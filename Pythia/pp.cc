@@ -5,7 +5,6 @@ using namespace Pythia8;
 
 // Constants
 const std::string input = "pp.cmnd";
-const int event_count = 100;
 const std::vector<int> pion_ids {-211, 211, 111};
 
 template <typename T>
@@ -46,15 +45,16 @@ std::vector<double> find_azimuths(std::vector<Particle> particles) {
 	return phis;
 }
 
-int main() {
+void create_histogram(int energy, int count) {
 	Pythia pythia;
 	pythia.readFile(input);
+	pythia.readString("Beams::eCM = " + std::to_string(energy));
 	pythia.init();
 
 	std::vector<Event> events;
 	Hist azimuth_hist("azimuth angles", 50, -4, 4);
 
-	for (int i = 0; i < event_count; ++i) {
+	for (int i = 0; i < count; ++i) {
 		if (!pythia.next()) {
 			continue;
 		}
@@ -77,10 +77,47 @@ int main() {
 	hpl.add(azimuth_hist);
 	hpl.plot(); 
 
-	// std::string python_call = "python " + python_plot_file + ".py";
-	// system(python_call.c_str());
-
 	pythia.stat();
+}
+
+int pion_production(double energy, int count) {
+	Pythia pythia;
+	pythia.readFile(input);
+	pythia.readString("Beams::eCM = " + std::to_string(energy));
+	pythia.init();
+
+	std::vector<Event> events;
+
+	for (int i = 0; i < count; ++i) {
+		if (!pythia.next()) {
+			continue;
+		}
+
+		events.push_back(pythia.event);
+	}
+
+	const std::vector<Particle> particles = all_particles(events);
+	const std::vector<Particle> pions = filter_particles(particles, pion_ids);
+
+	return pions.size();
+}
+
+int main() {
+	// create_histogram(8000, 100);
+
+	const int pions1 = pion_production(10000, 100);
+	const int pions2 = pion_production(1000, 100);
+	const int pions3 = pion_production(100, 100);
+	const int pions4 = pion_production(10, 100);
+	const int pions5 = pion_production(1, 100);
+	const int pions6 = pion_production(0.1, 100);
+
+	cout << "pions at 10000 GeV: " << pions1 << "\n";
+	cout << "pions at 1000 GeV: " << pions2 << "\n";
+	cout << "pions at 100 GeV: " << pions3 << "\n";
+	cout << "pions at 10 GeV: " << pions4 << "\n";
+	cout << "pions at 1 GeV: " << pions5 << "\n";
+	cout << "pions at 0.1 GeV: " << pions6 << "\n";
 
 	return 0;
 }
