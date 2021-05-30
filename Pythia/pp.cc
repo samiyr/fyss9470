@@ -1,6 +1,8 @@
 #include "Pythia8/Pythia.h"
 #include <algorithm>
 #include <string>
+#include <utility>
+
 using namespace Pythia8;
 
 // Constants
@@ -93,7 +95,9 @@ int pion_production(double energy, int count) {
 			continue;
 		}
 
-		events.push_back(pythia.event);
+		if (i != 0) {
+			events.push_back(pythia.event);
+		}
 	}
 
 	const std::vector<Particle> particles = all_particles(events);
@@ -102,22 +106,21 @@ int pion_production(double energy, int count) {
 	return pions.size();
 }
 
+void test_pion_production() {
+	std::vector<std::pair<int, int>> pion_counts;
+	for (int energy = 1; energy <= 10000; energy *= 10) {
+		const int pions = pion_production(energy, 100);
+		pion_counts.push_back(std::make_pair(pions, energy));
+	}
+	for (std::pair<int, int> e : pion_counts) {
+		cout << "pions at " << e.second << " GeV: " << e.first << "\n";
+	}
+}
+
 int main() {
 	// create_histogram(8000, 100);
 
-	const int pions1 = pion_production(10000, 100);
-	const int pions2 = pion_production(1000, 100);
-	const int pions3 = pion_production(100, 100);
-	const int pions4 = pion_production(10, 100);
-	const int pions5 = pion_production(1, 100);
-	const int pions6 = pion_production(0.1, 100);
-
-	cout << "pions at 10000 GeV: " << pions1 << "\n";
-	cout << "pions at 1000 GeV: " << pions2 << "\n";
-	cout << "pions at 100 GeV: " << pions3 << "\n";
-	cout << "pions at 10 GeV: " << pions4 << "\n";
-	cout << "pions at 1 GeV: " << pions5 << "\n";
-	cout << "pions at 0.1 GeV: " << pions6 << "\n";
+	test_pion_production();
 
 	return 0;
 }
