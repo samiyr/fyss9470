@@ -1,55 +1,12 @@
 #include "Pythia8/Pythia.h"
-#include <algorithm>
 #include <string>
-#include <utility>
+#include "PionGenerator.cc"
 
 using namespace Pythia8;
 
-// Constants
-const std::string input = "pp.cmnd";
-const std::vector<int> pion_ids {-211, 211, 111};
-
-template <typename T>
-bool contains(std::vector<T> vec, T element) {
-	return std::find(vec.begin(), vec.end(), element) != vec.end();
-}
-
-std::vector<Particle> all_particles(std::vector<Event> events) {
-	std::vector<Particle> particles;
-	for (Event event : events) {
-		const int particle_count = event.size();
-		for (int i = 0; i < particle_count; ++i) {
-			const Particle particle = event[i];
-			particles.push_back(particle);
-		}
-	}
-	return particles;
-}
-
-std::vector<Particle> filter_particles(std::vector<Particle> particles, std::vector<int> types, bool keep_decayed = false) {
-	particles.erase(std::remove_if(particles.begin(), particles.end(), [types, keep_decayed](Particle particle) {
-		if (!contains(types, particle.id())) {
-			return true;
-		}
-		if (!particle.isFinal() && !keep_decayed) {
-			return true;
-		}
-		return false;
-	}), particles.end());
-	return particles;
-}
-
-std::vector<double> find_azimuths(std::vector<Particle> particles) {
-	std::vector<double> phis;
-	for (Particle particle : particles) {
-		phis.push_back(particle.phi());
-	}
-	return phis;
-}
-
 void create_histogram(int energy, int count) {
 	Pythia pythia;
-	pythia.readFile(input);
+	pythia.readFile(cmnd_input);
 	pythia.readString("Beams::eCM = " + std::to_string(energy));
 	pythia.init();
 
@@ -83,25 +40,8 @@ void create_histogram(int energy, int count) {
 }
 
 int pion_production(double energy, int count) {
-	Pythia pythia;
-	pythia.readFile(input);
-	pythia.readString("Beams::eCM = " + std::to_string(energy));
-	pythia.init();
-
-	std::vector<Event> events;
-
-	for (int i = 0; i < count; ++i) {
-		if (!pythia.next()) {
-			continue;
-		}
-
-		if (i != 0) {
-			events.push_back(pythia.event);
-		}
-	}
-
-	const std::vector<Particle> particles = all_particles(events);
-	const std::vector<Particle> pions = filter_particles(particles, pion_ids);
+	PionGenerator generator(energy, count);
+	const std::vector<Particle> pions = generator.generate();
 
 	return pions.size();
 }
