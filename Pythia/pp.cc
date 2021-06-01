@@ -41,6 +41,7 @@ void create_histogram(int energy, int count) {
 
 int pion_production(double energy, int count) {
 	PionGenerator generator(energy, count);
+	generator.initialize();
 	const std::vector<Particle> pions = generator.generate();
 
 	return pions.size();
