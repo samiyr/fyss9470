@@ -5,6 +5,8 @@
 #include <numeric>
 #include <boost/histogram.hpp>
 #include <iomanip>
+#include <iostream>
+#include <fstream>
 
 using namespace Pythia8;
 using namespace boost;
@@ -81,6 +83,9 @@ struct Bin {
 	double width() {
 		return end - start;
 	}
+	double center() {
+		return (start + end) / 2;
+	}
 };
 
 template <typename T>
@@ -99,4 +104,16 @@ void print_bins(std::vector<Bin<T>> bins) {
 		cout << "[" << bin.start << ", " << bin.end << "): ";
 		print_with_precision(value, 8);
 	}
+}
+template <typename T>
+void export_bins(std::vector<Bin<T>> bins, std::string filename, int precision = 12) {
+	ofstream file;
+	file.open(filename);
+	file << std::setprecision(precision);
+	for (auto bin : bins) {
+		const T center = bin.center();
+		const T value = bin.value;
+		file << center << "," << value << "\n";
+	}
+	file.close();
 }

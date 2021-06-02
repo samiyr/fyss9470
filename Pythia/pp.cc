@@ -59,11 +59,13 @@ void cross_section(double energy, int count) {
 
 	cout << "Normalized pT histogram" << "\n";
 	print_bins(normalized);
+	cout << "\n";
+	export_bins(normalized, "data.csv");
 }
 
 int main() {
 	cross_section(200, 10000);
-	
+
 	return 0;
 }
 
