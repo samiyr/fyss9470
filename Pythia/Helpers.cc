@@ -2,8 +2,12 @@
 #include <algorithm>
 #include <string>
 #include <utility>
+#include <numeric>
+#include <boost/histogram.hpp>
+#include <iomanip>
 
 using namespace Pythia8;
+using namespace boost;
 
 template <typename T>
 bool contains(std::vector<T> vec, T element) {
@@ -22,23 +26,77 @@ std::vector<Particle> all_particles(std::vector<Event> events) {
 	return particles;
 }
 
-std::vector<Particle> filter_particles(std::vector<Particle> particles, std::vector<int> types, bool keep_decayed = false) {
-	particles.erase(std::remove_if(particles.begin(), particles.end(), [types, keep_decayed](Particle particle) {
-		if (!contains(types, particle.id())) {
-			return true;
-		}
-		if (!particle.isFinal() && !keep_decayed) {
-			return true;
-		}
-		return false;
-	}), particles.end());
-	return particles;
-}
-
 std::vector<double> find_azimuths(std::vector<Particle> particles) {
 	std::vector<double> phis;
 	for (Particle particle : particles) {
 		phis.push_back(particle.phi());
 	}
 	return phis;
+}
+std::vector<double> find_pT(std::vector<Particle> particles) {
+	std::vector<double> phis;
+	for (Particle particle : particles) {
+		phis.push_back(particle.pT());
+	}
+	return phis;
+}
+template <typename T>
+T sum(std::vector<T> v) {
+	T sum = std::accumulate(std::begin(v), std::end(v), 0.0);
+	return sum;
+}
+template <typename T>
+T mean(std::vector<T> v) {
+	return sum(v) / v.size();
+}
+
+void print_event(Event event) {
+	for (int i = 0; i < event.size(); ++i) {
+		const Particle particle = event[i];
+		cout << particle.name() << "\n";
+	}
+}
+
+template <typename Histogram, typename Axis>
+void print_histogram(Histogram hist, Axis axis) {
+	for (histogram::axis::index_type i = 0; i < axis.size(); i++) {
+		const int size = (int)hist.at(i);
+		cout << "[" << axis.bin(i).lower() << ", " << axis.bin(i).upper() << "): " << size << "\n";
+	}
+}
+
+template <typename T>
+struct Bin {
+	double start;
+	double end;
+
+	T value;
+
+	Bin(double s, double e, T v) {
+		start = s;
+		end = e;
+		value = v;
+	}
+
+	double width() {
+		return end - start;
+	}
+};
+
+template <typename T>
+void print_with_precision(T value, int precision, bool newline = true) {
+	cout << std::setprecision(precision) << value;
+	if (newline) {
+		cout << "\n";
+	}
+	cout << std::setprecision(3);
+}
+
+template <typename T>
+void print_bins(std::vector<Bin<T>> bins) {
+	for (auto bin : bins) {
+		const T value = bin.value;
+		cout << "[" << bin.start << ", " << bin.end << "): ";
+		print_with_precision(value, 8);
+	}
 }
