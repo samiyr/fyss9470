@@ -61,7 +61,7 @@ struct RangedContainer {
 	bool in_range(T v) {
 		return (v >= lower && v < upper);
 	}
-	std::string extent() {
+	const std::string extent() {
 		return "[" + std::to_string(lower) + ", " + std::to_string(upper) + ")";
 	}
 };
@@ -73,10 +73,10 @@ public:
 	std::vector<double> axis;
 
 	double lower_edge() {
-		return axis.front().lower;
+		return axis.front();
 	}
 	double upper_edge() {
-		return axis.back().upper;
+		return axis.back();
 	}
 
 	Histogram(int count, double lower, double upper) {

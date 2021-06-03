@@ -36,7 +36,7 @@ std::vector<double> find_azimuths(std::vector<Particle> particles) {
 	}
 	return phis;
 }
-std::vector<double> find_pT(std::vector<Particle> particles) {
+std::vector<double> find_pTs(std::vector<Particle> particles) {
 	std::vector<double> phis;
 	for (Particle particle : particles) {
 		phis.push_back(particle.pT());
