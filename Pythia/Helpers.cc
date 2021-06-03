@@ -60,15 +60,6 @@ void print_event(Event event) {
 	}
 }
 
-// template <typename Histogram, typename Axis>
-// void print_histogram(Histogram hist, Axis axis) {
-// 	for (histogram::axis::index_type i = 0; i < axis.size(); i++) {
-// 		const int size = (int)hist.at(i);
-// 		cout << "[" << axis.bin(i).lower() << ", " << axis.bin(i).upper() << "): " << size << "\n";
-// 	}
-// }
-
-
 
 template <typename T>
 void print_with_precision(T value, int precision, bool newline = true) {
@@ -92,6 +83,21 @@ std::vector<T> range(T lower, T upper, T step = 1) {
 		return current;
 	});
 	return v;
+}
+
+// https://stackoverflow.com/a/17299623
+template <typename T>
+std::vector<T> flatten(const std::vector<std::vector<T>>& v) {
+    std::size_t total_size = 0;
+    for (const auto& sub : v) {
+        total_size += sub.size();
+    }
+    std::vector<T> result;
+    result.reserve(total_size);
+    for (const auto& sub : v) {
+        result.insert(result.end(), sub.begin(), sub.end());
+    }
+    return result;
 }
 
 #endif // HELPERS_H

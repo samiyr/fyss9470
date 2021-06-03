@@ -35,10 +35,12 @@ std::vector<RangedContainer<double>> normalize(Histogram<double> hist, PionGener
 	return normalized;
 }
 
-void cross_section(double energy, int count) {
-	cout << "Starting experiment with E = " << energy << ", N = " << count << "\n";
-	cout << "Generating pions" << "\n";
-
+void cross_section(double energy, int count, std::vector<double> bins, std::vector<double> pT_hat_bins) {
+	std::vector<std::vector<Particle>> binned_particles;
+	for (std::vector<double>::size_type i = 0; i < pT_hat_bins.size() - 1; i++) {
+		const double pT_hat_min = pT_hat_bins[i];
+		const double pT_hat_max = pT_hat_bins[i + 1];
+	}
 	PionGenerator generator(energy, count);
 
 	generator.include_decayed = INCLUDE_DECAY;
@@ -48,20 +50,11 @@ void cross_section(double energy, int count) {
 	generator.initialize();
 
 	const std::vector<Particle> pions = generator.generate();
-	cout << "Generated " << pions.size() << " pions" << "\n";
 
 	const std::vector<double> pTs = find_pT(pions);
-	const double min_pT = *std::min_element(pTs.begin(), pTs.end());
-	const double max_pT = *std::max_element(pTs.begin(), pTs.end());
-	const double mean_pT = mean(pTs);
-	cout << "pT in range [" << min_pT << ", " << max_pT << "], mean = " << mean_pT << "\n";
-
 	const double sigma = generator.sigma();
-	cout << "sigma = " << sigma << "\n";
 
-	Histogram<double> hist = Histogram<double>({
-		1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 8.0, 9.0, 10.0, 12.0, 15.0
-	});
+	Histogram<double> hist = Histogram<double>(bins);
 
 	hist.fill(pTs);
 
@@ -81,8 +74,49 @@ void cross_section(double energy, int count) {
 	export_containers(nonconstant_normalized, "nonconstant_pT.csv");
 }
 
+void azimuth_correlation(double energy, int count) {
+	cout << "Starting experiment with E = " << energy << ", N = " << count << "\n";
+	cout << "Generating pions" << "\n";
+
+	PionGenerator generator(energy, count);
+
+	generator.include_decayed = INCLUDE_DECAY;
+	generator.y_min = Y_MIN;
+	generator.y_max = Y_MAX;
+
+	generator.initialize();
+
+	const std::vector<Particle> pions = generator.generate();
+	cout << "Generated " << pions.size() << " pions" << "\n";
+
+	std::vector<double> deltas;
+	for (std::vector<Particle>::size_type i = 0; i < pions.size(); i++) {
+		const Particle p1 = pions[i];
+		const double phi1 = p1.phi();
+		for (std::vector<Particle>::size_type j = i + 1; j < pions.size(); j++) {
+			const Particle p2 = pions[j];
+			const double phi2 = p2.phi();
+			const double delta_phi = abs(phi1 - phi2);
+			deltas.push_back(min(delta_phi, 2 * M_PI - delta_phi));
+		}
+	}
+
+	ofstream file;
+	file.open("delta_phi.csv");
+	file << std::setprecision(12);
+	for (auto delta : deltas) {
+		file << delta << "\n";
+	}
+	file.close();
+}
+
 int main() {
-	cross_section(200, 50000);
+	const std::vector<double> bins = {
+		1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 8.0, 9.0, 10.0, 12.0, 15.0
+	};
+	cross_section(200, 10000);
+
+	// azimuth_correlation(8000, 10000);
 
 	return 0;
 }
