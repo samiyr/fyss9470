@@ -10,84 +10,110 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      7632,        207]
-NotebookOptionsPosition[      6971,        188]
-NotebookOutlinePosition[      7364,        204]
-CellTagsIndexPosition[      7321,        201]
+NotebookDataLength[      9836,        259]
+NotebookOptionsPosition[      9044,        237]
+NotebookOutlinePosition[      9437,        253]
+CellTagsIndexPosition[      9394,        250]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
 Notebook[{
 Cell[BoxData[{
  RowBox[{
-  RowBox[{"data", "=", 
+  RowBox[{"hepData", "=", 
    RowBox[{
    "Import", "[", 
     "\"\</Users/samiyrjanheikki/Downloads/HEPData-ins617784-v1-csv/Table1.csv\
 \>\"", "]"}]}], ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pT", "=", 
-   RowBox[{"data", "[", 
+   RowBox[{"hepData", "[", 
     RowBox[{"[", 
      RowBox[{"All", ",", "1"}], "]"}], "]"}]}], 
   ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"\[Sigma]", "=", 
-   RowBox[{"data", "[", 
+   RowBox[{"hepData", "[", 
     RowBox[{"[", 
-     RowBox[{"All", ",", "4"}], "]"}], "]"}]}], ";"}]}], "Input",
- CellChangeTimes->{{3.831637026551749*^9, 3.8316370611088333`*^9}, {
-  3.831637261939773*^9, 3.831637277747961*^9}, {3.831637554970806*^9, 
-  3.831637555857122*^9}},
- CellLabel->"In[44]:=",ExpressionUUID->"00694af7-cb54-47dd-8bd1-4ee54e286cd4"],
-
-Cell[BoxData[{
+     RowBox[{"All", ",", "4"}], "]"}], "]"}]}], ";"}], "\n", 
  RowBox[{
-  RowBox[{"data2", "=", 
+  RowBox[{"constant", "=", 
    RowBox[{
    "Import", "[", 
     "\"\</Users/samiyrjanheikki/Documents/FYS/FYSS9470 \
-Erikoistyo\:0308/Pythia/data.csv\>\"", "]"}]}], 
+Erikoistyo\:0308/Pythia/constant_pT.csv\>\"", "]"}]}], 
   ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"pT2", "=", 
-   RowBox[{"data2", "[", 
+   RowBox[{"constant", "[", 
     RowBox[{"[", 
      RowBox[{"All", ",", "1"}], "]"}], "]"}]}], 
   ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"\[Sigma]2", "=", 
-   RowBox[{"data2", "[", 
+   RowBox[{"constant", "[", 
+    RowBox[{"[", 
+     RowBox[{"All", ",", "2"}], "]"}], "]"}]}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{"nonconstant", "=", 
+   RowBox[{
+   "Import", "[", 
+    "\"\</Users/samiyrjanheikki/Documents/FYS/FYSS9470 \
+Erikoistyo\:0308/Pythia/nonconstant_pT.csv\>\"", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"pT3", "=", 
+   RowBox[{"constant", "[", 
+    RowBox[{"[", 
+     RowBox[{"All", ",", "1"}], "]"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"\[Sigma]3", "=", 
+   RowBox[{"constant", "[", 
     RowBox[{"[", 
      RowBox[{"All", ",", "2"}], "]"}], "]"}]}], ";"}]}], "Input",
- CellChangeTimes->{{3.831637521346491*^9, 3.831637549681551*^9}, 
-   3.831637681922666*^9},
- CellLabel->"In[60]:=",ExpressionUUID->"b7d53a0d-dc6f-4e66-8fc1-4a5936975884"],
+ CellChangeTimes->{{3.831637026551749*^9, 3.8316370611088333`*^9}, {
+   3.831637261939773*^9, 3.831637277747961*^9}, {3.831637554970806*^9, 
+   3.831637555857122*^9}, {3.8317020673099403`*^9, 3.831702071922591*^9}, 
+   3.8317024503398933`*^9},
+ CellLabel->"In[39]:=",ExpressionUUID->"00694af7-cb54-47dd-8bd1-4ee54e286cd4"],
 
 Cell[CellGroupData[{
 
 Cell[BoxData[
- RowBox[{"Show", "[", 
-  RowBox[{
-   RowBox[{"ListLogPlot", "[", 
-    RowBox[{"Transpose", "[", 
-     RowBox[{"{", 
-      RowBox[{"pT", ",", "\[Sigma]"}], "}"}], "]"}], "]"}], ",", 
-   RowBox[{"ListLogPlot", "[", 
-    RowBox[{
+ RowBox[{"plot", "=", 
+  RowBox[{"Show", "[", 
+   RowBox[{
+    RowBox[{"ListLogPlot", "[", 
      RowBox[{"Transpose", "[", 
       RowBox[{"{", 
-       RowBox[{"pT2", ",", "\[Sigma]2"}], "}"}], "]"}], ",", 
-     RowBox[{"PlotStyle", "\[Rule]", 
-      RowBox[{
-       RowBox[{"ColorData", "[", 
-        RowBox[{"97", ",", "\"\<ColorList\>\""}], "]"}], "[", 
-       RowBox[{"[", "2", "]"}], "]"}]}]}], "]"}], ",", 
-   RowBox[{"PlotRange", "->", "All"}]}], "]"}]], "Input",
+       RowBox[{"pT", ",", "\[Sigma]"}], "}"}], "]"}], "]"}], ",", 
+    RowBox[{"ListLogPlot", "[", 
+     RowBox[{
+      RowBox[{"Transpose", "[", 
+       RowBox[{"{", 
+        RowBox[{"pT2", ",", "\[Sigma]2"}], "}"}], "]"}], ",", 
+      RowBox[{"PlotStyle", "\[Rule]", 
+       RowBox[{
+        RowBox[{"ColorData", "[", 
+         RowBox[{"97", ",", "\"\<ColorList\>\""}], "]"}], "[", 
+        RowBox[{"[", "2", "]"}], "]"}]}]}], "]"}], ",", 
+    RowBox[{"ListLogPlot", "[", 
+     RowBox[{
+      RowBox[{"Transpose", "[", 
+       RowBox[{"{", 
+        RowBox[{"pT3", ",", "\[Sigma]3"}], "}"}], "]"}], ",", 
+      RowBox[{"PlotStyle", "\[Rule]", 
+       RowBox[{
+        RowBox[{"ColorData", "[", 
+         RowBox[{"97", ",", "\"\<ColorList\>\""}], "]"}], "[", 
+        RowBox[{"[", "3", "]"}], "]"}]}]}], "]"}], ",", 
+    RowBox[{"PlotRange", "->", "All"}]}], "]"}]}]], "Input",
  CellChangeTimes->{{3.831637283303434*^9, 3.831637290227788*^9}, {
   3.831637559391231*^9, 3.831637616316352*^9}, {3.831638039226412*^9, 
-  3.831638126136722*^9}},
- CellLabel->"In[67]:=",ExpressionUUID->"98162b6b-ee1d-4f07-a5bf-a564709aad20"],
+  3.831638126136722*^9}, {3.831702119144682*^9, 3.831702131148868*^9}, {
+  3.831702479736252*^9, 3.831702480441002*^9}},
+ CellLabel->"In[48]:=",ExpressionUUID->"98162b6b-ee1d-4f07-a5bf-a564709aad20"],
 
 Cell[BoxData[
  GraphicsBox[{{{}, 
@@ -104,9 +130,19 @@ Cell[BoxData[
       13.25, -18.44497343652141}}]}, {{}, {}}}, {{}, 
     {RGBColor[0.880722, 0.611041, 0.142051], PointSize[0.012833333333333334`],
       AbsoluteThickness[1.6], 
-     PointBox[{{1.25, 0.23639417783123065`}, {1.75, -1.8163647405853331`}, {
-      2.25, -3.777760607078425}, {2.75, -5.202206734162284}, {
-      3.25, -5.88008644259023}, {3.75, -7.121799574899976}}]}, {{}, {}}}},
+     PointBox[{{1.25, -1.0826221884377276`}, {1.75, -2.839169776036916}, {
+      2.25, -4.238203162937394}, {2.75, -5.636220987749147}, {
+      3.25, -6.6600516767532225`}, {3.75, -7.431761179818447}, {
+      4.25, -8.537753575784404}, {4.75, -9.459909427111205}, {
+      5.75, -10.344111844432305`}, {
+      6.75, -11.197601675069457`}}]}, {{}, {}}}, {{}, 
+    {RGBColor[0.560181, 0.691569, 0.194885], PointSize[0.012833333333333334`],
+      AbsoluteThickness[1.6], 
+     PointBox[{{1.25, -1.0826221884377276`}, {1.75, -2.839169776036916}, {
+      2.25, -4.238203162937394}, {2.75, -5.636220987749147}, {
+      3.25, -6.6600516767532225`}, {3.75, -7.431761179818447}, {
+      4.25, -8.537753575784404}, {4.75, -9.459909427111205}, {
+      5.75, -10.344111844432305`}, {6.75, -11.197601675069457`}}]}, {{}, {}}}},
   AspectRatio->NCache[GoldenRatio^(-1), 0.6180339887498948],
   Axes->{True, True},
   AxesLabel->{None, None},
@@ -174,16 +210,29 @@ Cell[BoxData[
         TemplateBox[{0., 0.}, "Spacer2"], TraditionalForm], {0.005, 0.}}, {
       2.302585092994046, 
        FormBox[
-        TemplateBox[{0., 0.}, "Spacer2"], TraditionalForm], {0.005, 0.}}, {
-      2.995732273553991, 
-       FormBox[
-        TemplateBox[{0., 0.}, "Spacer2"], TraditionalForm], {0.005, 0.}}, {
-      3.4011973816621555`, 
-       FormBox[
         TemplateBox[{0., 0.}, "Spacer2"], TraditionalForm], {0.005, 
        0.}}}}]]], "Output",
- CellChangeTimes->{{3.831638115406241*^9, 3.831638126409191*^9}},
- CellLabel->"Out[67]=",ExpressionUUID->"b8029284-373e-4687-a17f-ea73589e8c9b"]
+ CellChangeTimes->{{3.831638115406241*^9, 3.831638126409191*^9}, {
+   3.83170212561443*^9, 3.8317021348071423`*^9}, {3.831702454369486*^9, 
+   3.831702480654894*^9}, {3.83170260413454*^9, 3.831702607613741*^9}, 
+   3.831702695474535*^9},
+ CellLabel->"Out[48]=",ExpressionUUID->"0684eb86-efac-46f4-8396-cf90aaadf1c3"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Export", "[", 
+  RowBox[{
+  "\"\</Users/samiyrjanheikki/Documents/FYS/FYSS9470 \
+Erikoistyo\:0308/sigma.pdf\>\"", ",", "plot"}], "]"}]], "Input",
+ CellChangeTimes->{{3.831702476305667*^9, 3.831702501155895*^9}},
+ CellLabel->"In[27]:=",ExpressionUUID->"24f4ba5c-4e73-4f50-b17d-408555468053"],
+
+Cell[BoxData["\<\"/Users/samiyrjanheikki/Documents/FYS/FYSS9470 Erikoistyo\
+\:0308/sigma.pdf\"\>"], "Output",
+ CellChangeTimes->{3.8317025017365713`*^9},
+ CellLabel->"Out[27]=",ExpressionUUID->"77ba329d-bc73-4b3f-a350-583da187fac1"]
 }, Open  ]]
 },
 WindowSize->{808, 911},
@@ -203,11 +252,14 @@ CellTagsIndex->{}
 *)
 (*NotebookFileOutline
 Notebook[{
-Cell[558, 20, 754, 21, 168, "Input",ExpressionUUID->"00694af7-cb54-47dd-8bd1-4ee54e286cd4"],
-Cell[1315, 43, 698, 21, 168, "Input",ExpressionUUID->"b7d53a0d-dc6f-4e66-8fc1-4a5936975884"],
+Cell[558, 20, 1897, 58, 480, "Input",ExpressionUUID->"00694af7-cb54-47dd-8bd1-4ee54e286cd4"],
 Cell[CellGroupData[{
-Cell[2038, 68, 861, 21, 90, "Input",ExpressionUUID->"98162b6b-ee1d-4f07-a5bf-a564709aad20"],
-Cell[2902, 91, 4053, 94, 297, "Output",ExpressionUUID->"b8029284-373e-4687-a17f-ea73589e8c9b"]
+Cell[2480, 82, 1373, 33, 142, "Input",ExpressionUUID->"98162b6b-ee1d-4f07-a5bf-a564709aad20"],
+Cell[3856, 117, 4586, 101, 297, "Output",ExpressionUUID->"0684eb86-efac-46f4-8396-cf90aaadf1c3"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[8479, 223, 314, 6, 90, "Input",ExpressionUUID->"24f4ba5c-4e73-4f50-b17d-408555468053"],
+Cell[8796, 231, 232, 3, 42, "Output",ExpressionUUID->"77ba329d-bc73-4b3f-a350-583da187fac1"]
 }, Open  ]]
 }
 ]

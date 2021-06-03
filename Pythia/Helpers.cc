@@ -1,15 +1,16 @@
+#ifndef HELPERS_H
+#define HELPERS_H
+
 #include "Pythia8/Pythia.h"
 #include <algorithm>
 #include <string>
 #include <utility>
 #include <numeric>
-#include <boost/histogram.hpp>
 #include <iomanip>
 #include <iostream>
 #include <fstream>
 
 using namespace Pythia8;
-using namespace boost;
 
 template <typename T>
 bool contains(std::vector<T> vec, T element) {
@@ -59,34 +60,15 @@ void print_event(Event event) {
 	}
 }
 
-template <typename Histogram, typename Axis>
-void print_histogram(Histogram hist, Axis axis) {
-	for (histogram::axis::index_type i = 0; i < axis.size(); i++) {
-		const int size = (int)hist.at(i);
-		cout << "[" << axis.bin(i).lower() << ", " << axis.bin(i).upper() << "): " << size << "\n";
-	}
-}
+// template <typename Histogram, typename Axis>
+// void print_histogram(Histogram hist, Axis axis) {
+// 	for (histogram::axis::index_type i = 0; i < axis.size(); i++) {
+// 		const int size = (int)hist.at(i);
+// 		cout << "[" << axis.bin(i).lower() << ", " << axis.bin(i).upper() << "): " << size << "\n";
+// 	}
+// }
 
-template <typename T>
-struct Bin {
-	double start;
-	double end;
 
-	T value;
-
-	Bin(double s, double e, T v) {
-		start = s;
-		end = e;
-		value = v;
-	}
-
-	double width() {
-		return end - start;
-	}
-	double center() {
-		return (start + end) / 2;
-	}
-};
 
 template <typename T>
 void print_with_precision(T value, int precision, bool newline = true) {
@@ -97,23 +79,19 @@ void print_with_precision(T value, int precision, bool newline = true) {
 	cout << std::setprecision(3);
 }
 
+
 template <typename T>
-void print_bins(std::vector<Bin<T>> bins) {
-	for (auto bin : bins) {
-		const T value = bin.value;
-		cout << "[" << bin.start << ", " << bin.end << "): ";
-		print_with_precision(value, 8);
-	}
+std::vector<T> range(T lower, T upper, T step = 1) {
+	const size_t size = (upper - lower) / step;
+	std::vector<T> v(size);
+
+	T new_val = lower;
+	std::generate(begin(v), end(v), [step, &new_val]() {
+		T current = new_val;
+		new_val += step;
+		return current;
+	});
+	return v;
 }
-template <typename T>
-void export_bins(std::vector<Bin<T>> bins, std::string filename, int precision = 12) {
-	ofstream file;
-	file.open(filename);
-	file << std::setprecision(precision);
-	for (auto bin : bins) {
-		const T center = bin.center();
-		const T value = bin.value;
-		file << center << "," << value << "\n";
-	}
-	file.close();
-}
+
+#endif // HELPERS_H

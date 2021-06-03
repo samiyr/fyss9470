@@ -1,15 +1,39 @@
 #include "Pythia8/Pythia.h"
 #include <string>
 #include "PionGenerator.cc"
-#include <boost/histogram.hpp>
+#include "Histogram.cc"
+#include "Helpers.cc"
 #include <math.h>
 
 using namespace Pythia8;
-using namespace boost;
 
 #define INCLUDE_DECAY 	true
 #define Y_MIN	 		-0.35
 #define Y_MAX 	 		0.35
+
+std::vector<RangedContainer<double>> normalize(Histogram<double> hist, PionGenerator *generator, bool constant_pT) {
+	const double sigma = generator->sigma();
+	const int count = generator->event_count;
+	std::vector<RangedContainer<double>> normalized;
+	for (auto bin : hist.bins) {
+		const int N = (int)bin.size();
+		const double dy = generator->y_max - generator->y_min;
+		const double dpT = bin.width();
+		const double pT = bin.center();
+		double dsigma;
+		if (constant_pT) {
+			dsigma = N * sigma / (2 * M_PI * count * dy * dpT * pT);
+		} else {
+			dsigma = std::accumulate(bin.contents.begin(), bin.contents.end(), 0.0, [dy, dpT, sigma, count](double sum, double pT) {
+				double new_value = sigma / (2 * M_PI * count * dy * dpT * pT);
+				return sum + new_value;
+			});
+		}
+		RangedContainer<double> container(bin.lower, bin.upper, dsigma);
+		normalized.push_back(container);
+	}
+	return normalized;
+}
 
 void cross_section(double energy, int count) {
 	cout << "Starting experiment with E = " << energy << ", N = " << count << "\n";
@@ -35,36 +59,30 @@ void cross_section(double energy, int count) {
 	const double sigma = generator.sigma();
 	cout << "sigma = " << sigma << "\n";
 
-	auto axis = histogram::axis::variable({
+	Histogram<double> hist = Histogram<double>({
 		1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 8.0, 9.0, 10.0, 12.0, 15.0
-	}, "pT");
-	auto hist = histogram::make_histogram(axis);
+	});
+
 	hist.fill(pTs);
 
 	cout << "Non-normalized pT histogram" << "\n";
-	print_histogram(hist, axis);
+	hist.print();
 	cout << "\n";
 
-	std::vector<Bin<double>> normalized;
-	for (histogram::axis::index_type i = 0; i < axis.size(); i++) {
-		const int N = (int)hist.at(i);
-		const double dy = generator.y_max - generator.y_min;
-		const auto b = axis.bin(i);
-		const double dpT = b.width();
-		const double pT = b.center();
-		const double dsigma = N * sigma / (2 * M_PI * count * dy * dpT * pT);
-		Bin<double> bin(b.lower(), b.upper(), dsigma);
-		normalized.push_back(bin);
-	}
+	auto constant_normalized = normalize(hist, &generator, true);
+	auto nonconstant_normalized = normalize(hist, &generator, false);
 
-	cout << "Normalized pT histogram" << "\n";
-	print_bins(normalized);
+	cout << "Normalized constant pT histogram" << "\n";
+	print_containers(constant_normalized);
 	cout << "\n";
-	export_bins(normalized, "data.csv");
+	cout << "Normalized nonconstant pT histogram" << "\n";
+	print_containers(nonconstant_normalized);
+	export_containers(constant_normalized, "constant_pT.csv");
+	export_containers(nonconstant_normalized, "nonconstant_pT.csv");
 }
 
 int main() {
-	cross_section(200, 10000);
+	cross_section(200, 50000);
 
 	return 0;
 }

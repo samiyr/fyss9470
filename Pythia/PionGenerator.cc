@@ -1,3 +1,6 @@
+#ifndef PION_GENERATOR_H
+#define PION_GENERATOR_H
+
 #include "Pythia8/Pythia.h"
 #include <string>
 #include "ParticleFilter.cc"
@@ -83,3 +86,4 @@ public:
 	}
 };
 
+#endif // PION_GENERATOR_H

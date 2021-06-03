@@ -1,3 +1,6 @@
+#ifndef PARTICLE_FILTER_H
+#define PARTICLE_FILTER_H
+
 #include "Pythia8/Pythia.h"
 #include <string>
 #include "Helpers.cc"
@@ -71,3 +74,5 @@ public:
 		return apply_filter_chain(particles, filters);
 	}
 };
+
+#endif // PARTICLE_FILTER_H
