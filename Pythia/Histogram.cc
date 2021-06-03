@@ -12,11 +12,16 @@ struct Bin {
 	double upper;
 
 	std::vector<T> contents;
+	std::vector<T> weights;
+	T weight_sum() {
+		return std::accumulate(weights.begin(), weights.end(), 0.0);
+	}
 
-	Bin(double l, double u, std::vector<T> c = {}) {
+	Bin(double l, double u, std::vector<T> c = {}, std::vector<T> w = {}) {
 		lower = l;
 		upper = u;
 		contents = c;
+		weights = w;
 	}
 
 	auto size() {
@@ -88,18 +93,19 @@ public:
 		Construct(points);
 	}
 
-	void fill(T v) {
+	void fill(T v, T w) {
 		for (auto &bin : bins) {
 			if (bin.in_range(v)) {
 				bin.contents.push_back(v);
+				bin.weights.push_back(w);
 				break;
 			}
 		}
 	}
-	void fill(std::vector<T> v) {
-		std::for_each(std::begin(v), std::end(v), [this](T&value) {
-			fill(value);
-		});
+	void fill(std::vector<T> v, std::vector<T> w) {
+		for (typename std::vector<T>::size_type i = 0; i < v.size(); i++) {
+			fill(v[i], w[i]);
+		}
 	}
 
 	void print() {

@@ -4,6 +4,7 @@
 #include "Histogram.cc"
 #include "Helpers.cc"
 #include <math.h>
+#include <execution>
 
 using namespace Pythia8;
 
@@ -11,21 +12,24 @@ using namespace Pythia8;
 #define Y_MIN	 		-0.35
 #define Y_MAX 	 		0.35
 
-std::vector<RangedContainer<double>> normalize(Histogram<double> hist, int count, double sigma, bool constant_pT) {
+std::vector<RangedContainer<double>> normalize(Histogram<double> hist, int count, double sigma, bool use_weights = true) {
 	std::vector<RangedContainer<double>> normalized;
 	for (auto bin : hist.bins) {
-		const int N = (int)bin.size();
 		const double dy = Y_MAX - Y_MIN;
 		const double dpT = bin.width();
-		const double pT = bin.center();
-		double dsigma;
-		if (constant_pT) {
-			dsigma = N * sigma / (2 * M_PI * count * dy * dpT * pT);
-		} else {
-			dsigma = std::accumulate(bin.contents.begin(), bin.contents.end(), 0.0, [dy, dpT, sigma, count](double sum, double pT) {
-				double new_value = sigma / (2 * M_PI * count * dy * dpT * pT);
-				return sum + new_value;
-			});
+		double dsigma = 0.0;
+		double w_sum = 1.0;
+		if (use_weights) {
+			w_sum = bin.weight_sum();
+		}
+		for (std::vector<double>::size_type i = 0; i < bin.contents.size(); i++) {
+			const double pT = bin.contents[i];
+			double weight_factor = 1.0;
+			if (use_weights) {
+				const double w = bin.weights[i];
+				weight_factor = w / w_sum;
+			}
+			dsigma += weight_factor * sigma / (2 * M_PI * count * dy * dpT * pT);
 		}
 		RangedContainer<double> container(bin.lower, bin.upper, dsigma);
 		normalized.push_back(container);
@@ -72,18 +76,19 @@ void cross_section(double energy, int count, std::vector<double> bins, std::vect
 
 		generator.initialize();
 
-		const std::vector<Particle> pions = generator.generate();
+		const std::vector<ParticleContainer> pions = generator.generate();
 		const double sigma = generator.sigma();
 
-		std::vector<double> pTs = find_pTs(pions);
+		const std::vector<double> pTs = find_pTs(pions);
+		const std::vector<double> pT_hats = find_pT_hats(pions);
 
 		Histogram<double> partial = Histogram<double>(bins);
-		partial.fill(pTs);
+		partial.fill(pTs, pT_hats);
 
 		const auto partial_container = normalize(partial, count, sigma, false);
 		containers.push_back(partial_container);
 
-		weights.push_back(1);
+		weights.push_back(1.0);
 	}
 
 	const auto combined = combine(containers, weights);
@@ -106,15 +111,15 @@ void azimuth_correlation(double energy, int count) {
 
 	generator.initialize();
 
-	const std::vector<Particle> pions = generator.generate();
+	const std::vector<ParticleContainer> pions = generator.generate();
 	cout << "Generated " << pions.size() << " pions" << "\n";
 
 	std::vector<double> deltas;
-	for (std::vector<Particle>::size_type i = 0; i < pions.size(); i++) {
-		const Particle p1 = pions[i];
+	for (std::vector<ParticleContainer>::size_type i = 0; i < pions.size(); i++) {
+		const Particle p1 = pions[i].particle;
 		const double phi1 = p1.phi();
 		for (std::vector<Particle>::size_type j = i + 1; j < pions.size(); j++) {
-			const Particle p2 = pions[j];
+			const Particle p2 = pions[j].particle;
 			const double phi2 = p2.phi();
 			const double delta_phi = abs(phi1 - phi2);
 			deltas.push_back(min(delta_phi, 2 * M_PI - delta_phi));

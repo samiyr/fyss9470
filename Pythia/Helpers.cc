@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <iostream>
 #include <fstream>
+#include "ParticleContainer.cc"
 
 using namespace Pythia8;
 
@@ -36,10 +37,17 @@ std::vector<double> find_azimuths(std::vector<Particle> particles) {
 	}
 	return phis;
 }
-std::vector<double> find_pTs(std::vector<Particle> particles) {
+std::vector<double> find_pTs(std::vector<ParticleContainer> particles) {
 	std::vector<double> phis;
-	for (Particle particle : particles) {
-		phis.push_back(particle.pT());
+	for (ParticleContainer particle : particles) {
+		phis.push_back(particle.particle.pT());
+	}
+	return phis;
+}
+std::vector<double> find_pT_hats(std::vector<ParticleContainer> particles) {
+	std::vector<double> phis;
+	for (ParticleContainer particle : particles) {
+		phis.push_back(particle.pT_hat);
 	}
 	return phis;
 }
@@ -98,6 +106,14 @@ std::vector<T> flatten(const std::vector<std::vector<T>>& v) {
         result.insert(result.end(), sub.begin(), sub.end());
     }
     return result;
+}
+
+template <typename T>
+std::vector<T> product(const std::vector<T> v1, const std::vector<T> v2) {
+	std::vector<T> r;
+	r.reserve(v1.size());
+	std::transform(v1.begin(), v1.end(), v2.begin(), std::back_inserter(r), std::multiplies<T>());
+	return r;
 }
 
 #endif // HELPERS_H

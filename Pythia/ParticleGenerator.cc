@@ -29,6 +29,8 @@ public:
 
 	std::vector<int> particle_ids = {111};
 
+	double pT_hat_total = 0;
+
 	Pythia pythia;
 
 	ParticleGenerator(double energy, int count) {
@@ -47,8 +49,10 @@ public:
 		}
 		pythia.init();
 	}
-	std::vector<Particle> generate() {
+	std::vector<ParticleContainer> generate() {
 		std::vector<Event> events;
+		events.reserve(event_count);
+		std::vector<ParticleContainer> particles;
 
 		for (int i = 0; i < event_count; ++i) {
 			if (!pythia.next()) {
@@ -57,10 +61,17 @@ public:
 
 			if (i != 0) {
 				events.push_back(pythia.event);
+				const double pT_hat = pythia.info.pTHat();
+				pT_hat_total += pT_hat;
+
+				const int particle_count = pythia.event.size();
+
+				for (int j = 0; j < particle_count; j++) {
+					const ParticleContainer container = ParticleContainer(pythia.event[j], pT_hat);
+					particles.push_back(container);
+				}
 			}
 		}	
-
-		const std::vector<Particle> particles = all_particles(events);
 
 		ParticleFilter filter;
 		filter.allowed_particle_ids = particle_ids;
@@ -70,7 +81,7 @@ public:
 		filter.y_min = y_min;
 		filter.y_max = y_max;
 
-		const std::vector<Particle> filtered = filter.filter(particles);
+		const std::vector<ParticleContainer> filtered = filter.filter(particles);
 
 		return filtered;
 	}

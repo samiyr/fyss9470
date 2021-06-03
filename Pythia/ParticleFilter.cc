@@ -11,35 +11,35 @@ using namespace Pythia8;
 
 class ParticleFilter {
 private:
-	std::vector<Particle> apply_filter(std::vector<Particle> particles, bool (ParticleFilter::*filter)(Particle)) {
-		particles.erase(std::remove_if(particles.begin(), particles.end(), [this, filter](Particle particle) {
+	std::vector<ParticleContainer> apply_filter(std::vector<ParticleContainer> particles, bool (ParticleFilter::*filter)(ParticleContainer)) {
+		particles.erase(std::remove_if(particles.begin(), particles.end(), [this, filter](ParticleContainer particle) {
 			const bool value = (this->*filter)(particle);
 			return !value;
 		}), particles.end());
 		return particles;
 	}
-	std::vector<Particle> apply_filter_chain(std::vector<Particle> particles, std::vector<bool (ParticleFilter::*)(Particle)> chain) {
-		std::vector<Particle> current = particles;
-		for (bool (ParticleFilter::*filter)(Particle) : chain) {
+	std::vector<ParticleContainer> apply_filter_chain(std::vector<ParticleContainer> particles, std::vector<bool (ParticleFilter::*)(ParticleContainer)> chain) {
+		std::vector<ParticleContainer> current = particles;
+		for (bool (ParticleFilter::*filter)(ParticleContainer) : chain) {
 			current = apply_filter(current, filter);
 		}
 		return current;
 	}
 
-	bool id_filter(Particle p) {
-		return contains(allowed_particle_ids, p.id());
+	bool id_filter(ParticleContainer p) {
+		return contains(allowed_particle_ids, p.particle.id());
 	}
-	bool decay_filter(Particle p) {
+	bool decay_filter(ParticleContainer p) {
 		if (!include_decayed) {
-			return p.isFinal();
+			return p.particle.isFinal();
 		}
 		return true;
 	}
-	bool pT_filter(Particle p) {
-		return in_range(p.pT(), pT_min, pT_max);
+	bool pT_filter(ParticleContainer p) {
+		return in_range(p.particle.pT(), pT_min, pT_max);
 	}
-	bool rapidity_filter(Particle p) {
-		return in_range(p.y(), y_min, y_max);
+	bool rapidity_filter(ParticleContainer p) {
+		return in_range(p.particle.y(), y_min, y_max);
 	}
 	bool in_range(double value, double min, double max) {
 		if (!std::isnan(min) && value < min) {
@@ -61,14 +61,14 @@ public:
 	double y_min;
 	double y_max;
 
-	std::vector<bool (ParticleFilter::*)(Particle)> filters = {
+	std::vector<bool (ParticleFilter::*)(ParticleContainer)> filters = {
 		&ParticleFilter::id_filter,
 		&ParticleFilter::decay_filter,
 		&ParticleFilter::pT_filter,
 		&ParticleFilter::rapidity_filter,
 	};
 			
-	std::vector<Particle> filter(const std::vector<Particle> particles) {
+	std::vector<ParticleContainer> filter(const std::vector<ParticleContainer> particles) {
 		filters.push_back(&ParticleFilter::id_filter);
 
 		return apply_filter_chain(particles, filters);
