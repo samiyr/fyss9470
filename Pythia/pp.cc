@@ -8,10 +8,6 @@
 
 using namespace Pythia8;
 
-#define INCLUDE_DECAY 	true
-#define Y_MIN	 		-0.35
-#define Y_MAX 	 		0.35
-
 ValueHistogram<double> combine(std::vector<ValueHistogram<double>> containers, std::vector<double> weights) {
 	auto reference = containers.front();
 	const auto N = reference.size();
@@ -33,7 +29,7 @@ ValueHistogram<double> combine(std::vector<ValueHistogram<double>> containers, s
 	return result;
 }
 
-void cross_section(double energy, int count, std::vector<double> bins, std::vector<double> pT_hat_bins) {
+void cross_section(double energy, int count, std::vector<double> bins, std::vector<double> pT_hat_bins, Range<double> y_range, bool include_decayed, bool use_biasing) {
 	std::vector<ValueHistogram<double>> containers;
 	std::vector<double> weights;
 
@@ -43,9 +39,10 @@ void cross_section(double energy, int count, std::vector<double> bins, std::vect
 
 		ParticleGenerator generator(energy, count);
 
-		generator.include_decayed = INCLUDE_DECAY;
-		generator.y_range = Range<double>(Y_MIN, Y_MAX);
+		generator.include_decayed = include_decayed;
+		generator.y_range = y_range;
 		generator.pT_hat_range = Range<double>(pT_hat_min, pT_hat_max);
+		generator.use_biasing = use_biasing;
 
 		generator.initialize();
 
@@ -53,12 +50,12 @@ void cross_section(double energy, int count, std::vector<double> bins, std::vect
 		const double sigma = generator.sigma();
 
 		const std::vector<double> pTs = find_pTs(pions);
-		const std::vector<double> pT_hats = find_pT_hats(pions);
+		const std::vector<double> event_weights = find_event_weights(pions);
 
 		Histogram<double> partial = Histogram<double>(bins);
-		partial.fill(pTs, pT_hats);
+		partial.fill(pTs, event_weights);
 
-		const auto partial_container = partial.normalize(count, sigma, Range<double>(Y_MIN, Y_MAX), false);
+		const auto partial_container = partial.normalize(generator.total_weight(), sigma, y_range, use_biasing);
 		containers.push_back(partial_container);
 
 		weights.push_back(1.0);
@@ -67,19 +64,19 @@ void cross_section(double energy, int count, std::vector<double> bins, std::vect
 	const auto combined = combine(containers, weights);
 
 	cout << "Normalized pT histogram" << "\n";
-	print_containers(combined);
+	combined.print();
 	cout << "\n";
-	export_containers(combined, "pT_histogram.csv");
+	combined.export_histogram("pT_histogram.csv");
 }
 
-void azimuth_correlation(double energy, int count) {
+void azimuth_correlation(double energy, int count, Range<double> y_range, bool include_decayed) {
 	cout << "Starting experiment with E = " << energy << ", N = " << count << "\n";
 	cout << "Generating pions" << "\n";
 
 	ParticleGenerator generator(energy, count);
 
-	generator.include_decayed = INCLUDE_DECAY;
-	generator.y_range = Range<double>(Y_MIN, Y_MAX);
+	generator.include_decayed = include_decayed;
+	generator.y_range = y_range;
 
 	generator.initialize();
 
@@ -114,7 +111,15 @@ int main() {
 	const std::vector<double> pT_hat_bins = {
 		2.0, 5.0, 10.0, 40.0, -1
 	};
-	cross_section(200, 10000, bins, pT_hat_bins);
+	cross_section(
+		200, 						// center-of-mass energy in GeV
+		10000, 						// number of events
+		bins, 						// pT histogram bins
+		pT_hat_bins, 				// pT_hat bins
+		Range<double>(-0.35, 0.35), // rapidity range
+		true, 						// include decayed particles
+		true						// use event weighting
+	);
 
 	return 0;
 }

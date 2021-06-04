@@ -22,9 +22,11 @@ public:
 	Range<double> y_range = Range<double>(NAN, NAN);
 	Range<double> pT_hat_range = Range<double>(0, -1);
 
-	std::vector<int> particle_ids = {111};
+	bool use_biasing = false;
+	double bias_power = 4.0;
+	double bias_reference = 10.0;
 
-	double pT_hat_total = 0;
+	std::vector<int> particle_ids = {111};
 
 	Pythia pythia;
 
@@ -39,7 +41,10 @@ public:
 		settings.parm("Beams:eCM", cm_energy);
 		settings.parm("PhaseSpace:pTHatMin", pT_hat_range.start);
 		settings.parm("PhaseSpace:pTHatMax", pT_hat_range.end);
-		if (!pythia_printing) {
+        settings.flag("PhaseSpace:bias2Selection", use_biasing);
+        settings.parm("PhaseSpace:bias2SelectionPow", bias_power);
+        settings.parm("PhaseSpace:bias2SelectionRef", bias_reference);
+  		if (!pythia_printing) {
 			pythia.readString("Print:quiet = on");
 		}
 		pythia.init();
@@ -57,12 +62,10 @@ public:
 			if (i != 0) {
 				events.push_back(pythia.event);
 				const double pT_hat = pythia.info.pTHat();
-				pT_hat_total += pT_hat;
-
 				const int particle_count = pythia.event.size();
 
 				for (int j = 0; j < particle_count; j++) {
-					const ParticleContainer container = ParticleContainer(pythia.event[j], pT_hat);
+					const ParticleContainer container = ParticleContainer(pythia.event[j], pT_hat, pythia.info.weight());
 					particles.push_back(container);
 				}
 			}
@@ -80,6 +83,9 @@ public:
 	}
 	double sigma() {
 		return pythia.info.sigmaGen();
+	}
+	double total_weight() {
+		return pythia.info.weightSum();
 	}
 };
 

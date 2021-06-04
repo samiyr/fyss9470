@@ -73,6 +73,13 @@ std::vector<double> find_pT_hats(std::vector<ParticleContainer> particles) {
 	}
 	return phis;
 }
+std::vector<double> find_event_weights(std::vector<ParticleContainer> particles) {
+	std::vector<double> weights;
+	for (ParticleContainer particle : particles) {
+		weights.push_back(particle.event_weight);
+	}
+	return weights;
+}
 template <typename T>
 T sum(std::vector<T> v) {
 	T sum = std::accumulate(std::begin(v), std::end(v), 0.0);
