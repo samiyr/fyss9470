@@ -11,8 +11,6 @@
 
 using namespace Pythia8;
 
-#define PARALLELIZE true
-
 ValueHistogram<double> combine(std::vector<ValueHistogram<double>> containers, std::vector<double> weights) {
 	auto reference = containers.front();
 	const auto N = reference.size();
@@ -34,13 +32,11 @@ ValueHistogram<double> combine(std::vector<ValueHistogram<double>> containers, s
 	return result;
 }
 
-void cross_section(double energy, int count, std::vector<double> bins, std::vector<double> pT_hat_bins, Range<double> y_range, bool include_decayed, bool use_biasing) {
+void cross_section(double energy, int count, std::vector<double> bins, std::vector<double> pT_hat_bins, Range<double> y_range, bool include_decayed, bool use_biasing, bool parallelize) {
 	std::vector<ValueHistogram<double>> containers;
 	std::vector<double> weights;
 
-	#if PARALLELIZE
-	#pragma omp parallel for
-	#endif
+	#pragma omp parallel for if(parallelize)
 	for (std::vector<double>::size_type i = 0; i < pT_hat_bins.size() - 1; i++) {
 		const double pT_hat_min = pT_hat_bins[i];
 		const double pT_hat_max = pT_hat_bins[i + 1];
@@ -77,7 +73,7 @@ void cross_section(double energy, int count, std::vector<double> bins, std::vect
 	combined.export_histogram("pT_histogram.csv");
 }
 
-void azimuth_correlation(double energy, int count, Range<double> y_range, bool include_decayed) {
+void azimuth_correlation(double energy, int count, Range<double> y_range, bool include_decayed, bool parallelize) {
 	cout << "Starting experiment with E = " << energy << ", N = " << count << "\n";
 	cout << "Generating pions" << "\n";
 
@@ -91,25 +87,27 @@ void azimuth_correlation(double energy, int count, Range<double> y_range, bool i
 	const std::vector<ParticleContainer> pions = generator.generate();
 	cout << "Generated " << pions.size() << " pions" << "\n";
 
-	std::vector<double> deltas;
-	for (std::vector<ParticleContainer>::size_type i = 0; i < pions.size(); i++) {
-		const Particle p1 = pions[i].particle;
-		const double phi1 = p1.phi();
-		for (std::vector<Particle>::size_type j = i + 1; j < pions.size(); j++) {
-			const Particle p2 = pions[j].particle;
-			const double phi2 = p2.phi();
-			const double delta_phi = abs(phi1 - phi2);
-			deltas.push_back(min(delta_phi, 2 * M_PI - delta_phi));
+	Histogram<double> hist(10, 0, M_PI);
+	#pragma omp parallel if(parallelize)
+	{
+		std::vector<double> _deltas;
+		#pragma omp for collapse(2)
+		for (std::vector<ParticleContainer>::size_type i = 0; i < pions.size(); i++) {
+			const Particle p1 = pions[i].particle;
+			const double phi1 = p1.phi();
+			for (std::vector<Particle>::size_type j = i + 1; j < pions.size(); j++) {
+				const Particle p2 = pions[j].particle;
+				const double phi2 = p2.phi();
+				const double delta_phi = abs(phi1 - phi2);
+				_deltas.push_back(min(delta_phi, 2 * M_PI - delta_phi));
+			}
 		}
+		#pragma omp critical
+		hist.fill(_deltas);
 	}
 
-	ofstream file;
-	file.open("delta_phi.csv");
-	file << std::setprecision(12);
-	for (auto delta : deltas) {
-		file << delta << "\n";
-	}
-	file.close();
+	ValueHistogram<double> exported = hist.export_to_values();
+	exported.export_histogram("delta_phi.csv");
 }
 
 int main() {
@@ -119,14 +117,23 @@ int main() {
 	const std::vector<double> pT_hat_bins = {
 		2.0, 5.0, 10.0, 40.0, -1
 	};
-	cross_section(
-		200, 						// center-of-mass energy in GeV
-		10000, 						// number of events
-		bins, 						// pT histogram bins
-		pT_hat_bins, 				// pT_hat bins
-		Range<double>(-0.35, 0.35), // rapidity range
-		true, 						// include decayed particles
-		true						// use event weighting
+	// cross_section(
+	// 	200, 						// center-of-mass energy in GeV
+	// 	10000, 						// number of events per pT_hat bin
+	// 	bins, 						// pT histogram bins
+	// 	pT_hat_bins, 				// pT_hat bins
+	// 	Range<double>(-0.35, 0.35), // rapidity range
+	// 	true, 						// include decayed particles
+	// 	true,						// use event weighting
+	// 	true						// use multithreading
+	// );
+	
+	azimuth_correlation(
+		200,						// center-of-mass energy in GeV
+		10000,						// number of events
+		Range<double>(-0.35, 0.35),	// rapidity range
+		true,						// include decayed particles
+		true						// use multithreading
 	);
 
 	return 0;

@@ -149,6 +149,13 @@ public:
 			fill(v[i], w[i]);
 		}
 	}
+	/// Appends a collection of values `v` to the appropriate bins.
+	/// Calls `fill` for the individual values.
+	void fill(std::vector<T> v) {
+		for (typename std::vector<T>::size_type i = 0; i < v.size(); i++) {
+			fill(v[i], 1);
+		}
+	}
 	/// Prints the contents of the bins to stdout.
 	void print() {
 		std::for_each(std::begin(bins), std::end(bins), [](Bin<T>&bin) {
@@ -157,26 +164,37 @@ public:
 	}
 	/// Normalizes the histogram to cross section and returns a `ValueHistogram`. 
 	ValueHistogram<T> normalize(double total_weight, double sigma, Range<double> rapidity, bool use_weights) {
-	std::vector<RangedContainer<T>> normalized;
-	for (auto bin : bins) {
-		const double dy = rapidity.width();
-		const double dpT = bin.range.width();
-		// dsigma = 1 / 2π * N / N_ev * sigma / dy pT dpT
-		double dsigma = 0.0;
-		for (typename std::vector<T>::size_type i = 0; i < bin.contents.size(); i++) {
-			const double pT = bin.contents[i];
-			double weight_factor = 1.0;
-			if (use_weights) {
-				weight_factor = bin.weights[i];
+		std::vector<RangedContainer<T>> normalized;
+		for (auto bin : bins) {
+			const double dy = rapidity.width();
+			const double dpT = bin.range.width();
+			// dsigma = 1 / 2π * N / N_ev * sigma / dy pT dpT
+			double dsigma = 0.0;
+			for (typename std::vector<T>::size_type i = 0; i < bin.contents.size(); i++) {
+				const double pT = bin.contents[i];
+				double weight_factor = 1.0;
+				if (use_weights) {
+					weight_factor = bin.weights[i];
+				}
+				dsigma += weight_factor / pT;
 			}
-			dsigma += weight_factor / pT;
+			dsigma *= sigma / (2 * M_PI * total_weight * dy * dpT);
+			RangedContainer<T> container(bin.range.start, bin.range.end, dsigma);
+			normalized.push_back(container);
 		}
-		dsigma *= sigma / (2 * M_PI * total_weight * dy * dpT);
-		RangedContainer<T> container(bin.range.start, bin.range.end, dsigma);
-		normalized.push_back(container);
+		return normalized;
 	}
-	return normalized;
-}
+
+	ValueHistogram<T> export_to_values() {
+		std::vector<RangedContainer<T>> containers;
+		ValueHistogram<T> hist;
+		for (auto bin : bins) {
+			const auto value = bin.size();
+			RangedContainer<T> container(bin.range.start, bin.range.end, value);
+			hist.containers.push_back(container);
+		}
+		return hist;
+	}
 private:
 	void Construct(std::vector<double> points) {
 		axis = points;
