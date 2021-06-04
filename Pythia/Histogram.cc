@@ -161,6 +161,7 @@ public:
 	for (auto bin : bins) {
 		const double dy = rapidity.width();
 		const double dpT = bin.range.width();
+		// dsigma = 1 / 2π * N / N_ev * sigma / dy pT dpT
 		double dsigma = 0.0;
 		for (typename std::vector<T>::size_type i = 0; i < bin.contents.size(); i++) {
 			const double pT = bin.contents[i];

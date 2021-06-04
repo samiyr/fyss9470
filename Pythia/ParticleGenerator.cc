@@ -4,6 +4,7 @@
 #include "Pythia8/Pythia.h"
 #include <string>
 #include "ParticleFilter.cc"
+#include "pp.cc"
 
 using namespace Pythia8;
 
@@ -60,12 +61,14 @@ public:
 			}
 
 			if (i != 0) {
-				events.push_back(pythia.event);
-				const double pT_hat = pythia.info.pTHat();
-				const int particle_count = pythia.event.size();
+				const Event &event = pythia.event;
+				const Info &info = pythia.info;
+				events.push_back(event);
+				const double pT_hat = info.pTHat();
+				const int particle_count = event.size();
 
 				for (int j = 0; j < particle_count; j++) {
-					const ParticleContainer container = ParticleContainer(pythia.event[j], pT_hat, pythia.info.weight());
+					const ParticleContainer container = ParticleContainer(event[j], pT_hat, info.weight());
 					particles.push_back(container);
 				}
 			}

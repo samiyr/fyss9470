@@ -1,3 +1,6 @@
+#ifndef MAIN_H
+#define MAIN_H
+
 #include "Pythia8/Pythia.h"
 #include <string>
 #include "ParticleGenerator.cc"
@@ -7,6 +10,8 @@
 #include <execution>
 
 using namespace Pythia8;
+
+#define PARALLELIZE true
 
 ValueHistogram<double> combine(std::vector<ValueHistogram<double>> containers, std::vector<double> weights) {
 	auto reference = containers.front();
@@ -33,6 +38,9 @@ void cross_section(double energy, int count, std::vector<double> bins, std::vect
 	std::vector<ValueHistogram<double>> containers;
 	std::vector<double> weights;
 
+	#if PARALLELIZE
+	#pragma omp parallel for
+	#endif
 	for (std::vector<double>::size_type i = 0; i < pT_hat_bins.size() - 1; i++) {
 		const double pT_hat_min = pT_hat_bins[i];
 		const double pT_hat_max = pT_hat_bins[i + 1];
@@ -124,3 +132,4 @@ int main() {
 	return 0;
 }
 
+#endif // MAIN_H
