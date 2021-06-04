@@ -18,14 +18,9 @@ public:
 
 	bool include_decayed = true;
 
-	double pT_min = NAN;
-	double pT_max = NAN;
-	
-	double y_min = NAN;
-	double y_max = NAN;
-
-	double pT_hat_min = 0;
-	double pT_hat_max = -1;
+	Range<double> pT_range = Range<double>(NAN, NAN);
+	Range<double> y_range = Range<double>(NAN, NAN);
+	Range<double> pT_hat_range = Range<double>(0, -1);
 
 	std::vector<int> particle_ids = {111};
 
@@ -42,8 +37,8 @@ public:
 
 		pythia.readFile(cmnd_input);
 		settings.parm("Beams:eCM", cm_energy);
-		settings.parm("PhaseSpace:pTHatMin", pT_hat_min);
-		settings.parm("PhaseSpace:pTHatMax", pT_hat_max);
+		settings.parm("PhaseSpace:pTHatMin", pT_hat_range.start);
+		settings.parm("PhaseSpace:pTHatMax", pT_hat_range.end);
 		if (!pythia_printing) {
 			pythia.readString("Print:quiet = on");
 		}
@@ -76,10 +71,8 @@ public:
 		ParticleFilter filter;
 		filter.allowed_particle_ids = particle_ids;
 		filter.include_decayed = include_decayed;
-		filter.pT_min = pT_min;
-		filter.pT_max = pT_max;
-		filter.y_min = y_min;
-		filter.y_max = y_max;
+		filter.pT_range = pT_range;
+		filter.y_range = y_range;
 
 		const std::vector<ParticleContainer> filtered = filter.filter(particles);
 

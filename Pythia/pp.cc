@@ -12,38 +12,13 @@ using namespace Pythia8;
 #define Y_MIN	 		-0.35
 #define Y_MAX 	 		0.35
 
-std::vector<RangedContainer<double>> normalize(Histogram<double> hist, int count, double sigma, bool use_weights = true) {
-	std::vector<RangedContainer<double>> normalized;
-	for (auto bin : hist.bins) {
-		const double dy = Y_MAX - Y_MIN;
-		const double dpT = bin.width();
-		double dsigma = 0.0;
-		double w_sum = 1.0;
-		if (use_weights) {
-			w_sum = bin.weight_sum();
-		}
-		for (std::vector<double>::size_type i = 0; i < bin.contents.size(); i++) {
-			const double pT = bin.contents[i];
-			double weight_factor = 1.0;
-			if (use_weights) {
-				const double w = bin.weights[i];
-				weight_factor = w / w_sum;
-			}
-			dsigma += weight_factor * sigma / (2 * M_PI * count * dy * dpT * pT);
-		}
-		RangedContainer<double> container(bin.lower, bin.upper, dsigma);
-		normalized.push_back(container);
-	}
-	return normalized;
-}
-
-std::vector<RangedContainer<double>> combine(std::vector<std::vector<RangedContainer<double>>> containers, std::vector<double> weights) {
-	std::vector<RangedContainer<double>> result;
-	const auto reference = containers.front();
+ValueHistogram<double> combine(std::vector<ValueHistogram<double>> containers, std::vector<double> weights) {
+	auto reference = containers.front();
 	const auto N = reference.size();
+	ValueHistogram<double> result(N);
 	for (std::vector<RangedContainer<double>>::size_type i = 0; i < N; i++) {
-		const double lower = reference[i].lower;
-		const double upper = reference[i].upper;
+		double lower = reference[i].range.start;
+		double upper = reference[i].range.end;
 
 		double value = 0;
 
@@ -53,13 +28,13 @@ std::vector<RangedContainer<double>> combine(std::vector<std::vector<RangedConta
 		}
 
 		RangedContainer<double> container(lower, upper, value);
-		result.push_back(container);
+		result.containers.push_back(container);
 	}
 	return result;
 }
 
 void cross_section(double energy, int count, std::vector<double> bins, std::vector<double> pT_hat_bins) {
-	std::vector<std::vector<RangedContainer<double>>> containers;
+	std::vector<ValueHistogram<double>> containers;
 	std::vector<double> weights;
 
 	for (std::vector<double>::size_type i = 0; i < pT_hat_bins.size() - 1; i++) {
@@ -69,10 +44,8 @@ void cross_section(double energy, int count, std::vector<double> bins, std::vect
 		ParticleGenerator generator(energy, count);
 
 		generator.include_decayed = INCLUDE_DECAY;
-		generator.y_min = Y_MIN;
-		generator.y_max = Y_MAX;
-		generator.pT_hat_min = pT_hat_min;
-		generator.pT_hat_max = pT_hat_max;
+		generator.y_range = Range<double>(Y_MIN, Y_MAX);
+		generator.pT_hat_range = Range<double>(pT_hat_min, pT_hat_max);
 
 		generator.initialize();
 
@@ -85,7 +58,7 @@ void cross_section(double energy, int count, std::vector<double> bins, std::vect
 		Histogram<double> partial = Histogram<double>(bins);
 		partial.fill(pTs, pT_hats);
 
-		const auto partial_container = normalize(partial, count, sigma, false);
+		const auto partial_container = partial.normalize(count, sigma, Range<double>(Y_MIN, Y_MAX), false);
 		containers.push_back(partial_container);
 
 		weights.push_back(1.0);
@@ -106,8 +79,7 @@ void azimuth_correlation(double energy, int count) {
 	ParticleGenerator generator(energy, count);
 
 	generator.include_decayed = INCLUDE_DECAY;
-	generator.y_min = Y_MIN;
-	generator.y_max = Y_MAX;
+	generator.y_range = Range<double>(Y_MIN, Y_MAX);
 
 	generator.initialize();
 

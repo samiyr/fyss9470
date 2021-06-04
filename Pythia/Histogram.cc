@@ -8,8 +8,7 @@
 
 template <typename T>
 struct Bin {
-	double lower;
-	double upper;
+	Range<double> range;
 
 	std::vector<T> contents;
 	std::vector<T> weights;
@@ -17,9 +16,7 @@ struct Bin {
 		return std::accumulate(weights.begin(), weights.end(), 0.0);
 	}
 
-	Bin(double l, double u, std::vector<T> c = {}, std::vector<T> w = {}) {
-		lower = l;
-		upper = u;
+	Bin(double l, double u, std::vector<T> c = {}, std::vector<T> w = {}) : range(l, u) {
 		contents = c;
 		weights = w;
 	}
@@ -27,47 +24,39 @@ struct Bin {
 	auto size() {
 		return contents.size();
 	}
-	double width() {
-		return upper - lower;
-	}
-	double center() {
-		return (lower + upper) / 2;
-	}
 	T& operator[](int index) {
 		return contents[index];
-	}
-	bool in_range(T v) {
-		return (v >= lower && v < upper);
-	}
-	std::string extent() {
-		return "[" + std::to_string(lower) + ", " + std::to_string(upper) + ")";
 	}
 };
 
 template <typename T>
 struct RangedContainer {
-	double lower;
-	double upper;
+	Range<double> range;
 
 	T value;
 
-	RangedContainer(double l, double u, T v) {
-		lower = l;
-		upper = u;
+	RangedContainer(double l, double u, T v) : range(l, u) {
 		value = v;
 	}
+};
 
-	double width() {
-		return upper - lower;
+template <typename T>
+class ValueHistogram {
+public:
+	std::vector<RangedContainer<T>> containers;
+
+	ValueHistogram(std::vector<RangedContainer<T>> c = {}) {
+		containers = c;
 	}
-	double center() {
-		return (lower + upper) / 2;
+	ValueHistogram(int capacity) {
+		containers.reserve(capacity);
 	}
-	bool in_range(T v) {
-		return (v >= lower && v < upper);
+
+	typename std::vector<RangedContainer<T>>::size_type size() const {
+		return containers.size();
 	}
-	const std::string extent() {
-		return "[" + std::to_string(lower) + ", " + std::to_string(upper) + ")";
+	RangedContainer<T> &operator[](int index) {
+		return containers[index];
 	}
 };
 
@@ -86,7 +75,7 @@ public:
 
 	Histogram(int count, double lower, double upper) {
 		const double step = (upper - lower) / count;
-		const std::vector<double> points = range(lower, upper, step);
+		const std::vector<double> points = create_range(lower, upper, step);
 		Construct(points);
 	}
 	Histogram(std::vector<double> points) {
@@ -95,7 +84,7 @@ public:
 
 	void fill(T v, T w) {
 		for (auto &bin : bins) {
-			if (bin.in_range(v)) {
+			if (bin.range.in_range(v)) {
 				bin.contents.push_back(v);
 				bin.weights.push_back(w);
 				break;
@@ -113,6 +102,31 @@ public:
 			std::cout << "[" << bin.lower << ", " << bin.upper << "): " << bin.size() << "\n";
 		});
 	}
+
+	ValueHistogram<T> normalize(int count, double sigma, Range<double> rapidity, bool use_weights = true) {
+	std::vector<RangedContainer<T>> normalized;
+	for (auto bin : bins) {
+		const double dy = rapidity.width();
+		const double dpT = bin.range.width();
+		double dsigma = 0.0;
+		double w_sum = 1.0;
+		if (use_weights) {
+			w_sum = bin.weight_sum();
+		}
+		for (typename std::vector<T>::size_type i = 0; i < bin.contents.size(); i++) {
+			const double pT = bin.contents[i];
+			double weight_factor = 1.0;
+			if (use_weights) {
+				const double w = bin.weights[i];
+				weight_factor = w / w_sum;
+			}
+			dsigma += weight_factor * sigma / (2 * M_PI * count * dy * dpT * pT);
+		}
+		RangedContainer<T> container(bin.range.start, bin.range.end, dsigma);
+		normalized.push_back(container);
+	}
+	return normalized;
+}
 private:
 	void Construct(std::vector<double> points) {
 		axis = points;
@@ -126,20 +140,20 @@ private:
 };
 
 template <typename T>
-void print_containers(std::vector<RangedContainer<T>> containers) {
-	for (auto container : containers) {
+void print_containers(ValueHistogram<T> hist) {
+	for (auto container : hist.containers) {
 		const T value = container.value;
-		cout << container.extent() << ": ";
+		cout << container.range.extent() << ": ";
 		print_with_precision(value, 8);
 	}
 }
 template <typename T>
-void export_containers(std::vector<RangedContainer<T>> containers, std::string filename, int precision = 12) {
+void export_containers(ValueHistogram<T> hist, std::string filename, int precision = 12) {
 	ofstream file;
 	file.open(filename);
 	file << std::setprecision(precision);
-	for (auto container : containers) {
-		const T center = container.center();
+	for (auto container : hist.containers) {
+		const T center = container.range.center();
 		const T value = container.value;
 		file << center << "," << value << "\n";
 	}

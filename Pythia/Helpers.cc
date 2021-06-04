@@ -18,6 +18,28 @@ bool contains(std::vector<T> vec, T element) {
 	return std::find(vec.begin(), vec.end(), element) != vec.end();
 }
 
+template <typename T>
+struct Range {
+	T start;
+	T end;
+	Range(T s, T e) {
+		start = s;
+		end = e;
+	}
+	T width() {
+		return end - start;
+	}
+	T center() {
+		return (start + end) / 2;
+	}
+	bool in_range(T v) {
+		return (v >= start && v < end);
+	}
+	std::string extent() {
+		return "[" + std::to_string(start) + ", " + std::to_string(end) + ")";
+	}
+};
+
 std::vector<Particle> all_particles(std::vector<Event> events) {
 	std::vector<Particle> particles;
 	for (Event event : events) {
@@ -80,7 +102,7 @@ void print_with_precision(T value, int precision, bool newline = true) {
 
 
 template <typename T>
-std::vector<T> range(T lower, T upper, T step = 1) {
+std::vector<T> create_range(T lower, T upper, T step = 1) {
 	const size_t size = (upper - lower) / step;
 	std::vector<T> v(size);
 

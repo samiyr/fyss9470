@@ -36,12 +36,14 @@ private:
 		return true;
 	}
 	bool pT_filter(ParticleContainer p) {
-		return in_range(p.particle.pT(), pT_min, pT_max);
+		return in_range(p.particle.pT(), pT_range);
 	}
 	bool rapidity_filter(ParticleContainer p) {
-		return in_range(p.particle.y(), y_min, y_max);
+		return in_range(p.particle.y(), y_range);
 	}
-	bool in_range(double value, double min, double max) {
+	bool in_range(double value, Range<double> range) {
+		const double min = range.start;
+		const double max = range.end;
 		if (!std::isnan(min) && value < min) {
 			return false;
 		}
@@ -55,11 +57,8 @@ public:
 	std::vector<int> allowed_particle_ids;
 	bool include_decayed;
 
-	double pT_min;
-	double pT_max;
-	
-	double y_min;
-	double y_max;
+	Range<double> pT_range = Range<double>(NAN, NAN);
+	Range<double> y_range = Range<double>(NAN, NAN);
 
 	std::vector<bool (ParticleFilter::*)(ParticleContainer)> filters = {
 		&ParticleFilter::id_filter,
