@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      6604,        171]
-NotebookOptionsPosition[      5942,        152]
-NotebookOutlinePosition[      6336,        168]
-CellTagsIndexPosition[      6293,        165]
+NotebookDataLength[      4809,        121]
+NotebookOptionsPosition[      4242,        103]
+NotebookOutlinePosition[      4636,        119]
+CellTagsIndexPosition[      4593,        116]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -30,56 +30,7 @@ Erikoistyo\:0308/Pythia/delta_phi.csv\>\"", "]"}]}], ";"}]], "Input",
   3.8317045585344553`*^9}, {3.831704717490529*^9, 3.8317047528300247`*^9}, {
   3.8317060938079643`*^9, 3.831706103307807*^9}, {3.831792685719461*^9, 
   3.8317926898727913`*^9}},
- CellLabel->"In[31]:=",ExpressionUUID->"4020cc1b-5488-4609-9432-2b3483a189ae"],
-
-Cell[BoxData[
- RowBox[{
-  RowBox[{
-   RowBox[{"histogram", "[", 
-    RowBox[{
-     RowBox[{"{", 
-      RowBox[{"bins_", ",", "bincounts_"}], "}"}], ",", 
-     RowBox[{"plotopts", ":", 
-      RowBox[{"OptionsPattern", "[", "]"}]}]}], "]"}], ":=", 
-   RowBox[{"Module", "[", 
-    RowBox[{
-     RowBox[{"{", 
-      RowBox[{"width", "=", 
-       RowBox[{"First", "@", 
-        RowBox[{"Differences", "@", "bins"}]}]}], "}"}], ",", 
-     RowBox[{"Graphics", "[", 
-      RowBox[{
-       RowBox[{"{", 
-        RowBox[{
-         RowBox[{"EdgeForm", "[", "Black", "]"}], ",", 
-         RowBox[{
-          RowBox[{"ColorData", "[", "97", "]"}], "[", "8", "]"}], ",", 
-         RowBox[{
-          RowBox[{
-           RowBox[{"Rectangle", "[", 
-            RowBox[{
-             RowBox[{"{", 
-              RowBox[{
-               RowBox[{"#1", "-", 
-                RowBox[{"0.5", " ", "width"}]}], ",", "0"}], "}"}], ",", 
-             RowBox[{"{", 
-              RowBox[{
-               RowBox[{"#1", "+", 
-                RowBox[{"0.5", " ", "width"}]}], ",", "#2"}], "}"}]}], "]"}], 
-           "&"}], "@@@", 
-          RowBox[{"Transpose", "[", 
-           RowBox[{"{", 
-            RowBox[{
-             RowBox[{"Mean", "/@", 
-              RowBox[{"(", 
-               RowBox[{"Partition", "[", 
-                RowBox[{"bins", ",", "2", ",", "1"}], "]"}], ")"}]}], ",", 
-             "bincounts"}], "}"}], "]"}]}]}], "}"}], ",", "plotopts", ",", 
-       RowBox[{"Frame", "->", "True"}], ",", 
-       RowBox[{"AspectRatio", "->", "0.7"}]}], "]"}]}], "]"}]}], 
-  ";"}]], "Input",
- CellChangeTimes->{{3.831795088008876*^9, 3.831795089347515*^9}},
- CellLabel->"In[33]:=",ExpressionUUID->"4452a700-16e3-4d78-9b44-c99453fcbc65"],
+ CellLabel->"In[39]:=",ExpressionUUID->"4020cc1b-5488-4609-9432-2b3483a189ae"],
 
 Cell[CellGroupData[{
 
@@ -92,7 +43,7 @@ Cell[BoxData[
   3.831705645909829*^9, 3.831705798486273*^9}, {3.8317907491948853`*^9, 
   3.8317907493445797`*^9}, {3.831792692355365*^9, 3.83179272894903*^9}, {
   3.8317951729996967`*^9, 3.831795195647031*^9}},
- CellLabel->"In[37]:=",ExpressionUUID->"6cacee98-165a-47b5-b9f7-1253075683a9"],
+ CellLabel->"In[40]:=",ExpressionUUID->"6cacee98-165a-47b5-b9f7-1253075683a9"],
 
 Cell[BoxData[
  GraphicsBox[{{}, {{}, {}, 
@@ -146,8 +97,8 @@ Cell[BoxData[
    3.831792729174281*^9}, 3.831792989477203*^9, 3.831793025419396*^9, 
    3.831793173259727*^9, 3.831793378933928*^9, 3.831793510624144*^9, 
    3.831793581085981*^9, 3.831795027225293*^9, 3.831795074832592*^9, {
-   3.831795175077559*^9, 3.8317951799952583`*^9}},
- CellLabel->"Out[37]=",ExpressionUUID->"e47bc395-75b6-4ca5-8d18-b9ee5fe77123"]
+   3.831795175077559*^9, 3.8317951799952583`*^9}, 3.831795296614428*^9},
+ CellLabel->"Out[40]=",ExpressionUUID->"9d34544f-04ec-4dce-b4cd-cbd6e7e59462"]
 }, Open  ]]
 },
 WindowSize->{808, 911},
@@ -168,10 +119,9 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[558, 20, 602, 12, 116, "Input",ExpressionUUID->"4020cc1b-5488-4609-9432-2b3483a189ae"],
-Cell[1163, 34, 1719, 47, 168, "Input",ExpressionUUID->"4452a700-16e3-4d78-9b44-c99453fcbc65"],
 Cell[CellGroupData[{
-Cell[2907, 85, 525, 9, 37, "Input",ExpressionUUID->"6cacee98-165a-47b5-b9f7-1253075683a9"],
-Cell[3435, 96, 2491, 53, 266, "Output",ExpressionUUID->"e47bc395-75b6-4ca5-8d18-b9ee5fe77123"]
+Cell[1185, 36, 525, 9, 37, "Input",ExpressionUUID->"6cacee98-165a-47b5-b9f7-1253075683a9"],
+Cell[1713, 47, 2513, 53, 266, "Output",ExpressionUUID->"9d34544f-04ec-4dce-b4cd-cbd6e7e59462"]
 }, Open  ]]
 }
 ]

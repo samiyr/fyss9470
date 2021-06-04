@@ -207,4 +207,26 @@ private:
 	}
 };
 
+ValueHistogram<double> combine(std::vector<ValueHistogram<double>> containers, std::vector<double> weights) {
+	auto reference = containers.front();
+	const auto N = reference.size();
+	ValueHistogram<double> result(N);
+	for (std::vector<RangedContainer<double>>::size_type i = 0; i < N; i++) {
+		double lower = reference[i].range.start;
+		double upper = reference[i].range.end;
+
+		double value = 0;
+
+		for (std::vector<RangedContainer<double>>::size_type j = 0; j < containers.size(); j++) {
+			const double weight = weights[j];
+			value += weight * containers[j][i].value;
+		}
+
+		RangedContainer<double> container(lower, upper, value);
+		result.containers.push_back(container);
+	}
+	return result;
+}
+
+
 #endif // HISTOGRAM_H

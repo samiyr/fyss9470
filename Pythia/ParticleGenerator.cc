@@ -4,7 +4,6 @@
 #include "Pythia8/Pythia.h"
 #include <string>
 #include "ParticleFilter.cc"
-#include "pp.cc"
 
 using namespace Pythia8;
 
