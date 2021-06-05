@@ -163,10 +163,12 @@ public:
 		});
 	}
 	/// Normalizes the histogram to cross section and returns a `ValueHistogram`. 
-	ValueHistogram<T> normalize(double total_weight, double sigma, Range<double> rapidity, bool use_weights) {
+	ValueHistogram<T> normalize(double total_weight, double sigma, OptionalRange<double> rapidity, bool use_weights) {
 		std::vector<RangedContainer<T>> normalized;
 		for (auto bin : bins) {
-			const double dy = rapidity.width();
+			const double y_min = rapidity.start.has_value() ? *rapidity.start : 0.0;
+			const double y_max = rapidity.end.has_value() ? *rapidity.end : 2 * M_PI;
+			const double dy = y_max - y_min;
 			const double dpT = bin.range.width();
 			// dsigma = 1 / 2π * N / N_ev * sigma / dy pT dpT
 			double dsigma = 0.0;

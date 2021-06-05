@@ -18,9 +18,9 @@ public:
 
 	bool include_decayed = true;
 
-	Range<double> pT_range = Range<double>(NAN, NAN);
-	Range<double> y_range = Range<double>(NAN, NAN);
-	Range<double> pT_hat_range = Range<double>(0, -1);
+	OptionalRange<double> pT_range = OptionalRange<double>();
+	OptionalRange<double> y_range = OptionalRange<double>();
+	OptionalRange<double> pT_hat_range = OptionalRange<double>();
 
 	bool use_biasing = false;
 	double bias_power = 4.0;
@@ -39,8 +39,8 @@ public:
 
 		pythia.readFile(cmnd_input);
 		settings.parm("Beams:eCM", cm_energy);
-		settings.parm("PhaseSpace:pTHatMin", pT_hat_range.start);
-		settings.parm("PhaseSpace:pTHatMax", pT_hat_range.end);
+		settings.parm("PhaseSpace:pTHatMin", pT_hat_range.start.has_value() ? *pT_hat_range.start : 0);
+		settings.parm("PhaseSpace:pTHatMax", pT_hat_range.end.has_value() ? *pT_hat_range.end : -1);
         settings.flag("PhaseSpace:bias2Selection", use_biasing);
         settings.parm("PhaseSpace:bias2SelectionPow", bias_power);
         settings.parm("PhaseSpace:bias2SelectionRef", bias_reference);
@@ -50,9 +50,13 @@ public:
 		pythia.init();
 	}
 	std::vector<ParticleContainer> generate() {
-		std::vector<Event> events;
-		events.reserve(event_count);
 		std::vector<ParticleContainer> particles;
+
+		ParticleFilter filter;
+		filter.allowed_particle_ids = particle_ids;
+		filter.include_decayed = include_decayed;
+		filter.pT_range = pT_range;
+		filter.y_range = y_range;
 
 		for (int i = 0; i < event_count; ++i) {
 			if (!pythia.next()) {
@@ -62,26 +66,20 @@ public:
 			if (i != 0) {
 				const Event &event = pythia.event;
 				const Info &info = pythia.info;
-				events.push_back(event);
 				const double pT_hat = info.pTHat();
+
 				const int particle_count = event.size();
 
 				for (int j = 0; j < particle_count; j++) {
-					const ParticleContainer container = ParticleContainer(event[j], pT_hat, info.weight());
-					particles.push_back(container);
+					ParticleContainer container = ParticleContainer(event[j], pT_hat, info.weight());
+					if (filter.is_allowed(container)) {
+						particles.push_back(container);
+					}
 				}
 			}
 		}	
 
-		ParticleFilter filter;
-		filter.allowed_particle_ids = particle_ids;
-		filter.include_decayed = include_decayed;
-		filter.pT_range = pT_range;
-		filter.y_range = y_range;
-
-		const std::vector<ParticleContainer> filtered = filter.filter(particles);
-
-		return filtered;
+		return particles;
 	}
 	double sigma() {
 		return pythia.info.sigmaGen();

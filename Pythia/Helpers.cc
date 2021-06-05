@@ -23,8 +23,8 @@ struct Range {
 	T start;
 	T end;
 	Range() {
-		start = 0;
-		end = 0;
+		start = T(0);
+		end = T(0);
 	}
 	Range(T s, T e) {
 		start = s;
@@ -41,6 +41,57 @@ struct Range {
 	}
 	std::string extent() {
 		return "[" + std::to_string(start) + ", " + std::to_string(end) + ")";
+	}
+};
+template <typename T>
+struct OptionalRange {
+	std::optional<T> start;
+	std::optional<T> end;
+	OptionalRange() {
+		start = std::nullopt;
+		end = std::nullopt;
+	}
+	OptionalRange(T s, T e) {
+		start = s;
+		end = e;
+	}
+	std::optional<T> width() {
+		if (start && end) {
+			return *end - *start;
+		}
+		return std::nullopt;
+	}
+	std::optional<T> center() {
+		if (start && end) {
+			return (*start + *end) / 2;
+		}
+	}
+	bool in_range(T v) {
+		bool lower_bound = true;
+		bool upper_bound = true;
+		if (start) {
+			lower_bound = v >= *start;
+		}
+		if (end) {
+			upper_bound = v < *end;
+		}
+		return lower_bound && upper_bound;
+	}
+	std::string extent() {
+		std::string lower;
+		if (start) {
+			lower = "[" + std::to_string(*start);
+		} else {
+			lower = "(-∞";
+		}
+		std::string middle = ", ";
+		std::string upper;
+		if (end) {
+			upper = std::to_string(*end) + ")";
+		} else {
+			upper = "∞)";
+		}
+		return lower + middle + upper;
 	}
 };
 
@@ -65,6 +116,7 @@ std::vector<double> find_azimuths(std::vector<Particle> particles) {
 }
 std::vector<double> find_pTs(std::vector<ParticleContainer> particles) {
 	std::vector<double> phis;
+	#pragma omp parallel for
 	for (ParticleContainer particle : particles) {
 		phis.push_back(particle.particle.pT());
 	}
@@ -72,6 +124,7 @@ std::vector<double> find_pTs(std::vector<ParticleContainer> particles) {
 }
 std::vector<double> find_pT_hats(std::vector<ParticleContainer> particles) {
 	std::vector<double> phis;
+	#pragma omp parallel for
 	for (ParticleContainer particle : particles) {
 		phis.push_back(particle.pT_hat);
 	}

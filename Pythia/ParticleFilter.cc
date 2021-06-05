@@ -11,12 +11,22 @@ using namespace Pythia8;
 
 class ParticleFilter {
 private:
+	bool check_filter(ParticleContainer particle, bool (ParticleFilter::*filter)(ParticleContainer)) {
+		return (this->*filter)(particle);
+	}
 	std::vector<ParticleContainer> apply_filter(std::vector<ParticleContainer> particles, bool (ParticleFilter::*filter)(ParticleContainer)) {
 		particles.erase(std::remove_if(particles.begin(), particles.end(), [this, filter](ParticleContainer particle) {
-			const bool value = (this->*filter)(particle);
-			return !value;
+			return !check_filter(particle, filter);
 		}), particles.end());
 		return particles;
+	}
+	bool check_filter_chain(ParticleContainer particle, std::vector<bool (ParticleFilter::*)(ParticleContainer)> chain) {
+		for (bool (ParticleFilter::*filter)(ParticleContainer) : chain) {
+			if(!check_filter(particle, filter)) {
+				return false;
+			}
+		}
+		return true;
 	}
 	std::vector<ParticleContainer> apply_filter_chain(std::vector<ParticleContainer> particles, std::vector<bool (ParticleFilter::*)(ParticleContainer)> chain) {
 		std::vector<ParticleContainer> current = particles;
@@ -36,29 +46,18 @@ private:
 		return true;
 	}
 	bool pT_filter(ParticleContainer p) {
-		return in_range(p.particle.pT(), pT_range);
+		return pT_range.in_range(p.particle.pT());
 	}
 	bool rapidity_filter(ParticleContainer p) {
-		return in_range(p.particle.y(), y_range);
-	}
-	bool in_range(double value, Range<double> range) {
-		const double min = range.start;
-		const double max = range.end;
-		if (!std::isnan(min) && value < min) {
-			return false;
-		}
-		if (!std::isnan(max) && value > max) {
-			return false;
-		}
-		return true;
+		return y_range.in_range(p.particle.y());
 	}
 
 public:
 	std::vector<int> allowed_particle_ids;
 	bool include_decayed;
 
-	Range<double> pT_range = Range<double>(NAN, NAN);
-	Range<double> y_range = Range<double>(NAN, NAN);
+	OptionalRange<double> pT_range = OptionalRange<double>();
+	OptionalRange<double> y_range = OptionalRange<double>();
 
 	std::vector<bool (ParticleFilter::*)(ParticleContainer)> filters = {
 		&ParticleFilter::id_filter,
@@ -68,9 +67,10 @@ public:
 	};
 			
 	std::vector<ParticleContainer> filter(const std::vector<ParticleContainer> particles) {
-		filters.push_back(&ParticleFilter::id_filter);
-
 		return apply_filter_chain(particles, filters);
+	}
+	bool is_allowed(const ParticleContainer particle) {
+		return check_filter_chain(particle, filters);
 	}
 };
 
