@@ -62,7 +62,6 @@ public:
 			if (!pythia.next()) {
 				continue;
 			}
-
 			if (i != 0) {
 				const Event &event = pythia.event;
 				const Info &info = pythia.info;
@@ -78,7 +77,6 @@ public:
 				}
 			}
 		}	
-
 		return particles;
 	}
 	double sigma() {

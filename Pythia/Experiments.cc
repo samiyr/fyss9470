@@ -3,7 +3,7 @@
 
 #include "Pythia8/Pythia.h"
 #include <string>
-#include "ParticleGenerator.cc"
+#include "PartonicGenerator.cc"
 #include "Histogram.cc"
 #include "Helpers.cc"
 #include <math.h>
@@ -20,7 +20,7 @@ public:
 	OptionalRange<double> y_range;
 	bool include_decayed;
 	bool use_biasing;
-	double bias_power = 4.0;
+	double bias_power;
 	bool parallelize;
 	std::string filename = "pT_histogram.csv";
 
@@ -28,23 +28,16 @@ public:
 		std::vector<ValueHistogram<double>> containers;
 		std::vector<double> weights;
 
-		#pragma omp parallel for if(parallelize)
-		for (std::vector<double>::size_type i = 0; i < pT_hat_bins.size() - 1; i++) {
-			const double pT_hat_min = *pT_hat_bins[i];
-			const double pT_hat_max = *pT_hat_bins[i + 1];
+		PartonicGenerator generator(energy, count, pT_hat_bins);
 
-			ParticleGenerator generator(energy, count);
+		generator.include_decayed = include_decayed;
+		generator.y_range = y_range;
+		generator.use_biasing = use_biasing;
+		generator.bias_power = bias_power;
+		generator.parallelize = parallelize;
 
-			generator.include_decayed = include_decayed;
-			generator.y_range = y_range;
-			generator.pT_hat_range = OptionalRange<double>(pT_hat_min, pT_hat_max);
-			generator.use_biasing = use_biasing;
-			generator.bias_power = bias_power;
-
-			generator.initialize();
-
-			const std::vector<ParticleContainer> pions = generator.generate();
-			const double sigma = generator.sigma();
+		generator.start([&containers, &weights, this](std::vector<ParticleContainer> pions, ParticleGenerator *particle_generator) {
+			const double sigma = particle_generator->sigma();
 
 			const std::vector<double> pTs = find_pTs(pions);
 			const std::vector<double> event_weights = find_event_weights(pions);
@@ -52,18 +45,18 @@ public:
 			Histogram<double> partial = Histogram<double>(bins);
 			partial.fill(pTs, event_weights);
 
-			const auto partial_container = partial.normalize(generator.total_weight(), sigma, y_range, use_biasing);
+			const auto partial_container = partial.normalize(particle_generator->total_weight(), sigma, y_range, use_biasing);
 			containers.push_back(partial_container);
 
 			weights.push_back(1.0);
-		}
+		}, [&containers, &weights, this]{
+			const auto combined = combine(containers, weights);
 
-		const auto combined = combine(containers, weights);
-
-		cout << "Normalized pT histogram" << "\n";
-		combined.print();
-		cout << "\n";
-		combined.export_histogram(filename);
+			cout << "Normalized pT histogram" << "\n";
+			combined.print();
+			cout << "\n";
+			combined.export_histogram(filename);
+		});
 	}
 };
 
@@ -119,7 +112,7 @@ int main() {
 	CrossSectionExperiment cs;
 
 	cs.energy = 200;
-	cs.count = 5'000'000;
+	cs.count = 10'000;
 	cs.bins = {
 		1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 8.0, 9.0, 10.0, 12.0, 15.0
 	};
@@ -134,6 +127,7 @@ int main() {
 	cs.filename = "pT_histogram.csv";
 
 	cs.run();
+
 	
 	AzimuthCorrelationExperiment ac;
 
