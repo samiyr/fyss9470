@@ -44,9 +44,8 @@ public:
         settings.flag("PhaseSpace:bias2Selection", use_biasing);
         settings.parm("PhaseSpace:bias2SelectionPow", bias_power);
         settings.parm("PhaseSpace:bias2SelectionRef", bias_reference);
-  		if (!pythia_printing) {
-			pythia.readString("Print:quiet = on");
-		}
+        settings.flag("Print:quiet", !pythia_printing);
+
 		pythia.init();
 	}
 	std::vector<ParticleContainer> generate() {
@@ -70,9 +69,9 @@ public:
 				const int particle_count = event.size();
 
 				for (int j = 0; j < particle_count; j++) {
-					ParticleContainer container = ParticleContainer(event[j], pT_hat, info.weight());
-					if (filter.is_allowed(container)) {
-						particles.push_back(container);
+					Particle particle = event[j];
+					if (filter.is_allowed(particle)) {
+						particles.emplace_back(particle, pT_hat, info.weight());
 					}
 				}
 			}

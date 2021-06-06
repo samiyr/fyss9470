@@ -2,16 +2,13 @@
 #define EXPERIMENTS_H
 
 #include "Pythia8/Pythia.h"
-#include <string>
 #include "PartonicGenerator.cc"
 #include "Histogram.cc"
-#include "Helpers.cc"
 #include <math.h>
-#include <execution>
 
 using namespace Pythia8;
 
-class CrossSectionExperiment {
+class Experiment {
 public:
 	double energy;
 	int count;
@@ -25,6 +22,13 @@ public:
 	std::string filename = "pT_histogram.csv";
 
 	void run() {
+		abort();
+	}
+};
+
+class CrossSectionExperiment : public Experiment {
+public:
+	void run() {
 		std::vector<ValueHistogram<double>> containers;
 		std::vector<double> weights;
 
@@ -35,6 +39,7 @@ public:
 		generator.use_biasing = use_biasing;
 		generator.bias_power = bias_power;
 		generator.parallelize = parallelize;
+		generator.pythia_printing = false;
 
 		generator.start([&containers, &weights, this](std::vector<ParticleContainer> pions, ParticleGenerator *particle_generator) {
 			const double sigma = particle_generator->sigma();
@@ -60,14 +65,8 @@ public:
 	}
 };
 
-class AzimuthCorrelationExperiment {
+class AzimuthCorrelationExperiment : public Experiment {
 public:
-	double energy;
-	int count;
-	OptionalRange<double> y_range;
-	bool include_decayed;
-	bool parallelize;
-
 	void run() {
 		cout << "Starting experiment with E = " << energy << ", N = " << count << "\n";
 		cout << "Generating pions" << "\n";
@@ -103,7 +102,7 @@ public:
 		}
 
 		ValueHistogram<double> exported = hist.export_to_values();
-		exported.export_histogram("delta_phi.csv");
+		exported.export_histogram(filename);
 	}
 };
 

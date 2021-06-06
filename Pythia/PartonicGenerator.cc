@@ -48,6 +48,7 @@ public:
 			generator.pT_hat_range = OptionalRange<double>(pT_hat_min, pT_hat_max);
 			generator.use_biasing = use_biasing;
 			generator.bias_power = bias_power;
+			generator.pythia_printing = pythia_printing;
 
 			generator.initialize();
 
