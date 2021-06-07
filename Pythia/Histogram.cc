@@ -2,7 +2,6 @@
 #define HISTOGRAM_H
 
 #include <algorithm>
-#include <execution>
 #include "Helpers.cc"
 #include <iostream>
 
@@ -114,11 +113,11 @@ public:
 	/// The points at which bins change, start and end points included.
 	std::vector<double> axis;
 	/// Returns the lower edge of the histogram.
-	double lower_edge() {
+	double lower_edge() const {
 		return axis.front();
 	}
 	/// Returns the upper edge of the histogram.
-	double upper_edge() {
+	double upper_edge() const {
 		return axis.back();
 	}
 	/// Initializes a histogram with `count` bins, extending from `lower` to `upper`.
@@ -157,14 +156,14 @@ public:
 		}
 	}
 	/// Prints the contents of the bins to stdout.
-	void print() {
+	void print() const {
 		std::for_each(std::begin(bins), std::end(bins), [](Bin<T>&bin) {
 			std::cout << "[" << bin.lower << ", " << bin.upper << "): " << bin.size() << "\n";
 		});
 	}
 	/// Normalizes the histogram to cross section and returns a `ValueHistogram`. 
-	ValueHistogram<T> normalize(double total_weight, double sigma, OptionalRange<double> rapidity, bool use_weights) {
-		std::vector<RangedContainer<T>> normalized;
+	ValueHistogram<T> normalize(double total_weight, double sigma, OptionalRange<double> rapidity, bool use_weights) const {
+		ValueHistogram<T> normalized;
 		for (auto bin : bins) {
 			const double y_min = rapidity.start.has_value() ? *rapidity.start : 0.0;
 			const double y_max = rapidity.end.has_value() ? *rapidity.end : 2 * M_PI;
@@ -182,12 +181,12 @@ public:
 			}
 			dsigma *= sigma / (2 * M_PI * total_weight * dy * dpT);
 			RangedContainer<T> container(bin.range.start, bin.range.end, dsigma);
-			normalized.push_back(container);
+			normalized.containers.push_back(container);
 		}
 		return normalized;
 	}
 
-	ValueHistogram<T> export_to_values() {
+	ValueHistogram<T> export_to_values() const {
 		std::vector<RangedContainer<T>> containers;
 		ValueHistogram<T> hist;
 		for (auto bin : bins) {
@@ -209,22 +208,21 @@ private:
 	}
 };
 
-ValueHistogram<double> combine(std::vector<ValueHistogram<double>> containers, std::vector<double> weights) {
+ValueHistogram<double> combine(std::vector<ValueHistogram<double>> containers) {
 	auto reference = containers.front();
 	const auto N = reference.size();
 	ValueHistogram<double> result(N);
 	for (std::vector<RangedContainer<double>>::size_type i = 0; i < N; i++) {
-		double lower = reference[i].range.start;
-		double upper = reference[i].range.end;
+		const double lower = reference[i].range.start;
+		const double upper = reference[i].range.end;
 
 		double value = 0;
 
 		for (std::vector<RangedContainer<double>>::size_type j = 0; j < containers.size(); j++) {
-			const double weight = weights[j];
-			value += weight * containers[j][i].value;
+			value += containers[j][i].value;
 		}
 
-		RangedContainer<double> container(lower, upper, value);
+		const RangedContainer<double> container(lower, upper, value);
 		result.containers.push_back(container);
 	}
 	return result;

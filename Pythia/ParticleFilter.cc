@@ -11,27 +11,27 @@ using namespace Pythia8;
 
 class ParticleFilter {
 private:
-	bool check_filter(Particle particle, bool (ParticleFilter::*filter)(Particle)) {
-		return (this->*filter)(particle);
+	bool check_filter(Particle particle, bool (ParticleFilter::*f)(Particle)) {
+		return (this->*f)(particle);
 	}
-	bool check_filter(ParticleContainer container, bool (ParticleFilter::*filter)(Particle)) {
-		return check_filter(container.particle, filter);
+	bool check_filter(ParticleContainer container, bool (ParticleFilter::*f)(Particle)) {
+		return check_filter(container.particle, f);
 	}
-	std::vector<Particle> apply_filter(std::vector<Particle> particles, bool (ParticleFilter::*filter)(Particle)) {
-		particles.erase(std::remove_if(particles.begin(), particles.end(), [this, filter](Particle particle) {
-			return !check_filter(particle, filter);
+	std::vector<Particle> apply_filter(std::vector<Particle> particles, bool (ParticleFilter::*f)(Particle)) {
+		particles.erase(std::remove_if(particles.begin(), particles.end(), [this, f](Particle particle) {
+			return !check_filter(particle, f);
 		}), particles.end());
 		return particles;
 	}
-	std::vector<ParticleContainer> apply_filter(std::vector<ParticleContainer> particles, bool (ParticleFilter::*filter)(Particle)) {
-		particles.erase(std::remove_if(particles.begin(), particles.end(), [this, filter](ParticleContainer particle) {
-			return !check_filter(particle, filter);
+	std::vector<ParticleContainer> apply_filter(std::vector<ParticleContainer> particles, bool (ParticleFilter::*f)(Particle)) {
+		particles.erase(std::remove_if(particles.begin(), particles.end(), [this, f](ParticleContainer particle) {
+			return !check_filter(particle, f);
 		}), particles.end());
 		return particles;
 	}
 	bool check_filter_chain(Particle particle, std::vector<bool (ParticleFilter::*)(Particle)> chain) {
-		for (bool (ParticleFilter::*filter)(Particle) : chain) {
-			if(!check_filter(particle, filter)) {
+		for (bool (ParticleFilter::*f)(Particle) : chain) {
+			if(!check_filter(particle, f)) {
 				return false;
 			}
 		}
@@ -43,15 +43,15 @@ private:
 
 	std::vector<Particle> apply_filter_chain(std::vector<Particle> particles, std::vector<bool (ParticleFilter::*)(Particle)> chain) {
 		std::vector<Particle> current = particles;
-		for (bool (ParticleFilter::*filter)(Particle) : chain) {
-			current = apply_filter(current, filter);
+		for (bool (ParticleFilter::*f)(Particle) : chain) {
+			current = apply_filter(current, f);
 		}
 		return current;
 	}
 	std::vector<ParticleContainer> apply_filter_chain(std::vector<ParticleContainer> particles, std::vector<bool (ParticleFilter::*)(Particle)> chain) {
 		std::vector<ParticleContainer> current = particles;
-		for (bool (ParticleFilter::*filter)(Particle) : chain) {
-			current = apply_filter(current, filter);
+		for (bool (ParticleFilter::*f)(Particle) : chain) {
+			current = apply_filter(current, f);
 		}
 		return current;
 	}

@@ -67,15 +67,6 @@ struct OptionalRange {
 		}
 	}
 	bool in_range(T v) const {
-		// bool lower_bound = true;
-		// bool upper_bound = true;
-		// if (start) {
-		// 	lower_bound = v >= *start;
-		// }
-		// if (end) {
-		// 	upper_bound = v < *end;
-		// }
-		// return lower_bound && upper_bound;
 		if (start && v < *start) {
 			return false;
 		}

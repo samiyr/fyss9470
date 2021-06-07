@@ -19,7 +19,7 @@ public:
 	bool use_biasing;
 	double bias_power;
 	bool parallelize;
-	std::string filename = "pT_histogram.csv";
+	std::optional<std::string> filename;
 
 	void run() {
 		abort();
@@ -30,7 +30,6 @@ class CrossSectionExperiment : public Experiment {
 public:
 	void run() {
 		std::vector<ValueHistogram<double>> containers;
-		std::vector<double> weights;
 
 		PartonicGenerator generator(energy, count, pT_hat_bins);
 
@@ -41,26 +40,26 @@ public:
 		generator.parallelize = parallelize;
 		generator.pythia_printing = false;
 
-		generator.start([&containers, &weights, this](std::vector<ParticleContainer> pions, ParticleGenerator *particle_generator) {
-			const double sigma = particle_generator->sigma();
-
+		generator.start([&containers, this](std::vector<ParticleContainer> pions, ParticleGenerator *particle_generator) {
 			const std::vector<double> pTs = find_pTs(pions);
 			const std::vector<double> event_weights = find_event_weights(pions);
 
 			Histogram<double> partial = Histogram<double>(bins);
 			partial.fill(pTs, event_weights);
 
-			const auto partial_container = partial.normalize(particle_generator->total_weight(), sigma, y_range, use_biasing);
+			const double sigma = particle_generator->sigma();
+			const double total_weight = particle_generator->total_weight();
+			const auto partial_container = partial.normalize(total_weight, sigma, y_range, use_biasing);
 			containers.push_back(partial_container);
-
-			weights.push_back(1.0);
-		}, [&containers, &weights, this]{
-			const auto combined = combine(containers, weights);
+		}, [&containers, this]{
+			const auto combined = combine(containers);
 
 			cout << "Normalized pT histogram" << "\n";
 			combined.print();
 			cout << "\n";
-			combined.export_histogram(filename);
+			if (filename) {
+				combined.export_histogram(*filename);
+			}
 		});
 	}
 };
@@ -102,7 +101,9 @@ public:
 		}
 
 		ValueHistogram<double> exported = hist.export_to_values();
-		exported.export_histogram(filename);
+		if (filename) {
+			exported.export_histogram(*filename);
+		}
 	}
 };
 
