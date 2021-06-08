@@ -105,6 +105,23 @@ public:
 			print_with_precision(value, 8);
 		}
 	}
+
+	void print_with_bars() const {
+		T total = T(0);
+		for (auto &container : containers) {
+			total += container.value;
+		}
+		for (auto &container : containers) {
+			const T value = container.value;
+			const T percentage = ((double)value / (double)total) * 100;
+			const int count = round(percentage);
+			cout << container.range.extent() << ": ";
+			for (int i = 0; i < count; i++) {
+				cout << "#";
+			}
+			cout << "\n";
+		}
+	}
 	/// Exports the histogram to a file `filename`.
 	void export_histogram(std::string filename, int precision = 12) const {
 		ofstream file;

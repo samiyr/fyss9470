@@ -124,7 +124,7 @@ public:
 			const auto combined = combine(histograms);
 
 			cout << "Azimuth histogram" << "\n";
-			combined.print();
+			combined.print_with_bars();
 			cout << "\n";
 			if (filename) {
 				combined.export_histogram(*filename);
