@@ -1,7 +1,6 @@
 #ifndef HISTOGRAM_H
 #define HISTOGRAM_H
 
-#include <algorithm>
 #include "Helpers.cc"
 #include <iostream>
 

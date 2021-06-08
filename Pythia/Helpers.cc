@@ -2,9 +2,6 @@
 #define HELPERS_H
 
 #include "Pythia8/Pythia.h"
-#include <algorithm>
-#include <string>
-#include <utility>
 #include <numeric>
 #include <iomanip>
 #include <iostream>

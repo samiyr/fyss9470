@@ -2,7 +2,6 @@
 #define PARTICLE_GENERATOR_H
 
 #include "Pythia8/Pythia.h"
-#include <string>
 #include "ParticleFilter.cc"
 
 using namespace Pythia8;
@@ -18,9 +17,9 @@ public:
 
 	bool include_decayed = true;
 
-	OptionalRange<double> pT_range = OptionalRange<double>();
-	OptionalRange<double> y_range = OptionalRange<double>();
-	OptionalRange<double> pT_hat_range = OptionalRange<double>();
+	OptionalRange<double> pT_range;
+	OptionalRange<double> y_range;
+	OptionalRange<double> pT_hat_range;
 
 	bool use_biasing = false;
 	double bias_power = 4.0;

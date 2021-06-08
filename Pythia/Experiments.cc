@@ -4,23 +4,41 @@
 #include "Pythia8/Pythia.h"
 #include "PartonicGenerator.cc"
 #include "Histogram.cc"
-#include <math.h>
 
 using namespace Pythia8;
 
+/**
+ * Represents a generic Pythia experiment.
+ * Must be subclassed, calling `run()` directly
+ * will kill the execution.
+ */
 class Experiment {
 public:
+	/// Center-of-mass energy in GeV.
 	double energy;
+	/// Number of events per partonic bin.
 	int count;
+	/// Histogram bins.
 	std::vector<double> bins;
+	/// Partonic bins for generating high-pT particles.
 	std::vector<std::optional<double>> pT_hat_bins;
+	/// Allowed rapidity range.
 	OptionalRange<double> y_range;
+	/// Whether to include decayed particles.
 	bool include_decayed;
+	/// Whether to use partonic pT biasing.
 	bool use_biasing;
+	/// The power to which partonic pT will be raised when biasing.
+	/// Ignored if `use_biasing` is set to `false`.
 	double bias_power;
+	/// Use OpenMP multithreading if enabled.
 	bool parallelize;
+	/// Filename of the exported file. 
+	/// If set to `nullopt`, no data is exported.
 	std::optional<std::string> filename;
-
+	/// Controls the 'Print:quiet' Pythia flag.
+	bool pythia_printing;
+	/// Runs the experiment. Subclasses must implement this method.
 	void run() {
 		abort();
 	}
@@ -38,13 +56,13 @@ public:
 		generator.use_biasing = use_biasing;
 		generator.bias_power = bias_power;
 		generator.parallelize = parallelize;
-		generator.pythia_printing = false;
+		generator.pythia_printing = pythia_printing;
 
-		generator.start([&containers, this](std::vector<ParticleContainer> pions, ParticleGenerator *particle_generator) {
+		generator.generate([&containers, this](std::vector<ParticleContainer> pions, ParticleGenerator *particle_generator) {
 			const std::vector<double> pTs = find_pTs(pions);
 			const std::vector<double> event_weights = find_event_weights(pions);
 
-			Histogram<double> partial = Histogram<double>(bins);
+			Histogram<double> partial(bins);
 			partial.fill(pTs, event_weights);
 
 			const double sigma = particle_generator->sigma();
@@ -125,6 +143,7 @@ int main() {
 	cs.bias_power = 4.0;
 	cs.parallelize = true;
 	cs.filename = "pT_histogram.csv";
+	cs.pythia_printing = false;
 
 	cs.run();
 

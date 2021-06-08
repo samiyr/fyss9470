@@ -14,9 +14,9 @@ public:
 
 	bool include_decayed = true;
 
-	OptionalRange<double> pT_range = OptionalRange<double>();
-	OptionalRange<double> y_range = OptionalRange<double>();
-	OptionalRange<double> pT_hat_range = OptionalRange<double>();
+	OptionalRange<double> pT_range;
+	OptionalRange<double> y_range;
+	OptionalRange<double> pT_hat_range;
 
 	bool use_biasing = false;
 	double bias_power = 4.0;
@@ -34,9 +34,9 @@ public:
 	}
 
 	template <typename F, typename G>
-	void start(F &&lambda, G &&completion) {
+	void generate(F &&lambda, G &&completion) {
 		#pragma omp parallel for if(parallelize)
-		for (std::vector<double>::size_type i = 0; i < pT_hat_bins.size() - 1; i++) {
+		for (std::vector<double>::size_type i = 0; i < pT_hat_bins.size() - 1; i++) {   
 			const double pT_hat_min = *pT_hat_bins[i];
 			const double pT_hat_max = *pT_hat_bins[i + 1];
 

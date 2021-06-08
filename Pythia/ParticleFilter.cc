@@ -2,10 +2,7 @@
 #define PARTICLE_FILTER_H
 
 #include "Pythia8/Pythia.h"
-#include <string>
 #include "Helpers.cc"
-#include <functional>
-#include <math.h>
 
 using namespace Pythia8;
 
@@ -31,7 +28,7 @@ private:
 	}
 	bool check_filter_chain(Particle particle, std::vector<bool (ParticleFilter::*)(Particle)> chain) {
 		for (bool (ParticleFilter::*f)(Particle) : chain) {
-			if(!check_filter(particle, f)) {
+			if (!check_filter(particle, f)) {
 				return false;
 			}
 		}
