@@ -70,6 +70,15 @@ public:
 	ValueHistogram(int capacity) {
 		containers.reserve(capacity);
 	}
+
+	ValueHistogram(std::vector<double> points) {
+		std::vector<RangedContainer<T>> c;
+		for (typename std::vector<T>::size_type i = 0; i < points.size() - 1; i++) {
+			RangedContainer<T> container(points[i], points[i + 1], T(0));
+			c.push_back(container);
+		}
+		containers = c;
+	}
 	/// Returns the number of bins.
 	auto size() const {
 		return containers.size();
@@ -77,6 +86,16 @@ public:
 	/// Provides access to the underlaying bins.
 	RangedContainer<T> &operator[](int index) {
 		return containers[index];
+	}
+	/// Appends a value `v` to the appropriate bin. 
+	/// If no bin is found, discards the value silently.
+	void fill(double v) {
+		for (auto &container : containers) {
+			if (container.range.in_range(v)) {
+				container.value += T(1);
+				break;
+			}
+		}
 	}
 	/// Prints the histogram to stdout.
 	void print() const {
@@ -92,7 +111,7 @@ public:
 		file.open(filename);
 		file << std::setprecision(precision);
 		for (auto container : containers) {
-			const T center = container.range.center();
+			const double center = container.range.center();
 			const T value = container.value;
 			file << center << "," << value << "\n";
 		}
@@ -207,21 +226,22 @@ private:
 	}
 };
 
-ValueHistogram<double> combine(std::vector<ValueHistogram<double>> containers) {
+template <typename T>
+ValueHistogram<T> combine(std::vector<ValueHistogram<T>> containers) {
 	auto reference = containers.front();
 	const auto N = reference.size();
-	ValueHistogram<double> result(N);
-	for (std::vector<RangedContainer<double>>::size_type i = 0; i < N; i++) {
+	ValueHistogram<T> result(N);
+	for (typename std::vector<RangedContainer<T>>::size_type i = 0; i < N; i++) {
 		const double lower = reference[i].range.start;
 		const double upper = reference[i].range.end;
 
-		double value = 0;
+		T value = 0;
 
-		for (std::vector<RangedContainer<double>>::size_type j = 0; j < containers.size(); j++) {
+		for (typename std::vector<RangedContainer<T>>::size_type j = 0; j < containers.size(); j++) {
 			value += containers[j][i].value;
 		}
 
-		const RangedContainer<double> container(lower, upper, value);
+		const RangedContainer<T> container(lower, upper, value);
 		result.containers.push_back(container);
 	}
 	return result;

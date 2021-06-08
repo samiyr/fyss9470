@@ -102,10 +102,10 @@ std::vector<Particle> all_particles(std::vector<Event> events) {
 	return particles;
 }
 
-std::vector<double> find_azimuths(std::vector<Particle> particles) {
+std::vector<double> find_azimuths(std::vector<ParticleContainer> particles) {
 	std::vector<double> phis;
-	for (Particle particle : particles) {
-		phis.push_back(particle.phi());
+	for (ParticleContainer particle : particles) {
+		phis.push_back(particle.particle.phi());
 	}
 	return phis;
 }
@@ -159,9 +159,23 @@ void print_with_precision(T value, int precision, bool newline = true) {
 
 
 template <typename T>
-std::vector<T> create_range(T lower, T upper, T step = 1) {
+std::vector<T> create_range(T lower, T upper, T step = T(1)) {
 	const size_t size = (upper - lower) / step;
 	std::vector<T> v(size);
+
+	T new_val = lower;
+	std::generate(begin(v), end(v), [step, &new_val]() {
+		T current = new_val;
+		new_val += step;
+		return current;
+	});
+	return v;
+}
+
+template <typename T>
+std::vector<T> fixed_range(T lower, T upper, int N) {
+	const T step = (upper - lower) / N;
+	std::vector<T> v(N + 1);
 
 	T new_val = lower;
 	std::generate(begin(v), end(v), [step, &new_val]() {

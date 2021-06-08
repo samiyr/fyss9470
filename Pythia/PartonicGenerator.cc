@@ -36,7 +36,7 @@ public:
 	template <typename F, typename G>
 	void generate(F &&lambda, G &&completion) {
 		#pragma omp parallel for if(parallelize)
-		for (std::vector<double>::size_type i = 0; i < pT_hat_bins.size() - 1; i++) {   
+		for (std::vector<double>::size_type i = 0; i < pT_hat_bins.size() - 1; i++) {
 			const double pT_hat_min = *pT_hat_bins[i];
 			const double pT_hat_max = *pT_hat_bins[i + 1];
 

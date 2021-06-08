@@ -42,13 +42,9 @@ public:
 	void run() {
 		abort();
 	}
-};
-
-class CrossSectionExperiment : public Experiment {
-public:
-	void run() {
-		std::vector<ValueHistogram<double>> containers;
-
+	/// Initializes an instance of `PartonicGenerator`
+	/// with the appropriate parameters set.
+	PartonicGenerator create_generator() {
 		PartonicGenerator generator(energy, count, pT_hat_bins);
 
 		generator.include_decayed = include_decayed;
@@ -57,6 +53,16 @@ public:
 		generator.bias_power = bias_power;
 		generator.parallelize = parallelize;
 		generator.pythia_printing = pythia_printing;
+
+		return generator;
+	}
+};
+
+class CrossSectionExperiment : public Experiment {
+public:
+	void run() {
+		std::vector<ValueHistogram<double>> containers;
+		PartonicGenerator generator = create_generator();
 
 		generator.generate([&containers, this](std::vector<ParticleContainer> pions, ParticleGenerator *particle_generator) {
 			const std::vector<double> pTs = find_pTs(pions);
@@ -85,43 +91,45 @@ public:
 class AzimuthCorrelationExperiment : public Experiment {
 public:
 	void run() {
-		cout << "Starting experiment with E = " << energy << ", N = " << count << "\n";
-		cout << "Generating pions" << "\n";
+		std::vector<double> phis;
+		PartonicGenerator generator = create_generator();
 
-		ParticleGenerator generator(energy, count);
+		generator.generate([&phis](std::vector<ParticleContainer> particles, [[maybe_unused]] ParticleGenerator *particle_generator) {
+			auto generated_phis = find_azimuths(particles);
+			phis.insert(phis.end(), generated_phis.begin(), generated_phis.end());
+		}, [&phis, this]() {
+			std::vector<ValueHistogram<unsigned long long int>> histograms;
+			#pragma omp parallel if(parallelize)
+			{
+				// Create a local histogram variable for each thread,...
+				ValueHistogram<unsigned long long int> _hist(bins);
+				const auto N = phis.size();
+				#pragma omp for collapse(2)
+				for (std::vector<ParticleContainer>::size_type i = 0; i < N; i++) {
+					const double phi1 = phis[i];
+					for (std::vector<Particle>::size_type j = i + 1; j < N; j++) {
+						const double phi2 = phis[j];
 
-		generator.include_decayed = include_decayed;
-		generator.y_range = y_range;
-
-		generator.initialize();
-
-		const std::vector<ParticleContainer> pions = generator.generate();
-		cout << "Generated " << pions.size() << " pions" << "\n";
-
-		Histogram<double> hist(10, 0, M_PI);
-		#pragma omp parallel if(parallelize)
-		{
-			std::vector<double> _deltas;
-			// TODO: reserve space for _deltas
-			#pragma omp for collapse(2)
-			for (std::vector<ParticleContainer>::size_type i = 0; i < pions.size(); i++) {
-				const Particle p1 = pions[i].particle;
-				const double phi1 = p1.phi();
-				for (std::vector<Particle>::size_type j = i + 1; j < pions.size(); j++) {
-					const Particle p2 = pions[j].particle;
-					const double phi2 = p2.phi();
-					const double delta_phi = abs(phi1 - phi2);
-					_deltas.push_back(min(delta_phi, 2 * M_PI - delta_phi));
+						const double delta_phi = abs(phi1 - phi2);
+						const double value = min(delta_phi, 2 * M_PI - delta_phi);
+						// ...fill the local histogram...
+						_hist.fill(value);
+					}
 				}
+				// ...and collect them together in a thread-safe fashion...
+				#pragma omp critical
+				histograms.push_back(_hist);
 			}
-			#pragma omp critical
-			hist.fill(_deltas);
-		}
+			// ...then finally combine them to a single histogram.
+			const auto combined = combine(histograms);
 
-		ValueHistogram<double> exported = hist.export_to_values();
-		if (filename) {
-			exported.export_histogram(*filename);
-		}
+			cout << "Azimuth histogram" << "\n";
+			combined.print();
+			cout << "\n";
+			if (filename) {
+				combined.export_histogram(*filename);
+			}
+		});
 	}
 };
 
@@ -145,18 +153,26 @@ int main() {
 	cs.filename = "pT_histogram.csv";
 	cs.pythia_printing = false;
 
-	cs.run();
+	//cs.run();
 
 	
 	AzimuthCorrelationExperiment ac;
 
 	ac.energy = 200;
-	ac.count = 10000;
-	ac.y_range = OptionalRange<double>(-0.35, 0.35);
+	ac.count = 100;
+	ac.bins = fixed_range(0.0, M_PI, 10);
+	ac.pT_hat_bins = {
+		2.0, 5.0, 10.0, 40.0, std::nullopt
+	};
+	ac.y_range = OptionalRange<double>();
 	ac.include_decayed = true;
+	ac.use_biasing = true;
+	ac.bias_power = 4.0;
 	ac.parallelize = true;
+	ac.filename = "delta_phi.csv";
+	ac.pythia_printing = false;
 
-	// ac.run();
+	ac.run();
 
 	return 0;
 }
