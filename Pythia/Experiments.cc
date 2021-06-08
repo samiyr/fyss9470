@@ -104,7 +104,7 @@ public:
 				// Create a local histogram variable for each thread,...
 				ValueHistogram<unsigned long long int> _hist(bins);
 				const auto N = phis.size();
-				#pragma omp for collapse(2)
+				#pragma omp for collapse(2) nowait
 				for (std::vector<ParticleContainer>::size_type i = 0; i < N; i++) {
 					const double phi1 = phis[i];
 					for (std::vector<Particle>::size_type j = i + 1; j < N; j++) {
