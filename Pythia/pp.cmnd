@@ -3,3 +3,4 @@ Beams:idB = 2212
 HardQCD:all = on
 Random:setSeed = on
 Random:seed = -1
+PartonLevel:MPI = on

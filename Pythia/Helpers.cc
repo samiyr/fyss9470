@@ -48,7 +48,7 @@ struct OptionalRange {
 		start = std::nullopt;
 		end = std::nullopt;
 	}
-	OptionalRange(T s, T e) {
+	OptionalRange(std::optional<T> s, std::optional<T> e) {
 		start = s;
 		end = e;
 	}

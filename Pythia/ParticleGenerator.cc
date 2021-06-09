@@ -47,8 +47,8 @@ public:
 
 		pythia.init();
 	}
-	std::vector<ParticleContainer> generate() {
-		std::vector<ParticleContainer> particles;
+	std::vector<std::vector<ParticleContainer>> generate() {
+		std::vector<std::vector<ParticleContainer>> particles;
 
 		ParticleFilter filter;
 		filter.allowed_particle_ids = particle_ids;
@@ -66,12 +66,15 @@ public:
 
 			const int particle_count = event.size();
 
+			std::vector<ParticleContainer> event_particles;
+
 			for (int j = 0; j < particle_count; j++) {
 				Particle particle = event[j];
 				if (filter.is_allowed(particle)) {
-					particles.emplace_back(particle, pT_hat, info.weight());
+					event_particles.emplace_back(particle, pT_hat, info.weight(), i);
 				}
 			}
+			particles.push_back(event_particles);
 		}	
 		return particles;
 	}

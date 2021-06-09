@@ -25,9 +25,9 @@ public:
 	std::vector<int> particle_ids = {111};
 
 	bool parallelize = false;
-	std::vector<std::optional<double>> pT_hat_bins;
+	std::vector<OptionalRange<double>> pT_hat_bins;
 
-	PartonicGenerator(double energy, int count, std::vector<std::optional<double>> bins) {
+	PartonicGenerator(double energy, int count, std::vector<OptionalRange<double>> bins) {
 		cm_energy = energy;
 		event_count = count;
 		pT_hat_bins = bins;
@@ -36,23 +36,21 @@ public:
 	template <typename F, typename G>
 	void generate(F &&lambda, G &&completion) {
 		#pragma omp parallel for if(parallelize)
-		for (std::vector<double>::size_type i = 0; i < pT_hat_bins.size() - 1; i++) {
-			const double pT_hat_min = *pT_hat_bins[i];
-			const double pT_hat_max = *pT_hat_bins[i + 1];
-
+		for (auto &range : pT_hat_bins) {
 			ParticleGenerator generator(cm_energy, event_count);
 
 			generator.particle_ids = particle_ids;
 			generator.include_decayed = include_decayed;
 			generator.y_range = y_range;
-			generator.pT_hat_range = OptionalRange<double>(pT_hat_min, pT_hat_max);
+			generator.pT_range = pT_range;
+			generator.pT_hat_range = range;
 			generator.use_biasing = use_biasing;
 			generator.bias_power = bias_power;
 			generator.pythia_printing = pythia_printing;
 
 			generator.initialize();
 
-			const std::vector<ParticleContainer> particles = generator.generate();
+			const std::vector<std::vector<ParticleContainer>> particles = generator.generate();
 			lambda(particles, &generator);
 		}
 		completion();

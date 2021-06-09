@@ -12,11 +12,13 @@ struct ParticleContainer {
 	Particle particle;
 	double pT_hat;
 	double event_weight;
+	int event_id;
 
-	ParticleContainer(Particle p, double h, double w) {
+	ParticleContainer(Particle p, double h, double w, int e) {
 		particle = p;
 		pT_hat = h;
 		event_weight = w;
+		event_id = e;
 	}
 };
 

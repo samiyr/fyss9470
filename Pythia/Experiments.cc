@@ -21,9 +21,11 @@ public:
 	/// Histogram bins.
 	std::vector<double> bins;
 	/// Partonic bins for generating high-pT particles.
-	std::vector<std::optional<double>> pT_hat_bins;
+	std::vector<OptionalRange<double>> pT_hat_bins;
 	/// Allowed rapidity range.
 	OptionalRange<double> y_range;
+	/// Allowed transverse momentum range.
+	OptionalRange<double> pT_range;
 	/// Whether to include decayed particles.
 	bool include_decayed;
 	/// Whether to use partonic pT biasing.
@@ -49,6 +51,7 @@ public:
 
 		generator.include_decayed = include_decayed;
 		generator.y_range = y_range;
+		generator.pT_range = pT_range;
 		generator.use_biasing = use_biasing;
 		generator.bias_power = bias_power;
 		generator.parallelize = parallelize;
@@ -64,7 +67,8 @@ public:
 		std::vector<ValueHistogram<double>> containers;
 		PartonicGenerator generator = create_generator();
 
-		generator.generate([&containers, this](std::vector<ParticleContainer> pions, ParticleGenerator *particle_generator) {
+		generator.generate([&containers, this](std::vector<std::vector<ParticleContainer>> pions_by_event, ParticleGenerator *particle_generator) {
+			const auto pions = flatten(pions_by_event);
 			const std::vector<double> pTs = find_pTs(pions);
 			const std::vector<double> event_weights = find_event_weights(pions);
 
@@ -90,45 +94,60 @@ public:
 
 class AzimuthCorrelationExperiment : public Experiment {
 public:
+	Range<double> pT_1;
+	Range<double> pT_2;
 	void run() {
-		std::vector<double> phis;
+		std::vector<std::vector<ParticleContainer>> pions;
 		PartonicGenerator generator = create_generator();
 
-		generator.generate([&phis](std::vector<ParticleContainer> particles, [[maybe_unused]] ParticleGenerator *particle_generator) {
-			auto generated_phis = find_azimuths(particles);
-			phis.insert(phis.end(), generated_phis.begin(), generated_phis.end());
-		}, [&phis, this]() {
-			std::vector<ValueHistogram<unsigned long long int>> histograms;
+		generator.generate([&pions](std::vector<std::vector<ParticleContainer>> particles, [[maybe_unused]] ParticleGenerator *particle_generator) {
+			#pragma omp critical
+			pions.insert(pions.end(), particles.begin(), particles.end());
+		}, [&pions, this]() {
+			std::vector<std::vector<ValueHistogram<unsigned long long int>>> histograms;
 			#pragma omp parallel if(parallelize)
 			{
-				// Create a local histogram variable for each thread,...
-				ValueHistogram<unsigned long long int> _hist(bins);
-				const auto N = phis.size();
-				#pragma omp for collapse(2) nowait
-				for (std::vector<ParticleContainer>::size_type i = 0; i < N; i++) {
-					const double phi1 = phis[i];
-					for (std::vector<Particle>::size_type j = i + 1; j < N; j++) {
-						const double phi2 = phis[j];
+				std::vector<ValueHistogram<unsigned long long int>> _histograms;
+				#pragma omp for nowait
+				for (auto &list : pions) {
+					ValueHistogram<unsigned long long int> _hist(bins);
+					const auto N = list.size();
+					for (std::vector<ParticleContainer>::size_type i = 0; i < N; i++) {
+						const Particle particle1 = list[i].particle;
+						const bool check11 = pT_1.in_range(particle1.pT());
+						const bool check12 = pT_2.in_range(particle1.pT());
+						if (check11 || check12) {
+							const double phi1 = particle1.phi();
+							for (std::vector<ParticleContainer>::size_type j = i + 1; j < N; j++) {
+								const Particle particle2 = list[j].particle;
+								const bool check21 = pT_1.in_range(particle2.pT());
+								const bool check22 = pT_2.in_range(particle2.pT());
+								if ((check21 && !check11) || (check22 && !check12)) {
+									const double phi2 = particle2.phi();
 
-						const double delta_phi = abs(phi1 - phi2);
-						const double value = min(delta_phi, 2 * M_PI - delta_phi);
-						// ...fill the local histogram...
-						_hist.fill(value);
+									const double delta_phi = abs(phi1 - phi2);
+									const double value = min(delta_phi, 2 * M_PI - delta_phi);
+
+									_hist.fill(value);									
+								}
+
+							}
+						}
 					}
+					#pragma omp critical
+					_histograms.push_back(_hist);
 				}
-				// ...and collect them together in a thread-safe fashion...
 				#pragma omp critical
-				histograms.push_back(_hist);
+				histograms.push_back(_histograms);
 			}
-			// ...then finally combine them to a single histogram.
-			const auto combined = combine(histograms);
+			const auto combined = combine(flatten(histograms));
 
 			cout << "Azimuth histogram" << "\n";
 			combined.print_with_bars();
 			cout << "\n";
 			if (filename) {
 				combined.export_histogram(*filename);
-			}
+			}			
 		});
 	}
 };
@@ -138,14 +157,18 @@ int main() {
 	CrossSectionExperiment cs;
 
 	cs.energy = 200;
-	cs.count = 10'000;
+	cs.count = 10000;
 	cs.bins = {
 		1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 8.0, 9.0, 10.0, 12.0, 15.0
 	};
 	cs.pT_hat_bins = {
-		2.0, 5.0, 10.0, 40.0, std::nullopt
+		OptionalRange<double>(2.0, 5.0),
+		OptionalRange<double>(5.0, 10.0),
+		OptionalRange<double>(10.0, 40.0),
+		OptionalRange<double>(40.0, std::nullopt)
 	};
 	cs.y_range = OptionalRange<double>(-0.35, 0.35);
+	cs.pT_range = OptionalRange<double>();
 	cs.include_decayed = true;
 	cs.use_biasing = true;
 	cs.bias_power = 4.0;
@@ -159,12 +182,13 @@ int main() {
 	AzimuthCorrelationExperiment ac;
 
 	ac.energy = 200;
-	ac.count = 100;
-	ac.bins = fixed_range(0.0, M_PI, 10);
-	ac.pT_hat_bins = {
-		2.0, 5.0, 10.0, 40.0, std::nullopt
-	};
+	ac.count = 1'000'000 / 16;
+	ac.bins = fixed_range(0.0, M_PI, 20);
+	ac.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.0, std::nullopt));
 	ac.y_range = OptionalRange<double>();
+	ac.pT_range = OptionalRange<double>(1.0, 2.0);
+	ac.pT_1 = Range<double>(1.0, 1.4);
+	ac.pT_2 = Range<double>(1.4, 2.0);
 	ac.include_decayed = true;
 	ac.use_biasing = true;
 	ac.bias_power = 4.0;
