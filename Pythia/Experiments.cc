@@ -116,22 +116,23 @@ public:
 						const Particle particle1 = list[i].particle;
 						const bool check11 = pT_1.in_range(particle1.pT());
 						const bool check12 = pT_2.in_range(particle1.pT());
-						if (check11 || check12) {
-							const double phi1 = particle1.phi();
-							for (std::vector<ParticleContainer>::size_type j = i + 1; j < N; j++) {
-								const Particle particle2 = list[j].particle;
-								const bool check21 = pT_1.in_range(particle2.pT());
-								const bool check22 = pT_2.in_range(particle2.pT());
-								if ((check21 && !check11) || (check22 && !check12)) {
-									const double phi2 = particle2.phi();
-
-									const double delta_phi = abs(phi1 - phi2);
-									const double value = min(delta_phi, 2 * M_PI - delta_phi);
-
-									_hist.fill(value);									
-								}
-
+						if (!(check11 || check12)) {
+							continue;
+						}
+						const double phi1 = particle1.phi();
+						for (std::vector<ParticleContainer>::size_type j = i + 1; j < N; j++) {
+							const Particle particle2 = list[j].particle;
+							const bool check21 = pT_1.in_range(particle2.pT());
+							const bool check22 = pT_2.in_range(particle2.pT());
+							if (!((check21 && !check11) || (check22 && !check12))) {
+								continue;
 							}
+							const double phi2 = particle2.phi();
+
+							const double delta_phi = abs(phi1 - phi2);
+							const double value = min(delta_phi, 2 * M_PI - delta_phi);
+
+							_hist.fill(value);	
 						}
 					}
 					#pragma omp critical
