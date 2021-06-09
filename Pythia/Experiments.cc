@@ -141,12 +141,12 @@ public:
 				histograms.push_back(_histograms);
 			}
 			const auto combined = combine(flatten(histograms));
-
+			const auto normalized = combined.normalize_to_unity();
 			cout << "Azimuth histogram" << "\n";
-			combined.print_with_bars();
+			normalized.print_with_bars();
 			cout << "\n";
 			if (filename) {
-				combined.export_histogram(*filename);
+				normalized.export_histogram(*filename);
 			}			
 		});
 	}
@@ -182,7 +182,7 @@ int main() {
 	AzimuthCorrelationExperiment ac;
 
 	ac.energy = 200;
-	ac.count = 1'000'000 / 16;
+	ac.count = 100'000 / 16;
 	ac.bins = fixed_range(0.0, M_PI, 20);
 	ac.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.0, std::nullopt));
 	ac.y_range = OptionalRange<double>();

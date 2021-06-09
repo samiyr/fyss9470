@@ -134,6 +134,23 @@ public:
 		}
 		file.close();
 	}
+
+	double total() const {
+		return std::accumulate(containers.begin(), containers.end(), 0.0, [](double partial, RangedContainer<T> current) {
+			return partial + current.value;
+		});
+	}
+
+	ValueHistogram<double> normalize_to_unity() const {
+		ValueHistogram<double> normalized;
+		const double sum_total = total();
+		for (auto container : containers) {
+			const double new_value = (double)container.value / (container.range.width() * sum_total);
+			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
+			normalized.containers.push_back(new_container);
+		}
+		return normalized;
+	}
 };
 
 /**
