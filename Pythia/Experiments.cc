@@ -40,6 +40,12 @@ public:
 	std::optional<std::string> filename;
 	/// Controls the 'Print:quiet' Pythia flag.
 	bool pythia_printing;
+	/// The base random seed used in Pythia. See also `variable_seed`.
+	int random_seed = -1;
+	/// If set, the random seed forwarded to Pythia will be
+	/// `random_seed` + i, where i is the iterator index of
+	/// the partonic pT bins `pT_hat_bins`.
+	bool variable_seed = false;
 	/// Runs the experiment. Subclasses must implement this method.
 	void run() {
 		abort();
@@ -56,6 +62,8 @@ public:
 		generator.bias_power = bias_power;
 		generator.parallelize = parallelize;
 		generator.pythia_printing = pythia_printing;
+		generator.variable_seed = variable_seed;
+		generator.random_seed = random_seed;
 
 		return generator;
 	}
@@ -104,45 +112,45 @@ public:
 			#pragma omp critical
 			pions.insert(pions.end(), particles.begin(), particles.end());
 		}, [&pions, this]() {
-			std::vector<std::vector<ValueHistogram<unsigned long long int>>> histograms;
-			#pragma omp parallel if(parallelize)
-			{
-				std::vector<ValueHistogram<unsigned long long int>> _histograms;
-				#pragma omp for nowait
-				for (auto &list : pions) {
-					ValueHistogram<unsigned long long int> _hist(bins);
-					const auto N = list.size();
-					for (std::vector<ParticleContainer>::size_type i = 0; i < N; i++) {
-						const Particle particle1 = list[i].particle;
-						const bool check11 = pT_1.in_range(particle1.pT());
-						const bool check12 = pT_2.in_range(particle1.pT());
-						if (!(check11 || check12)) {
+			ValueHistogram<unsigned long long int> hist(bins);
+
+			const auto total_N = pions.size();
+			int current_N = 0;
+			const auto threshold = total_N / 100;
+
+			for (auto &list : pions) {
+				const auto N = list.size();
+				for (std::vector<ParticleContainer>::size_type i = 0; i < N; i++) {
+					const Particle particle1 = list[i].particle;
+					const bool check11 = pT_1.in_range(particle1.pT());
+					const bool check12 = pT_2.in_range(particle1.pT());
+					if (!(check11 || check12)) {
+						continue;
+					}
+					const double phi1 = particle1.phi();
+					for (std::vector<ParticleContainer>::size_type j = i + 1; j < N; j++) {
+						const Particle particle2 = list[j].particle;
+						const bool check21 = pT_1.in_range(particle2.pT());
+						const bool check22 = pT_2.in_range(particle2.pT());
+						if (!((check21 && !check11) || (check22 && !check12))) {
 							continue;
 						}
-						const double phi1 = particle1.phi();
-						for (std::vector<ParticleContainer>::size_type j = i + 1; j < N; j++) {
-							const Particle particle2 = list[j].particle;
-							const bool check21 = pT_1.in_range(particle2.pT());
-							const bool check22 = pT_2.in_range(particle2.pT());
-							if (!((check21 && !check11) || (check22 && !check12))) {
-								continue;
-							}
-							const double phi2 = particle2.phi();
+						const double phi2 = particle2.phi();
 
-							const double delta_phi = abs(phi1 - phi2);
-							const double value = min(delta_phi, 2 * M_PI - delta_phi);
+						const double delta_phi = abs(phi1 - phi2);
+						const double value = min(delta_phi, 2 * M_PI - delta_phi);
 
-							_hist.fill(value);	
-						}
+						hist.fill(value);	
 					}
-					#pragma omp critical
-					_histograms.push_back(_hist);
 				}
-				#pragma omp critical
-				histograms.push_back(_histograms);
+				current_N++;
+
+				if (current_N % threshold == 0) {
+					cout << "analysis: " << (double)current_N / total_N * 100 << "%\n";
+				}
 			}
-			const auto combined = combine(flatten(histograms));
-			const auto normalized = combined.normalize_to_unity();
+
+			const auto normalized = hist/*.normalize_to_unity()*//*.normalize_by((double)total_N)*/;
 			cout << "Azimuth histogram" << "\n";
 			normalized.print_with_bars();
 			cout << "\n";
@@ -183,10 +191,10 @@ int main() {
 	AzimuthCorrelationExperiment ac;
 
 	ac.energy = 200;
-	ac.count = 100'000 / 16;
+	ac.count = 100'000'000 / 16;
 	ac.bins = fixed_range(0.0, M_PI, 20);
 	ac.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.0, std::nullopt));
-	ac.y_range = OptionalRange<double>();
+	ac.y_range = OptionalRange<double>(2.6, 4.1);
 	ac.pT_range = OptionalRange<double>(1.0, 2.0);
 	ac.pT_1 = Range<double>(1.0, 1.4);
 	ac.pT_2 = Range<double>(1.4, 2.0);
@@ -194,8 +202,10 @@ int main() {
 	ac.use_biasing = true;
 	ac.bias_power = 4.0;
 	ac.parallelize = true;
-	ac.filename = "delta_phi.csv";
+	ac.filename = "delta_phi_1e8_2641_1014_1420__.csv";
 	ac.pythia_printing = false;
+	ac.variable_seed = true;
+	ac.random_seed = 1;
 
 	ac.run();
 

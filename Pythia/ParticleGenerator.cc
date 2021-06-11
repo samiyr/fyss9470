@@ -25,6 +25,8 @@ public:
 	double bias_power = 4.0;
 	double bias_reference = 10.0;
 
+	int random_seed = -1;
+
 	std::vector<int> particle_ids = {111};
 
 	Pythia pythia;
@@ -44,11 +46,13 @@ public:
         settings.parm("PhaseSpace:bias2SelectionPow", bias_power);
         settings.parm("PhaseSpace:bias2SelectionRef", bias_reference);
         settings.flag("Print:quiet", !pythia_printing);
+        settings.mode("Next:numberCount", 10000);
+        settings.mode("Random:seed", random_seed);
 
 		pythia.init();
 	}
 	std::vector<std::vector<ParticleContainer>> generate() {
-		std::vector<std::vector<ParticleContainer>> particles;
+		std::vector<std::vector<ParticleContainer>> particles(event_count, std::vector<ParticleContainer>());
 
 		ParticleFilter filter;
 		filter.allowed_particle_ids = particle_ids;
@@ -66,15 +70,12 @@ public:
 
 			const int particle_count = event.size();
 
-			std::vector<ParticleContainer> event_particles;
-
 			for (int j = 0; j < particle_count; j++) {
 				Particle particle = event[j];
 				if (filter.is_allowed(particle)) {
-					event_particles.emplace_back(particle, pT_hat, info.weight(), i);
+					particles[i].emplace_back(particle, pT_hat, info.weight(), i);
 				}
 			}
-			particles.push_back(event_particles);
 		}	
 		return particles;
 	}

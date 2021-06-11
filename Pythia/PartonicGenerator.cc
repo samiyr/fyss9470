@@ -22,6 +22,9 @@ public:
 	double bias_power = 4.0;
 	double bias_reference = 10.0;
 
+	bool variable_seed = false;
+	int random_seed = -1;
+
 	std::vector<int> particle_ids = {111};
 
 	bool parallelize = false;
@@ -36,7 +39,8 @@ public:
 	template <typename F, typename G>
 	void generate(F &&lambda, G &&completion) {
 		#pragma omp parallel for if(parallelize)
-		for (auto &range : pT_hat_bins) {
+		for (std::vector<OptionalRange<double>>::size_type i = 0; i < pT_hat_bins.size(); i++) {
+			const auto range = pT_hat_bins[i];
 			ParticleGenerator generator(cm_energy, event_count);
 
 			generator.particle_ids = particle_ids;
@@ -47,6 +51,12 @@ public:
 			generator.use_biasing = use_biasing;
 			generator.bias_power = bias_power;
 			generator.pythia_printing = pythia_printing;
+
+			if (variable_seed) {
+				generator.random_seed = i + random_seed;
+			} else {
+				generator.random_seed = random_seed;
+			}
 
 			generator.initialize();
 

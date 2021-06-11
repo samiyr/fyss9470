@@ -151,6 +151,17 @@ public:
 		}
 		return normalized;
 	}
+
+	template <typename V>
+	ValueHistogram<double> normalize_by(V constant) const {
+		ValueHistogram<double> normalized;
+		for (auto container : containers) {
+			const double new_value = (double)container.value / constant;
+			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
+			normalized.containers.push_back(new_container);
+		}
+		return normalized;	
+	}
 };
 
 /**
