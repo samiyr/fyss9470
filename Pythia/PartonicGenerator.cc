@@ -14,6 +14,8 @@ public:
 
 	bool include_decayed = true;
 
+	bool mpi = true;
+
 	OptionalRange<double> pT_range;
 	OptionalRange<double> y_range;
 	OptionalRange<double> pT_hat_range;
@@ -51,6 +53,7 @@ public:
 			generator.use_biasing = use_biasing;
 			generator.bias_power = bias_power;
 			generator.pythia_printing = pythia_printing;
+			generator.mpi = mpi;
 
 			if (variable_seed) {
 				generator.random_seed = i + random_seed;

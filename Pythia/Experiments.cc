@@ -14,6 +14,9 @@ using namespace Pythia8;
  */
 class Experiment {
 public:
+	enum class Normalization {
+		None, Unity, Events
+	};
 	/// Center-of-mass energy in GeV.
 	double energy;
 	/// Number of events per partonic bin.
@@ -46,6 +49,10 @@ public:
 	/// `random_seed` + i, where i is the iterator index of
 	/// the partonic pT bins `pT_hat_bins`.
 	bool variable_seed = false;
+	/// Whether to use multiparton interactions.
+	bool mpi = true;
+	/// Normalization type to use.
+	Normalization normalization;
 	/// Runs the experiment. Subclasses must implement this method.
 	void run() {
 		abort();
@@ -66,6 +73,21 @@ public:
 		generator.random_seed = random_seed;
 
 		return generator;
+	}
+
+	template<typename T>
+	ValueHistogram<T> normalize(ValueHistogram<T> hist, double normalization_constant = 1.0) {
+		switch (normalization) {
+			case Normalization::None:
+				return hist;
+				break;
+			case Normalization::Unity:
+				return hist.normalize_to_unity();
+				break;
+			case Normalization::Events:
+				return hist.normalize_by(normalization_constant);
+				break;
+		}
 	}
 };
 
@@ -88,7 +110,7 @@ public:
 			const auto partial_container = partial.normalize(total_weight, sigma, y_range, use_biasing);
 			containers.push_back(partial_container);
 		}, [&containers, this]{
-			const auto combined = combine(containers);
+			const ValueHistogram<double> combined = normalize(combine(containers));
 
 			cout << "Normalized pT histogram" << "\n";
 			combined.print();
@@ -112,7 +134,7 @@ public:
 			#pragma omp critical
 			pions.insert(pions.end(), particles.begin(), particles.end());
 		}, [&pions, this]() {
-			ValueHistogram<unsigned long long int> hist(bins);
+			ValueHistogram<double> hist(bins);
 
 			const auto total_N = pions.size();
 			int current_N = 0;
@@ -150,7 +172,7 @@ public:
 				}
 			}
 
-			const auto normalized = hist/*.normalize_to_unity()*//*.normalize_by((double)total_N)*/;
+			const auto normalized = normalize(hist, (double)total_N);
 			cout << "Azimuth histogram" << "\n";
 			normalized.print_with_bars();
 			cout << "\n";
@@ -191,21 +213,29 @@ int main() {
 	AzimuthCorrelationExperiment ac;
 
 	ac.energy = 200;
-	ac.count = 100'000'000 / 16;
+	ac.count = 1'000'000 / 16;
 	ac.bins = fixed_range(0.0, M_PI, 20);
+
 	ac.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.0, std::nullopt));
 	ac.y_range = OptionalRange<double>(2.6, 4.1);
 	ac.pT_range = OptionalRange<double>(1.0, 2.0);
 	ac.pT_1 = Range<double>(1.0, 1.4);
 	ac.pT_2 = Range<double>(1.4, 2.0);
+
 	ac.include_decayed = true;
+	ac.mpi = true;
+
 	ac.use_biasing = true;
 	ac.bias_power = 4.0;
+
 	ac.parallelize = true;
-	ac.filename = "delta_phi_1e8_2641_1014_1420__.csv";
+	ac.filename = "delta_phi_1e6_2641_1014_1420_mpi_unity.csv";
 	ac.pythia_printing = false;
+	
 	ac.variable_seed = true;
 	ac.random_seed = 1;
+
+	ac.normalization = Experiment::Normalization::Unity;
 
 	ac.run();
 

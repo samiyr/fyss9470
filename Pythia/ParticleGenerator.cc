@@ -17,6 +17,8 @@ public:
 
 	bool include_decayed = true;
 
+	bool mpi = true;
+
 	OptionalRange<double> pT_range;
 	OptionalRange<double> y_range;
 	OptionalRange<double> pT_hat_range;
@@ -48,6 +50,7 @@ public:
         settings.flag("Print:quiet", !pythia_printing);
         settings.mode("Next:numberCount", 10000);
         settings.mode("Random:seed", random_seed);
+        settings.flag("PartonLevel:MPI", mpi);
 
 		pythia.init();
 	}

@@ -2,4 +2,3 @@ Beams:idA = 2212
 Beams:idB = 2212
 HardQCD:all = on
 Random:setSeed = on
-PartonLevel:MPI = off
