@@ -9,16 +9,16 @@ using namespace Pythia8;
  * Simple container for particles and associated properties not stored directly in Pythia8::Particle.
  */
 struct ParticleContainer {
-	Particle particle;
-	double pT_hat;
+	double pT;
+	double y;
+	double phi;
 	double event_weight;
-	int event_id;
 
-	ParticleContainer(Particle p, double h, double w, int e) {
-		particle = p;
-		pT_hat = h;
+	ParticleContainer(Particle p, double w) {
+		pT = p.pT();
+		y = p.y();
+		phi = p.phi();
 		event_weight = w;
-		event_id = e;
 	}
 };
 

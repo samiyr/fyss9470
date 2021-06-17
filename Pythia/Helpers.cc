@@ -11,8 +11,13 @@
 using namespace Pythia8;
 
 template <typename T>
-bool contains(std::vector<T> vec, T element) {
-	return std::find(vec.begin(), vec.end(), element) != vec.end();
+bool contains(std::vector<T> *vec, T element) {
+	for (auto &v : *vec) {
+		if (v == element) {
+			return true;
+		}
+	}
+	return false;
 }
 
 template <typename T>
@@ -74,13 +79,6 @@ struct OptionalRange {
 		} else {
 			return ans;
 		}
-		// if (start && v < *start) {
-		// 	return false;
-		// }
-		// if (end && v >= *end) {
-		// 	return false;
-		// }
-		// return true;
 	}
 	std::string extent() const {
 		std::string lower;
@@ -115,24 +113,18 @@ std::vector<Particle> all_particles(std::vector<Event> events) {
 std::vector<double> find_azimuths(std::vector<ParticleContainer> particles) {
 	std::vector<double> phis;
 	for (ParticleContainer particle : particles) {
-		phis.push_back(particle.particle.phi());
+		phis.push_back(particle.phi);
 	}
 	return phis;
 }
 std::vector<double> find_pTs(std::vector<ParticleContainer> particles) {
 	std::vector<double> phis;
 	for (ParticleContainer particle : particles) {
-		phis.push_back(particle.particle.pT());
+		phis.push_back(particle.pT);
 	}
 	return phis;
 }
-std::vector<double> find_pT_hats(std::vector<ParticleContainer> particles) {
-	std::vector<double> phis;
-	for (ParticleContainer particle : particles) {
-		phis.push_back(particle.pT_hat);
-	}
-	return phis;
-}
+
 std::vector<double> find_event_weights(std::vector<ParticleContainer> particles) {
 	std::vector<double> weights;
 	for (ParticleContainer particle : particles) {

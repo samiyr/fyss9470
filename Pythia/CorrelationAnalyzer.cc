@@ -83,21 +83,21 @@ public:
 		for (auto &list : *particles) {
 			const auto N = list.size();
 			for (std::vector<ParticleContainer>::size_type i = 0; i < N; i++) {
-				const Particle particle1 = list[i].particle;
-				const bool check11 = parameters.pT_small.in_range(particle1.pT()) && parameters.y_small.in_range(particle1.y());
-				const bool check12 = parameters.pT_large.in_range(particle1.pT()) && parameters.y_large.in_range(particle1.y());
+				const ParticleContainer particle1 = list[i];
+				const bool check11 = parameters.pT_small.in_range(particle1.pT) && parameters.y_small.in_range(particle1.y);
+				const bool check12 = parameters.pT_large.in_range(particle1.pT) && parameters.y_large.in_range(particle1.y);
 				if (!(check11 || check12)) {
 					continue;
 				}
-				const double phi1 = particle1.phi();
+				const double phi1 = particle1.phi;
 				for (std::vector<ParticleContainer>::size_type j = i + 1; j < N; j++) {
-					const Particle particle2 = list[j].particle;
-					const bool check21 = parameters.pT_small.in_range(particle2.pT()) && parameters.y_small.in_range(particle2.y());
-					const bool check22 = parameters.pT_large.in_range(particle2.pT()) && parameters.y_large.in_range(particle2.y());
+					const ParticleContainer particle2 = list[j];
+					const bool check21 = parameters.pT_small.in_range(particle2.pT) && parameters.y_small.in_range(particle2.y);
+					const bool check22 = parameters.pT_large.in_range(particle2.pT) && parameters.y_large.in_range(particle2.y);
 					if (!((check21 && !check11) || (check22 && !check12))) {
 						continue;
 					}
-					const double phi2 = particle2.phi();
+					const double phi2 = particle2.phi;
 
 					const double delta_phi = abs(phi1 - phi2);
 					const double value = min(delta_phi, 2 * M_PI - delta_phi);

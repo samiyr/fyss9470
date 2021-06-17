@@ -45,13 +45,13 @@ namespace Constants {
 				1.0, 1.4,
 				2.4, 2.8,
 				2.6, 4.1,
-				0.0, 5.0,
+				2.6, 4.1,
 				"STAR7/delta_phi_1e7_2641_2641_1014_2428_mpi_unity.csv"),
 			CorrelationAnalyzerParameters(
 				1.0, 1.4,
 				2.8, 5.0,
 				2.6, 4.1,
-				1.0, 4.5,
+				2.6, 4.1,
 				"STAR7/delta_phi_1e7_2641_2641_1014_2850_mpi_unity.csv"),
 
 			CorrelationAnalyzerParameters(
@@ -64,33 +64,33 @@ namespace Constants {
 				1.4, 2.0,
 				2.4, 2.8,
 				2.6, 4.1,
-				0.0, 5.0,
+				2.6, 4.1,
 				"STAR7/delta_phi_1e7_2641_2641_1420_2428_mpi_unity.csv"),
 			CorrelationAnalyzerParameters(
 				1.4, 2.0,
 				2.8, 5.0,
 				2.6, 4.1,
-				1.0, 4.5,
+				2.6, 4.1,
 				"STAR7/delta_phi_1e7_2641_2641_1420_2850_mpi_unity.csv"),
 
 			CorrelationAnalyzerParameters(
 				2.0, 2.4,
 				2.4, 2.8,
 				2.6, 4.1,
-				0.0, 5.0,
+				2.6, 4.1,
 				"STAR7/delta_phi_1e7_2641_2641_2024_2428_mpi_unity.csv"),
 			CorrelationAnalyzerParameters(
 				2.0, 2.4,
 				2.8, 5.0,
 				2.6, 4.1,
-				1.0, 4.5,
+				2.6, 4.1,
 				"STAR7/delta_phi_1e7_2641_2641_2024_2850_mpi_unity.csv"),
 
 			CorrelationAnalyzerParameters(
 				2.4, 2.8,
 				2.8, 5.0,
 				2.6, 4.1,
-				1.0, 4.5,
+				2.6, 4.1,
 				"STAR7/delta_phi_1e7_2641_2641_2428_2850_mpi_unity.csv"),
 		};
 		static std::vector<CorrelationAnalyzerParameters> STAR8 = {
@@ -110,13 +110,13 @@ namespace Constants {
 				1.0, 1.4,
 				2.4, 2.8,
 				2.6, 4.1,
-				0.0, 5.0,
+				2.6, 4.1,
 				"STAR8/delta_phi_1e8_2641_2641_1014_2428_mpi_unity.csv"),
 			CorrelationAnalyzerParameters(
 				1.0, 1.4,
 				2.8, 5.0,
 				2.6, 4.1,
-				1.0, 4.5,
+				2.6, 4.1,
 				"STAR8/delta_phi_1e8_2641_2641_1014_2850_mpi_unity.csv"),
 
 			CorrelationAnalyzerParameters(
@@ -129,33 +129,33 @@ namespace Constants {
 				1.4, 2.0,
 				2.4, 2.8,
 				2.6, 4.1,
-				0.0, 5.0,
+				2.6, 4.1,
 				"STAR8/delta_phi_1e8_2641_2641_1420_2428_mpi_unity.csv"),
 			CorrelationAnalyzerParameters(
 				1.4, 2.0,
 				2.8, 5.0,
 				2.6, 4.1,
-				1.0, 4.5,
+				2.6, 4.1,
 				"STAR8/delta_phi_1e8_2641_2641_1420_2850_mpi_unity.csv"),
 
 			CorrelationAnalyzerParameters(
 				2.0, 2.4,
 				2.4, 2.8,
 				2.6, 4.1,
-				0.0, 5.0,
+				2.6, 4.1,
 				"STAR8/delta_phi_1e8_2641_2641_2024_2428_mpi_unity.csv"),
 			CorrelationAnalyzerParameters(
 				2.0, 2.4,
 				2.8, 5.0,
 				2.6, 4.1,
-				1.0, 4.5,
+				2.6, 4.1,
 				"STAR8/delta_phi_1e8_2641_2641_2024_2850_mpi_unity.csv"),
 
 			CorrelationAnalyzerParameters(
 				2.4, 2.8,
 				2.8, 5.0,
 				2.6, 4.1,
-				1.0, 4.5,
+				2.6, 4.1,
 				"STAR8/delta_phi_1e8_2641_2641_2428_2850_mpi_unity.csv"),
 		};
 		static std::vector<CorrelationAnalyzerParameters> birapidity_window_test = {

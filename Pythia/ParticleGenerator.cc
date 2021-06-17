@@ -67,17 +67,16 @@ public:
 			}
 			const Event &event = pythia.event;
 			const Info &info = pythia.info;
-			const double pT_hat = info.pTHat();
 
 			const int particle_count = event.size();
 
 			for (int j = 0; j < particle_count; j++) {
 				Particle particle = event[j];
 				if (filter.is_allowed(particle)) {
-					particles[i].emplace_back(particle, pT_hat, info.weight(), i);
+					particles[i].emplace_back(particle, info.weight());
 				}
 			}
-		}	
+		}
 		return particles;
 	}
 	double sigma() const {

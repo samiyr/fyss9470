@@ -187,12 +187,12 @@ int main() {
 	AzimuthCorrelationExperiment ac;
 
 	ac.energy = 200;
-	ac.count = 10'000'000 / 16;
+	ac.count = 100'000 / 16;
 	ac.bins = fixed_range(0.0, M_PI, 20);
 
 	ac.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.0, std::nullopt));
 	ac.y_range = OptionalRange<double>();
-	ac.pT_range = OptionalRange<double>(1.0, 2.0);
+	ac.pT_range = OptionalRange<double>(1.0, 5.0);
 
 	ac.include_decayed = true;
 	ac.mpi = true;
@@ -206,10 +206,10 @@ int main() {
 	ac.variable_seed = true;
 	ac.random_seed = 1;
 
-	ac.normalization = Experiment::Normalization::None;
+	ac.normalization = Experiment::Normalization::Unity;
 
-	ac.runs = Constants::CorrelationRuns::birapidity_window_test;
-	// ac.runs = Constants::CorrelationRuns::STAR8;
+	// ac.runs = Constants::CorrelationRuns::birapidity_window_test;
+	ac.runs = Constants::CorrelationRuns::STAR8;
 
 	ac.run();
 
