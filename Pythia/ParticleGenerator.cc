@@ -3,33 +3,31 @@
 
 #include "Pythia8/Pythia.h"
 #include "ParticleFilter.cc"
+#include "Constants.cc"
 
 using namespace Pythia8;
-
-// Constants
-const std::string cmnd_input = "pp.cmnd";
 
 class ParticleGenerator {
 public:
 	double cm_energy;
 	int event_count;
-	bool pythia_printing = true;
+	bool pythia_printing;
 
-	bool include_decayed = true;
+	bool include_decayed;
 
-	bool mpi = true;
+	bool mpi;
 
 	OptionalRange<double> pT_range;
 	OptionalRange<double> y_range;
 	OptionalRange<double> pT_hat_range;
 
-	bool use_biasing = false;
-	double bias_power = 4.0;
-	double bias_reference = 10.0;
+	bool use_biasing;
+	double bias_power;
+	double bias_reference;
 
-	int random_seed = -1;
+	int random_seed;
 
-	std::vector<int> particle_ids = {111};
+	std::vector<int> particle_ids;
 
 	Pythia pythia;
 
@@ -40,7 +38,7 @@ public:
 	void initialize() {
 		Settings &settings = pythia.settings;
 
-		pythia.readFile(cmnd_input);
+		pythia.readFile(Constants::cmnd_input);
 		settings.parm("Beams:eCM", cm_energy);
 		settings.parm("PhaseSpace:pTHatMin", pT_hat_range.start.has_value() ? *pT_hat_range.start : 0);
 		settings.parm("PhaseSpace:pTHatMax", pT_hat_range.end.has_value() ? *pT_hat_range.end : -1);
@@ -48,7 +46,7 @@ public:
         settings.parm("PhaseSpace:bias2SelectionPow", bias_power);
         settings.parm("PhaseSpace:bias2SelectionRef", bias_reference);
         settings.flag("Print:quiet", !pythia_printing);
-        settings.mode("Next:numberCount", 10000);
+        settings.mode("Next:numberCount", Defaults::pythia_next);
         settings.mode("Random:seed", random_seed);
         settings.flag("PartonLevel:MPI", mpi);
 

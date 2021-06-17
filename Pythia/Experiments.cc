@@ -4,6 +4,8 @@
 #include "Pythia8/Pythia.h"
 #include "PartonicGenerator.cc"
 #include "Histogram.cc"
+#include "CorrelationAnalyzer.cc"
+#include "Constants.cc"
 
 using namespace Pythia8;
 
@@ -15,7 +17,7 @@ using namespace Pythia8;
 class Experiment {
 public:
 	enum class Normalization {
-		None, Unity, Events
+		None, Unity, Count
 	};
 	/// Center-of-mass energy in GeV.
 	double energy;
@@ -38,9 +40,6 @@ public:
 	double bias_power;
 	/// Use OpenMP multithreading if enabled.
 	bool parallelize;
-	/// Filename of the exported file. 
-	/// If set to `nullopt`, no data is exported.
-	std::optional<std::string> filename;
 	/// Controls the 'Print:quiet' Pythia flag.
 	bool pythia_printing;
 	/// The base random seed used in Pythia. See also `variable_seed`.
@@ -76,7 +75,7 @@ public:
 	}
 
 	template<typename T>
-	ValueHistogram<T> normalize(ValueHistogram<T> hist, double normalization_constant = 1.0) {
+	ValueHistogram<T> normalize(ValueHistogram<T> hist) {
 		switch (normalization) {
 			case Normalization::None:
 				return hist;
@@ -84,8 +83,8 @@ public:
 			case Normalization::Unity:
 				return hist.normalize_to_unity();
 				break;
-			case Normalization::Events:
-				return hist.normalize_by(normalization_constant);
+			case Normalization::Count:
+				return hist.normalize_by(hist.total());
 				break;
 		}
 	}
@@ -93,6 +92,8 @@ public:
 
 class CrossSectionExperiment : public Experiment {
 public:
+	std::optional<string> filename;
+
 	void run() {
 		std::vector<ValueHistogram<double>> containers;
 		PartonicGenerator generator = create_generator();
@@ -124,8 +125,8 @@ public:
 
 class AzimuthCorrelationExperiment : public Experiment {
 public:
-	Range<double> pT_1;
-	Range<double> pT_2;
+	std::vector<CorrelationAnalyzerParameters> runs;
+
 	void run() {
 		std::vector<std::vector<ParticleContainer>> pions;
 		PartonicGenerator generator = create_generator();
@@ -134,51 +135,24 @@ public:
 			#pragma omp critical
 			pions.insert(pions.end(), particles.begin(), particles.end());
 		}, [&pions, this]() {
-			ValueHistogram<double> hist(bins);
+			const auto run_count = runs.size();
+			for (std::vector<CorrelationAnalyzerParameters>::size_type i = 0; i < run_count; i++) {
+				const auto params = runs[i];
 
-			const auto total_N = pions.size();
-			int current_N = 0;
-			const auto threshold = total_N / 100;
+				CorrelationAnalyzer analyzer(params, &pions);
+				analyzer.bins = bins;
+				analyzer.run_index = i;
+				analyzer.run_count = run_count;
 
-			for (auto &list : pions) {
-				const auto N = list.size();
-				for (std::vector<ParticleContainer>::size_type i = 0; i < N; i++) {
-					const Particle particle1 = list[i].particle;
-					const bool check11 = pT_1.in_range(particle1.pT());
-					const bool check12 = pT_2.in_range(particle1.pT());
-					if (!(check11 || check12)) {
-						continue;
-					}
-					const double phi1 = particle1.phi();
-					for (std::vector<ParticleContainer>::size_type j = i + 1; j < N; j++) {
-						const Particle particle2 = list[j].particle;
-						const bool check21 = pT_1.in_range(particle2.pT());
-						const bool check22 = pT_2.in_range(particle2.pT());
-						if (!((check21 && !check11) || (check22 && !check12))) {
-							continue;
-						}
-						const double phi2 = particle2.phi();
-
-						const double delta_phi = abs(phi1 - phi2);
-						const double value = min(delta_phi, 2 * M_PI - delta_phi);
-
-						hist.fill(value);	
-					}
-				}
-				current_N++;
-
-				if (current_N % threshold == 0) {
-					cout << "analysis: " << (double)current_N / total_N * 100 << "%\n";
+				const auto hist = analyzer.analyze();
+				const auto normalized = normalize(hist);
+				cout << "\nAzimuth histogram\n";
+				normalized.print_with_bars();
+				cout << "\n";
+				if (params.filename) {
+					normalized.export_histogram(*params.filename);
 				}
 			}
-
-			const auto normalized = normalize(hist, (double)total_N);
-			cout << "Azimuth histogram" << "\n";
-			normalized.print_with_bars();
-			cout << "\n";
-			if (filename) {
-				normalized.export_histogram(*filename);
-			}			
 		});
 	}
 };
@@ -213,14 +187,12 @@ int main() {
 	AzimuthCorrelationExperiment ac;
 
 	ac.energy = 200;
-	ac.count = 1'000'000 / 16;
+	ac.count = 10'000'000 / 16;
 	ac.bins = fixed_range(0.0, M_PI, 20);
 
 	ac.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.0, std::nullopt));
-	ac.y_range = OptionalRange<double>(2.6, 4.1);
+	ac.y_range = OptionalRange<double>();
 	ac.pT_range = OptionalRange<double>(1.0, 2.0);
-	ac.pT_1 = Range<double>(1.0, 1.4);
-	ac.pT_2 = Range<double>(1.4, 2.0);
 
 	ac.include_decayed = true;
 	ac.mpi = true;
@@ -229,13 +201,15 @@ int main() {
 	ac.bias_power = 4.0;
 
 	ac.parallelize = true;
-	ac.filename = "delta_phi_1e6_2641_1014_1420_mpi_unity.csv";
 	ac.pythia_printing = false;
 	
 	ac.variable_seed = true;
 	ac.random_seed = 1;
 
-	ac.normalization = Experiment::Normalization::Unity;
+	ac.normalization = Experiment::Normalization::None;
+
+	ac.runs = Constants::CorrelationRuns::birapidity_window_test;
+	// ac.runs = Constants::CorrelationRuns::STAR8;
 
 	ac.run();
 

@@ -10,26 +10,26 @@ class PartonicGenerator {
 public:
 	double cm_energy;
 	int event_count;
-	bool pythia_printing = true;
+	bool pythia_printing = Defaults::pythia_printing;
 
-	bool include_decayed = true;
+	bool include_decayed = Defaults::include_decayed;
 
-	bool mpi = true;
+	bool mpi = Defaults::mpi;
 
 	OptionalRange<double> pT_range;
 	OptionalRange<double> y_range;
 	OptionalRange<double> pT_hat_range;
 
-	bool use_biasing = false;
-	double bias_power = 4.0;
-	double bias_reference = 10.0;
+	bool use_biasing = Defaults::use_biasing;
+	double bias_power = Defaults::bias_power;
+	double bias_reference = Defaults::bias_reference;
 
-	bool variable_seed = false;
-	int random_seed = -1;
+	bool variable_seed = Defaults::variable_seed;
+	int random_seed = Defaults::random_seed;
 
-	std::vector<int> particle_ids = {111};
+	std::vector<int> particle_ids = Constants::pions;
 
-	bool parallelize = false;
+	bool parallelize = Defaults::parallelize;
 	std::vector<OptionalRange<double>> pT_hat_bins;
 
 	PartonicGenerator(double energy, int count, std::vector<OptionalRange<double>> bins) {

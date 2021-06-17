@@ -44,13 +44,17 @@ template <typename T>
 struct OptionalRange {
 	std::optional<T> start;
 	std::optional<T> end;
+	bool complement;
+
 	OptionalRange() {
 		start = std::nullopt;
 		end = std::nullopt;
+		complement = false;
 	}
-	OptionalRange(std::optional<T> s, std::optional<T> e) {
+	OptionalRange(std::optional<T> s, std::optional<T> e, bool c = false) {
 		start = s;
 		end = e;
+		complement = c;
 	}
 	std::optional<T> width() const {
 		if (start && end) {
@@ -64,13 +68,19 @@ struct OptionalRange {
 		}
 	}
 	bool in_range(T v) const {
-		if (start && v < *start) {
-			return false;
+		const bool ans = !((start && v < *start) || (end && v >= *end));
+		if (complement) {
+			return !ans;
+		} else {
+			return ans;
 		}
-		if (end && v >= *end) {
-			return false;
-		}
-		return true;
+		// if (start && v < *start) {
+		// 	return false;
+		// }
+		// if (end && v >= *end) {
+		// 	return false;
+		// }
+		// return true;
 	}
 	std::string extent() const {
 		std::string lower;
