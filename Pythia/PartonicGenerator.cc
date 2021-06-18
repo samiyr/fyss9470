@@ -68,6 +68,38 @@ public:
 		}
 		completion();
 	}
+
+	template <typename F, typename G>
+	void generate_at_loop(F &&lambda, G &&completion) {
+		#pragma omp parallel for if(parallelize)
+		for (std::vector<OptionalRange<double>>::size_type i = 0; i < pT_hat_bins.size(); i++) {
+			const auto range = pT_hat_bins[i];
+			ParticleGenerator generator(cm_energy, event_count);
+
+			generator.particle_ids = particle_ids;
+			generator.include_decayed = include_decayed;
+			generator.y_range = y_range;
+			generator.pT_range = pT_range;
+			generator.pT_hat_range = range;
+			generator.use_biasing = use_biasing;
+			generator.bias_power = bias_power;
+			generator.pythia_printing = pythia_printing;
+			generator.mpi = mpi;
+
+			if (variable_seed) {
+				generator.random_seed = i + random_seed;
+			} else {
+				generator.random_seed = random_seed;
+			}
+
+			generator.initialize();
+
+			generator.generate([&lambda, &generator](std::vector<ParticleContainer> particles) {
+				lambda(particles, &generator);
+			});
+		}
+		completion();
+	}
 };
 
 #endif // PARTONIC_GENERATOR_H

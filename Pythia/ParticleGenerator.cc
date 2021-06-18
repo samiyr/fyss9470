@@ -52,9 +52,9 @@ public:
 
 		pythia.init();
 	}
-	std::vector<std::vector<ParticleContainer>> generate() {
-		std::vector<std::vector<ParticleContainer>> particles(event_count, std::vector<ParticleContainer>());
 
+	template <typename F>
+	void generate(F lambda) {
 		ParticleFilter filter;
 		filter.allowed_particle_ids = particle_ids;
 		filter.include_decayed = include_decayed;
@@ -69,15 +69,52 @@ public:
 			const Info &info = pythia.info;
 
 			const int particle_count = event.size();
+			std::vector<ParticleContainer> particles;
+			particles.reserve(particle_count);
 
 			for (int j = 0; j < particle_count; j++) {
 				Particle particle = event[j];
 				if (filter.is_allowed(particle)) {
-					particles[i].emplace_back(particle, info.weight());
+					particles.emplace_back(particle, info.weight());
 				}
 			}
+
+			lambda(particles);
 		}
+	}
+
+	std::vector<std::vector<ParticleContainer>> generate() {
+		std::vector<std::vector<ParticleContainer>> particles(event_count, std::vector<ParticleContainer>());
+
+		generate([&particles](std::vector<ParticleContainer> generated) {
+			particles.push_back(generated);
+		});
+
 		return particles;
+
+		// ParticleFilter filter;
+		// filter.allowed_particle_ids = particle_ids;
+		// filter.include_decayed = include_decayed;
+		// filter.pT_range = pT_range;
+		// filter.y_range = y_range;
+
+		// for (int i = 0; i < event_count; ++i) {
+		// 	if (!pythia.next()) {
+		// 		continue;
+		// 	}
+		// 	const Event &event = pythia.event;
+		// 	const Info &info = pythia.info;
+
+		// 	const int particle_count = event.size();
+
+		// 	for (int j = 0; j < particle_count; j++) {
+		// 		Particle particle = event[j];
+		// 		if (filter.is_allowed(particle)) {
+		// 			particles[i].emplace_back(particle, info.weight());
+		// 		}
+		// 	}
+		// }
+		// return particles;
 	}
 	double sigma() const {
 		return pythia.info.sigmaGen();

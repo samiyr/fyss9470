@@ -128,32 +128,56 @@ public:
 	std::vector<CorrelationAnalyzerParameters> runs;
 
 	void run() {
-		std::vector<std::vector<ParticleContainer>> pions;
 		PartonicGenerator generator = create_generator();
 
-		generator.generate([&pions](std::vector<std::vector<ParticleContainer>> particles, [[maybe_unused]] ParticleGenerator *particle_generator) {
-			#pragma omp critical
-			pions.insert(pions.end(), particles.begin(), particles.end());
-		}, [&pions, this]() {
-			const auto run_count = runs.size();
-			for (std::vector<CorrelationAnalyzerParameters>::size_type i = 0; i < run_count; i++) {
-				const auto params = runs[i];
+		std::vector<CorrelationAnalyzer> analyzers;
 
-				CorrelationAnalyzer analyzer(params, &pions);
-				analyzer.bins = bins;
-				analyzer.run_index = i;
-				analyzer.run_count = run_count;
+		for (auto &run : runs) {
+			analyzers.emplace_back(run, bins);
+		}
 
-				const auto hist = analyzer.analyze();
-				const auto normalized = normalize(hist);
+		generator.generate_at_loop([&analyzers](std::vector<ParticleContainer> particles, [[maybe_unused]] ParticleGenerator *particle_generator) {
+			for (auto &analyzer : analyzers) {
+				analyzer.book(&particles);
+			}
+		}, [&analyzers, this] {
+			for (auto &analyzer : analyzers) {
+				const auto normalized = normalize(analyzer.histogram);
 				cout << "\nAzimuth histogram\n";
 				normalized.print_with_bars();
 				cout << "\n";
-				if (params.filename) {
-					normalized.export_histogram(*params.filename);
+				if (analyzer.parameters.filename) {
+					normalized.export_histogram(*analyzer.parameters.filename);
 				}
 			}
 		});
+
+		// std::vector<std::vector<ParticleContainer>> pions;
+		// PartonicGenerator generator = create_generator();
+
+		// generator.generate([&pions](std::vector<std::vector<ParticleContainer>> particles, [[maybe_unused]] ParticleGenerator *particle_generator) {
+		// 	#pragma omp critical
+		// 	pions.insert(pions.end(), particles.begin(), particles.end());
+		// }, [&pions, this]() {
+		// 	const auto run_count = runs.size();
+		// 	for (std::vector<CorrelationAnalyzerParameters>::size_type i = 0; i < run_count; i++) {
+		// 		const auto params = runs[i];
+
+		// 		CorrelationAnalyzer analyzer(params, &pions);
+		// 		analyzer.bins = bins;
+		// 		analyzer.run_index = i;
+		// 		analyzer.run_count = run_count;
+
+		// 		const auto hist = analyzer.analyze();
+		// 		const auto normalized = normalize(hist);
+		// 		cout << "\nAzimuth histogram\n";
+		// 		normalized.print_with_bars();
+		// 		cout << "\n";
+		// 		if (params.filename) {
+		// 			normalized.export_histogram(*params.filename);
+		// 		}
+		// 	}
+		// });
 	}
 };
 
@@ -206,10 +230,10 @@ int main() {
 	ac.variable_seed = true;
 	ac.random_seed = 1;
 
-	ac.normalization = Experiment::Normalization::Unity;
+	ac.normalization = Experiment::Normalization::None;
 
 	// ac.runs = Constants::CorrelationRuns::birapidity_window_test;
-	ac.runs = Constants::CorrelationRuns::STAR8;
+	ac.runs = Constants::CorrelationRuns::STAR7;
 
 	ac.run();
 

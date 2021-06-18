@@ -68,9 +68,45 @@ public:
 
 	std::vector<std::vector<ParticleContainer>> *particles;
 
+	ValueHistogram<double> histogram;
+
 	CorrelationAnalyzer(CorrelationAnalyzerParameters params, std::vector<std::vector<ParticleContainer>> *ps) {
 		parameters = params;
 		particles = ps;
+	}
+
+	CorrelationAnalyzer(CorrelationAnalyzerParameters params, std::vector<double> b) {
+		parameters = params;
+		bins = b;
+		histogram = ValueHistogram<double>(bins);
+	}
+
+	void book(std::vector<ParticleContainer> *input) {
+		const auto N = input->size();
+
+		for (std::vector<ParticleContainer>::size_type i = 0; i < N; i++) {
+			const ParticleContainer particle1 = (*input)[i];
+			const bool check11 = parameters.pT_small.in_range(particle1.pT) && parameters.y_small.in_range(particle1.y);
+			const bool check12 = parameters.pT_large.in_range(particle1.pT) && parameters.y_large.in_range(particle1.y);
+			if (!(check11 || check12)) {
+				continue;
+			}
+			const double phi1 = particle1.phi;
+			for (std::vector<ParticleContainer>::size_type j = i + 1; j < N; j++) {
+				const ParticleContainer particle2 = (*input)[j];
+				const bool check21 = parameters.pT_small.in_range(particle2.pT) && parameters.y_small.in_range(particle2.y);
+				const bool check22 = parameters.pT_large.in_range(particle2.pT) && parameters.y_large.in_range(particle2.y);
+				if (!((check21 && !check11) || (check22 && !check12))) {
+					continue;
+				}
+				const double phi2 = particle2.phi;
+
+				const double delta_phi = abs(phi1 - phi2);
+				const double value = min(delta_phi, 2 * M_PI - delta_phi);
+
+				histogram.fill(value);
+			}
+		}
 	}
 
 	ValueHistogram<double> analyze() const {
