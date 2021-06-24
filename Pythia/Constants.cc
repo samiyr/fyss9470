@@ -27,7 +27,7 @@ namespace Constants {
 	 */
 	static std::vector<int> pions = {111};
 
-	namespace CorrelationRuns {
+	namespace RunParameters {
 		static std::vector<CorrelationAnalyzerParameters> STAR7 = {
 			CorrelationAnalyzerParameters(
 				1.0, 1.4,
@@ -157,6 +157,72 @@ namespace Constants {
 				2.6, 4.1,
 				2.6, 4.1,
 				"STAR8/delta_phi_1e8_2641_2641_2428_2850_mpi__.csv"),
+		};
+
+		static std::vector<CorrelationAnalyzerParameters> STAR9 = {
+			CorrelationAnalyzerParameters(
+				1.0, 1.4,
+				1.4, 2.0,
+				2.6, 4.1,
+				2.6, 4.1,
+				"STAR9/delta_phi_1e9_2641_2641_1014_1420_mpi__.csv"),
+			CorrelationAnalyzerParameters(
+				1.0, 1.4,
+				2.0, 2.4,
+				2.6, 4.1,
+				2.6, 4.1,
+				"STAR9/delta_phi_1e9_2641_2641_1014_2024_mpi__.csv"),
+			CorrelationAnalyzerParameters(
+				1.0, 1.4,
+				2.4, 2.8,
+				2.6, 4.1,
+				2.6, 4.1,
+				"STAR9/delta_phi_1e9_2641_2641_1014_2428_mpi__.csv"),
+			CorrelationAnalyzerParameters(
+				1.0, 1.4,
+				2.8, 5.0,
+				2.6, 4.1,
+				2.6, 4.1,
+				"STAR9/delta_phi_1e9_2641_2641_1014_2850_mpi__.csv"),
+
+			CorrelationAnalyzerParameters(
+				1.4, 2.0,
+				2.0, 2.4,
+				2.6, 4.1,
+				2.6, 4.1,
+				"STAR9/delta_phi_1e9_2641_2641_1420_2024_mpi__.csv"),
+			CorrelationAnalyzerParameters(
+				1.4, 2.0,
+				2.4, 2.8,
+				2.6, 4.1,
+				2.6, 4.1,
+				"STAR9/delta_phi_1e9_2641_2641_1420_2428_mpi__.csv"),
+			CorrelationAnalyzerParameters(
+				1.4, 2.0,
+				2.8, 5.0,
+				2.6, 4.1,
+				2.6, 4.1,
+				"STAR9/delta_phi_1e9_2641_2641_1420_2850_mpi__.csv"),
+
+			CorrelationAnalyzerParameters(
+				2.0, 2.4,
+				2.4, 2.8,
+				2.6, 4.1,
+				2.6, 4.1,
+				"STAR9/delta_phi_1e9_2641_2641_2024_2428_mpi__.csv"),
+			CorrelationAnalyzerParameters(
+				2.0, 2.4,
+				2.8, 5.0,
+				2.6, 4.1,
+				2.6, 4.1,
+				"STAR9/delta_phi_1e9_2641_2641_2024_2850_mpi__.csv"),
+
+			CorrelationAnalyzerParameters(
+				2.4, 2.8,
+				2.8, 5.0,
+				2.6, 4.1,
+				2.6, 4.1,
+				"STAR9/delta_phi_1e9_2641_2641_2428_2850_mpi__.csv"),
 		};
 		static std::vector<CorrelationAnalyzerParameters> birapidity_window_test = {
 			CorrelationAnalyzerParameters(

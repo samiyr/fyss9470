@@ -154,13 +154,65 @@ public:
 
 	template <typename V>
 	ValueHistogram<double> normalize_by(V constant) const {
-		ValueHistogram<double> normalized;
-		for (auto container : containers) {
-			const double new_value = (double)container.value / constant;
-			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
-			normalized.containers.push_back(new_container);
+		return *this / constant;
+		// ValueHistogram<double> normalized;
+		// for (auto container : containers) {
+		// 	const double new_value = (double)container.value / constant;
+		// 	RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
+		// 	normalized.containers.push_back(new_container);
+		// }
+		// return normalized;	
+	}
+	static ValueHistogram<T> combine(std::vector<ValueHistogram<T>> _containers) {
+		auto reference = _containers.front();
+		const auto N = reference.size();
+		ValueHistogram<T> result(N);
+		for (typename std::vector<RangedContainer<T>>::size_type i = 0; i < N; i++) {
+			const double lower = reference[i].range.start;
+			const double upper = reference[i].range.end;
+
+			T value = 0;
+
+			for (typename std::vector<RangedContainer<T>>::size_type j = 0; j < _containers.size(); j++) {
+				value += _containers[j][i].value;
+			}
+
+			const RangedContainer<T> container(lower, upper, value);
+			result.containers.push_back(container);
 		}
-		return normalized;	
+		return result;
+	}
+	ValueHistogram<T>& operator+=(ValueHistogram<T> rhs) {
+		*this = *this + rhs;
+		return *this;
+	}
+	ValueHistogram<T> operator+(ValueHistogram<T> rhs) {
+		ValueHistogram<T> lhs = *this;
+		return combine({lhs, rhs});
+	}
+	ValueHistogram<double>& operator*=(double constant) {
+		for (typename std::vector<RangedContainer<double>>::size_type i = 0; i < size(); i++) {
+			const auto container = containers[i];
+			const double new_value = (double)container.value * constant;
+			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
+			containers[i] = new_container;
+		}
+		return *this;	
+	}
+	ValueHistogram<double> operator*(double constant) const {
+		ValueHistogram<double> h = *this;
+		h *= constant;
+		return h;
+	}
+
+	ValueHistogram<double>& operator/=(double constant) {
+		*this *= (1.0 / constant);
+		return *this;
+	}
+	ValueHistogram<double> operator/(double constant) const {
+		ValueHistogram<double> h = *this;
+		h /= constant;
+		return h;
 	}
 };
 
@@ -271,26 +323,6 @@ private:
 	}
 };
 
-template <typename T>
-ValueHistogram<T> combine(std::vector<ValueHistogram<T>> containers) {
-	auto reference = containers.front();
-	const auto N = reference.size();
-	ValueHistogram<T> result(N);
-	for (typename std::vector<RangedContainer<T>>::size_type i = 0; i < N; i++) {
-		const double lower = reference[i].range.start;
-		const double upper = reference[i].range.end;
-
-		T value = 0;
-
-		for (typename std::vector<RangedContainer<T>>::size_type j = 0; j < containers.size(); j++) {
-			value += containers[j][i].value;
-		}
-
-		const RangedContainer<T> container(lower, upper, value);
-		result.containers.push_back(container);
-	}
-	return result;
-}
 
 
 #endif // HISTOGRAM_H
