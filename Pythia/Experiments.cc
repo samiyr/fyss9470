@@ -4,8 +4,9 @@
 #include "Pythia8/Pythia.h"
 #include "PartonicGenerator.cc"
 #include "Histogram.cc"
-#include "CorrelationAnalyzer.cc"
+#include "Analyzer.cc"
 #include "Constants.cc"
+#include "Generator.cc"
 
 using namespace Pythia8;
 
@@ -17,7 +18,7 @@ using namespace Pythia8;
 class Experiment {
 public:
 	enum class Normalization {
-		None, Unity, Count, Trigger
+		None, Unity, Count
 	};
 	/// Center-of-mass energy in GeV.
 	double energy;
@@ -58,6 +59,26 @@ public:
 	void run() {
 		abort();
 	}
+
+	GeneratorParameters create_parameters() {
+		GeneratorParameters params;
+
+		params.cm_energy = energy;
+		params.event_count = count;
+		params.include_decayed = include_decayed;
+		params.y_range = y_range;
+		params.pT_range = pT_range;
+		params.use_biasing = use_biasing;
+		params.bias_power = bias_power;
+		params.bias_reference = bias_reference;
+		params.pythia_printing = pythia_printing;
+		params.random_seed = random_seed;
+		params.mpi = mpi;
+		params.particle_ids = Constants::pions;
+
+		return params;
+	}
+
 	/// Initializes an instance of `PartonicGenerator`
 	/// with the appropriate parameters set.
 	PartonicGenerator create_generator() {
@@ -84,8 +105,8 @@ public:
 	}
 
 	template<typename T>
-	ValueHistogram<T> normalize(ValueHistogram<T> hist) {
-		switch (normalization) {
+	ValueHistogram<T> normalize(Normalization _normalization, ValueHistogram<T> hist) {
+		switch (_normalization) {
 			case Normalization::Unity:
 				return hist.normalize_to_unity();
 				break;
@@ -96,6 +117,11 @@ public:
 				return hist;
 				break;
 		}
+	}
+
+	template<typename T>
+	ValueHistogram<T> normalize(ValueHistogram<T> hist) {
+		return normalize(normalization, hist);
 	}
 };
 
@@ -134,12 +160,12 @@ public:
 
 class AzimuthCorrelationExperiment : public Experiment {
 public:
-	std::vector<CorrelationAnalyzerParameters> runs;
+	std::vector<AnalysisParameters> runs;
 
 	void run() {
 		PartonicGenerator generator = create_generator();
 
-		std::vector<CorrelationAnalyzer> analyzers;
+		std::vector<Analyzer> analyzers;
 
 		for (auto &run : runs) {
 			analyzers.emplace_back(run, bins);
@@ -165,11 +191,7 @@ public:
 
 class DPSExperiment : public Experiment {
 public:
-	OptionalRange<double> pT_1;
-	OptionalRange<double> pT_2;
-
-	OptionalRange<double> y_1;
-	OptionalRange<double> y_2;
+	std::vector<AnalysisParameters> runs;
 
 	double m;
 	int A;
@@ -177,68 +199,149 @@ public:
 	double sigma_eff;
 
 	void run() {
-		std::vector<ValueHistogram<double>> containers;
-		PartonicGenerator generator = create_generator();
-
-		double sigma_sps_1 = 0.0;
-		double sigma_sps_2 = 0.0;
-
-		ParticleFilter filter_1;
-
-		filter_1.allowed_particle_ids = Constants::pions;
-		filter_1.include_decayed = include_decayed;
-		filter_1.pT_range = pT_1;
-		filter_1.y_range = y_1;
-
-		ParticleFilter filter_2;
-
-		filter_2.allowed_particle_ids = Constants::pions;
-		filter_2.include_decayed = include_decayed;
-		filter_2.pT_range = pT_2;
-		filter_2.y_range = y_2;
-
-		generator.generate_at_loop([&filter_1, &filter_2, &sigma_sps_1, &sigma_sps_2]
-			(std::vector<ParticleContainer> particles, [[maybe_unused]] ParticleGenerator *particle_generator, bool last_event) {
-			for (auto &particle : particles) {
-				// pT and/or y ranges are assumed to be non-overlapping, i.e. a particle passes at most one filter
-				if (filter_1.is_allowed(particle)) {
-					sigma_sps_1 += particle.event_weight;
-				} else if (filter_2.is_allowed(particle)) {
-					sigma_sps_2 += particle.event_weight;
+		std::vector<std::vector<Result>> per_thread_results;
+		#pragma omp parallel if(parallelize)
+		{
+			std::vector<std::vector<Result>> _results;
+			#pragma omp for nowait
+			for (std::vector<OptionalRange<double>>::size_type i = 0; i < pT_hat_bins.size(); i++) {
+				auto params = create_parameters();
+				if (variable_seed) {
+					params.random_seed += i;
 				}
+				auto const range = pT_hat_bins[i];
+				Generator gen(params, bins, range, runs);
+
+				std::vector<Result> result = gen.run();
+				_results.push_back(result);
 			}
-			if (last_event) {
-				sigma_sps_1 *= particle_generator->sigma() / particle_generator->total_weight();
-				sigma_sps_2 *= particle_generator->sigma() / particle_generator->total_weight();
+			#pragma omp critical
+			per_thread_results.insert(per_thread_results.end(), _results.begin(), _results.end());
+		}
+		
+		std::vector<Result> results;
+		for (std::vector<AnalysisParameters>::size_type i = 0; i < runs.size(); i++) {
+			const auto current = per_thread_results[0][i];
+			Result result;
+			result.histogram = current.histogram;
+			result.sigma_sps_1 = current.sigma_sps_1;
+			result.sigma_sps_2 = current.sigma_sps_2;
+			result.sigma_sps = current.sigma_sps;
+			for (std::vector<std::vector<Result>>::size_type j = 1; j < per_thread_results.size(); j++) {
+				const auto iterated = per_thread_results[j][i];
+				result.histogram += iterated.histogram;
+				result.sigma_sps_1 += iterated.sigma_sps_1;
+				result.sigma_sps_2 += iterated.sigma_sps_2;
+				result.sigma_sps += iterated.sigma_sps;
 			}
-		}, [&sigma_sps_1, &sigma_sps_2] {
-			cout << "sps 1: " << sigma_sps_1 << "\n";
-			cout << "sps 2: " << sigma_sps_2 << "\n";
-		});
+			results.push_back(result);
+		}
+
+		for (auto &result : results) {
+			auto normalized = normalize(Normalization::Unity, result.histogram);
+			normalized.print_with_bars();
+
+			const double dps = (m * A * B / sigma_eff) * result.sigma_sps_1 * result.sigma_sps_2;
+			const double sps = A * B * result.sigma_sps;
+
+			const double den = sps + dps;
+			const double alpha = sps / den;
+			const double beta = dps / den;
+
+			cout << "sps = " << sps << "\n";
+			cout << "dps = " << dps << "\n";
+			cout << "alpha = ";
+			print_with_precision(alpha, 12);
+			cout << "beta = ";
+			print_with_precision(beta, 12);
+
+			normalized *= alpha;
+			normalized += beta / M_PI;
+
+			// const auto output = (normalized * alpha) + beta / M_PI;
+			normalized.print_with_bars();
+		}
 	}
+
+	// void run() {
+	// 	PartonicGenerator generator = create_generator();
+	// 	std::vector<CorrelationAnalyzer> analyzers;
+
+	// 	for (auto &run : runs) {
+	// 		analyzers.emplace_back(run, bins);
+	// 	}
+
+	// 	generator.generate_at_loop([&analyzers]
+	// 		(std::vector<ParticleContainer> particles, [[maybe_unused]] ParticleGenerator *particle_generator, bool last_event) {
+	// 		for (auto &analyzer : analyzers) {
+	// 			analyzer.book(&particles);
+	// 		}
+
+	// 		if (last_event) {
+	// 			for (auto &analyzer : analyzers) {
+	// 				#pragma omp critical
+	// 				analyzer.finalize(particle_generator);
+	// 			}
+	// 		}
+	// 	}, [&analyzers, this] {
+	// 		for (auto &analyzer : analyzers) {
+	// 			const auto normalized = normalize(Normalization::Unity, analyzer.histogram);
+	// 			normalized.print_with_bars();
+
+	// 			const double dps = (m * A * B / sigma_eff) * analyzer.sigmas[0].value * analyzer.sigmas[1].value;
+	// 			const double sps = A * B * analyzer.sigmas[2].value;
+
+	// 			const double den = sps + dps;
+	// 			const double alpha = sps / den;
+	// 			const double beta = dps / den;
+
+	// 			cout << "sps = " << sps << "\n";
+	// 			cout << "dps = " << dps << "\n";
+	// 			cout << "alpha = ";
+	// 			print_with_precision(alpha, 12);
+	// 			cout << "beta = ";
+	// 			print_with_precision(beta, 12);
+
+	// 			const auto output = (normalized * alpha) + beta / M_PI;
+	// 			output.print_with_bars();
+	// 		}
+	// 	});
+	// }
 };
 
 int main() {
 	DPSExperiment dps;
 
 	dps.energy = 200;
-	dps.count = 1000000;
+	dps.count = 100'000 / 16;
 	dps.mpi = false;
-	dps.pT_hat_bins = {
-		OptionalRange<double>(1.0, std::nullopt)
+	dps.bins = fixed_range(0.0, M_PI, 20);
+	dps.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.0, std::nullopt));
+
+	dps.runs = {
+		AnalysisParameters(
+			1.0, 1.4,
+			1.4, 2.0,
+			2.6, 4.1,
+			2.6, 4.1,
+			std::nullopt)
 	};
 
-	dps.y_1 = OptionalRange<double>(2.6, 4.1);
-	dps.y_2 = OptionalRange<double>(2.6, 4.1);
+	dps.pT_range = OptionalRange<double>(1.0, 2.0);
 	dps.y_range = OptionalRange<double>(2.6, 4.1);
 
-	dps.pT_1 = OptionalRange<double>(1.0, 1.4);
-	dps.pT_2 = OptionalRange<double>(1.4, 2.0);
-	dps.pT_range = OptionalRange<double>(1.0, 2.0);
-
 	dps.include_decayed = true;
-	dps.use_biasing = false;
-	dps.parallelize = false;
+	dps.use_biasing = true;
+	dps.parallelize = true;
+	dps.pythia_printing = false;
+
+	dps.variable_seed = true;
+	dps.random_seed = 1;
+
+	dps.m = 1;
+	dps.A = 1;
+	dps.B = 1;
+	dps.sigma_eff = 10;
 
 	dps.run();
 
@@ -271,7 +374,7 @@ int main() {
 	AzimuthCorrelationExperiment ac;
 
 	ac.energy = 200;
-	ac.count = 10'000'000 / 16;
+	ac.count = 100'000 / 16;
 	ac.bins = fixed_range(0.0, M_PI, 20);
 
 	ac.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.0, std::nullopt));
@@ -279,7 +382,7 @@ int main() {
 	ac.pT_range = OptionalRange<double>(1.0, 2.0);
 
 	ac.include_decayed = true;
-	ac.mpi = false;
+	ac.mpi = true;
 
 	ac.use_biasing = true;
 	ac.bias_power = 4.0;
@@ -293,36 +396,12 @@ int main() {
 	ac.normalization = Experiment::Normalization::Unity;
 
 	ac.runs = {
-		CorrelationAnalyzerParameters(
-			1.0, 1.4,
-			1.4, 2.0,
-			2.6, 4.1,
-			std::nullopt, std::nullopt,
-			"Tests/delta_phi_1e7_2641__1014_1420__unity.csv"),
-		CorrelationAnalyzerParameters(
-			1.0, 1.4,
-			1.4, 2.0,
-			2.6, 4.1,
-			-5.0, 5.0,
-			"Tests/delta_phi_1e7_2641_5050_1014_1420__unity.csv"),
-		CorrelationAnalyzerParameters(
-			1.0, 1.4,
-			1.4, 2.0,
-			2.6, 4.1,
-			0.0, 5.0,
-			"Tests/delta_phi_1e7_2641_0050_1014_1420__unity.csv"),
-		CorrelationAnalyzerParameters(
-			1.0, 1.4,
-			1.4, 2.0,
-			2.6, 4.1,
-			1.0, 4.5,
-			"Tests/delta_phi_1e7_1045_2641_1014_1420__unity.csv"),
-		CorrelationAnalyzerParameters(
+		AnalysisParameters(
 			1.0, 1.4,
 			1.4, 2.0,
 			2.6, 4.1,
 			2.6, 4.1,
-			"Tests/delta_phi_1e7_2641_2641_1014_1420__unity.csv"),
+			std::nullopt)
 	};
 
 	// ac.run();

@@ -89,10 +89,10 @@ public:
 	}
 	/// Appends a value `v` to the appropriate bin. 
 	/// If no bin is found, discards the value silently.
-	void fill(double v) {
+	void fill(double v, T w = T(1)) {
 		for (auto &container : containers) {
 			if (container.range.in_range(v)) {
-				container.value += T(1);
+				container.value += w;
 				break;
 			}
 		}
@@ -115,7 +115,7 @@ public:
 			const T value = container.value;
 			const T percentage = ((double)value / (double)total) * 100;
 			const int count = round(percentage);
-			cout << container.range.extent() << ": ";
+			cout << container.range.extent() << ": " << "(" << value << ")\t";
 			for (int i = 0; i < count; i++) {
 				cout << "#";
 			}
@@ -186,9 +186,23 @@ public:
 		*this = *this + rhs;
 		return *this;
 	}
-	ValueHistogram<T> operator+(ValueHistogram<T> rhs) {
+	ValueHistogram<T> operator+(ValueHistogram<T>& rhs) {
 		ValueHistogram<T> lhs = *this;
 		return combine({lhs, rhs});
+	}
+	ValueHistogram<double>& operator+=(double constant) {
+		for (typename std::vector<RangedContainer<double>>::size_type i = 0; i < size(); i++) {
+			const auto container = containers[i];
+			const double new_value = (double)container.value + constant;
+			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
+			containers[i] = new_container;
+		}
+		return *this;
+	}
+	ValueHistogram<double> operator+(double constant) const {
+		ValueHistogram<double> h = *this;
+		h *= constant;
+		return h;
 	}
 	ValueHistogram<double>& operator*=(double constant) {
 		for (typename std::vector<RangedContainer<double>>::size_type i = 0; i < size(); i++) {
