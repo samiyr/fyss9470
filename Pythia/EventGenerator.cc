@@ -1,19 +1,43 @@
-#ifndef GENERATOR_H
-#define GENERATOR_H
+#ifndef EVENT_GENERATOR_H
+#define EVENT_GENERATOR_H
 
 #include "Pythia8/Pythia.h"
 
 using namespace Pythia8;
 
-struct Result {
-	ValueHistogram<double> histogram;
-	double sigma_sps_1;
-	double sigma_sps_2;
-	double sigma_sps;
-};
-
-class Generator {
+class EventGenerator {
 public:
+	struct Result {
+		ValueHistogram<double> histogram;
+		double sigma_sps_1;
+		double sigma_sps_2;
+		double sigma_sps;
+
+		double sigma_gen;
+		double total_weight;
+
+		Result& operator+=(Result rhs) {
+			histogram += rhs.histogram;
+			sigma_sps_1 += rhs.sigma_sps_1;
+			sigma_sps_2 += rhs.sigma_sps_2;
+			sigma_sps += rhs.sigma_sps;
+			sigma_gen += rhs.sigma_gen;
+			total_weight += rhs.total_weight;
+			return *this;
+		}
+
+		static std::vector<Result> combine(std::vector<std::vector<Result>> input) {
+			std::vector<Result> results;
+			for (std::vector<Result>::size_type i = 0; i < input[0].size(); i++) {
+				Result result = input[0][i];
+				for (std::vector<std::vector<Result>>::size_type j = 1; j < input.size(); j++) {
+					result += input[j][i];
+				}
+				results.push_back(result);
+			}
+			return results;
+		}
+	};
 	GeneratorParameters params;
 	std::vector<double> bins;
 	OptionalRange<double> pT_hat_range;
@@ -21,7 +45,7 @@ public:
 	std::vector<Analyzer> analyzers;
 	Pythia pythia;
 
-	Generator(GeneratorParameters _params, std::vector<double> _bins, OptionalRange<double> _pT_hat_range, std::vector<AnalysisParameters> _runs) {
+	EventGenerator(GeneratorParameters _params, std::vector<double> _bins, OptionalRange<double> _pT_hat_range, std::vector<AnalysisParameters> _runs) {
 		params = _params;
 		bins = _bins;
 		pT_hat_range = _pT_hat_range;
@@ -52,20 +76,26 @@ public:
 	std::vector<Result> run() {
 		ParticleGenerator generator(params);
 		generator.initialize();
-		generator.generate([this](std::vector<ParticleContainer> particles, [[maybe_unused]] bool last_event) {			
+		generator.generate([this](std::vector<ParticleContainer> particles) {			
 			for (auto &analyzer : analyzers) {
 				analyzer.book(&particles);
 			}
 		});
 
+		const double sigma_gen = generator.sigma();
+		const double total_weight = generator.total_weight();
+
 		std::vector<Result> result_vector;
 
 		for (auto &analyzer : analyzers) {
+			const auto factor = sigma_gen / total_weight;
 			Result result;
 			result.histogram = analyzer.histogram;
-			result.sigma_sps_1 = analyzer.sigma_sps_1;
-			result.sigma_sps_2 = analyzer.sigma_sps_2;
-			result.sigma_sps = analyzer.sigma_sps;
+			result.sigma_sps_1 = analyzer.sigma_sps_1 * factor;
+			result.sigma_sps_2 = analyzer.sigma_sps_2 * factor;
+			result.sigma_sps = analyzer.sigma_sps * factor;
+			result.sigma_gen = sigma_gen;
+			result.total_weight = total_weight;
 			result_vector.push_back(result);
 		}
 
@@ -73,4 +103,4 @@ public:
 	}	
 };
 
-#endif // GENERATOR_H
+#endif // EVENT_GENERATOR_H

@@ -12,15 +12,16 @@ class ParticleGenerator {
 public:
 	GeneratorParameters params;
 	OptionalRange<double> pT_hat_range;
-	Pythia pythia;
+	Pythia *pythia;
 
 	ParticleGenerator(GeneratorParameters p) {
 		params = p;
 	}
 	void initialize() {
-		Settings &settings = pythia.settings;
+		pythia = new Pythia("../share/Pythia8/xmldoc", false);
+		Settings &settings = pythia->settings;
 
-		pythia.readFile(Constants::cmnd_input);
+		pythia->readFile(Constants::cmnd_input);
 		settings.parm("Beams:eCM", params.cm_energy);
 		settings.parm("PhaseSpace:pTHatMin", pT_hat_range.start.has_value() ? *pT_hat_range.start : 0);
 		settings.parm("PhaseSpace:pTHatMax", pT_hat_range.end.has_value() ? *pT_hat_range.end : -1);
@@ -32,7 +33,7 @@ public:
         settings.mode("Random:seed", params.random_seed);
         settings.flag("PartonLevel:MPI", params.mpi);
 
-		pythia.init();
+		pythia->init();
 	}
 
 	template <typename F>
@@ -44,11 +45,11 @@ public:
 		filter.y_range = params.y_range;
 
 		for (int i = 0; i < params.event_count; ++i) {
-			if (!pythia.next()) {
+			if (!pythia->next()) {
 				continue;
 			}
-			const Event &event = pythia.event;
-			const Info &info = pythia.info;
+			const Event &event = pythia->event;
+			const Info &info = pythia->info;
 
 			const int particle_count = event.size();
 			std::vector<ParticleContainer> particles;
@@ -60,25 +61,24 @@ public:
 					particles.emplace_back(particle, info.weight());
 				}
 			}
-			bool last_event = i == params.event_count - 1;
-			lambda(particles, last_event);
+			lambda(particles);
 		}
 	}
 
 	std::vector<std::vector<ParticleContainer>> generate() {
 		std::vector<std::vector<ParticleContainer>> particles(params.event_count, std::vector<ParticleContainer>());
 
-		generate([&particles](std::vector<ParticleContainer> generated, [[maybe_unused]] bool last_event) {
+		generate([&particles](std::vector<ParticleContainer> generated) {
 			particles.push_back(generated);
 		});
 
 		return particles;
 	}
 	double sigma() const {
-		return pythia.info.sigmaGen();
+		return pythia->info.sigmaGen();
 	}
 	double total_weight() const {
-		return pythia.info.weightSum();
+		return pythia->info.weightSum();
 	}
 };
 

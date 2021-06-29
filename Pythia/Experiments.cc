@@ -6,14 +6,13 @@
 #include "Histogram.cc"
 #include "Analyzer.cc"
 #include "Constants.cc"
-#include "Generator.cc"
+#include "EventGenerator.cc"
 
 using namespace Pythia8;
 
 /**
  * Represents a generic Pythia experiment.
- * Must be subclassed, calling `run()` directly
- * will kill the execution.
+ * Must be subclassed.
  */
 class Experiment {
 public:
@@ -56,9 +55,7 @@ public:
 	/// Normalization type to use.
 	Normalization normalization;
 	/// Runs the experiment. Subclasses must implement this method.
-	void run() {
-		abort();
-	}
+	virtual void run() = 0;
 
 	GeneratorParameters create_parameters() {
 		GeneratorParameters params;
@@ -82,20 +79,21 @@ public:
 	/// Initializes an instance of `PartonicGenerator`
 	/// with the appropriate parameters set.
 	PartonicGenerator create_generator() {
-		GeneratorParameters params;
+		GeneratorParameters params = create_parameters();
+		// GeneratorParameters params;
 
-		params.cm_energy = energy;
-		params.event_count = count;
-		params.include_decayed = include_decayed;
-		params.y_range = y_range;
-		params.pT_range = pT_range;
-		params.use_biasing = use_biasing;
-		params.bias_power = bias_power;
-		params.bias_reference = bias_reference;
-		params.pythia_printing = pythia_printing;
-		params.random_seed = random_seed;
-		params.mpi = mpi;
-		params.particle_ids = Constants::pions;
+		// params.cm_energy = energy;
+		// params.event_count = count;
+		// params.include_decayed = include_decayed;
+		// params.y_range = y_range;
+		// params.pT_range = pT_range;
+		// params.use_biasing = use_biasing;
+		// params.bias_power = bias_power;
+		// params.bias_reference = bias_reference;
+		// params.pythia_printing = pythia_printing;
+		// params.random_seed = random_seed;
+		// params.mpi = mpi;
+		// params.particle_ids = Constants::pions;
 
 		PartonicGenerator generator(params, pT_hat_bins);
 		generator.parallelize = parallelize;
@@ -171,7 +169,7 @@ public:
 			analyzers.emplace_back(run, bins);
 		}
 
-		generator.generate_at_loop([&analyzers](std::vector<ParticleContainer> particles, [[maybe_unused]] ParticleGenerator *particle_generator, [[maybe_unused]] bool last_event) {
+		generator.generate_at_loop([&analyzers](std::vector<ParticleContainer> particles, [[maybe_unused]] ParticleGenerator *particle_generator) {
 			for (auto &analyzer : analyzers) {
 				analyzer.book(&particles);
 			}
@@ -191,7 +189,11 @@ public:
 
 class DPSExperiment : public Experiment {
 public:
+	enum class MPIStrategy {
+		Disabled, PythiaMPI, DPS
+	};
 	std::vector<AnalysisParameters> runs;
+	MPIStrategy mpi_strategy;
 
 	double m;
 	int A;
@@ -199,10 +201,22 @@ public:
 	double sigma_eff;
 
 	void run() {
-		std::vector<std::vector<Result>> per_thread_results;
+		switch(mpi_strategy) {
+			case MPIStrategy::Disabled:
+				mpi = false;
+				break;
+			case MPIStrategy::PythiaMPI:
+				mpi = true;
+				break;
+			case MPIStrategy::DPS:
+				mpi = false;
+				break;
+		}
+
+		std::vector<std::vector<EventGenerator::Result>> per_thread_results;
 		#pragma omp parallel if(parallelize)
 		{
-			std::vector<std::vector<Result>> _results;
+			std::vector<std::vector<EventGenerator::Result>> _results;
 			#pragma omp for nowait
 			for (std::vector<OptionalRange<double>>::size_type i = 0; i < pT_hat_bins.size(); i++) {
 				auto params = create_parameters();
@@ -210,111 +224,55 @@ public:
 					params.random_seed += i;
 				}
 				auto const range = pT_hat_bins[i];
-				Generator gen(params, bins, range, runs);
+				EventGenerator gen(params, bins, range, runs);
 
-				std::vector<Result> result = gen.run();
+				std::vector<EventGenerator::Result> result = gen.run();
 				_results.push_back(result);
 			}
 			#pragma omp critical
 			per_thread_results.insert(per_thread_results.end(), _results.begin(), _results.end());
 		}
-		
-		std::vector<Result> results;
-		for (std::vector<AnalysisParameters>::size_type i = 0; i < runs.size(); i++) {
-			const auto current = per_thread_results[0][i];
-			Result result;
-			result.histogram = current.histogram;
-			result.sigma_sps_1 = current.sigma_sps_1;
-			result.sigma_sps_2 = current.sigma_sps_2;
-			result.sigma_sps = current.sigma_sps;
-			for (std::vector<std::vector<Result>>::size_type j = 1; j < per_thread_results.size(); j++) {
-				const auto iterated = per_thread_results[j][i];
-				result.histogram += iterated.histogram;
-				result.sigma_sps_1 += iterated.sigma_sps_1;
-				result.sigma_sps_2 += iterated.sigma_sps_2;
-				result.sigma_sps += iterated.sigma_sps;
-			}
-			results.push_back(result);
-		}
+
+		std::vector<EventGenerator::Result> results = EventGenerator::Result::combine(per_thread_results);
 
 		for (auto &result : results) {
 			auto normalized = normalize(Normalization::Unity, result.histogram);
 			normalized.print_with_bars();
 
-			const double dps = (m * A * B / sigma_eff) * result.sigma_sps_1 * result.sigma_sps_2;
-			const double sps = A * B * result.sigma_sps;
+			if (mpi_strategy == MPIStrategy::DPS) {
+				const double sps1 = result.sigma_sps_1 / pT_hat_bins.size();
+				const double sps2 = result.sigma_sps_2 / pT_hat_bins.size();
+				const double ssps = result.sigma_sps / pT_hat_bins.size();
 
-			const double den = sps + dps;
-			const double alpha = sps / den;
-			const double beta = dps / den;
+				const double dps = (m * A * B / sigma_eff) * sps1 * sps2;
+				const double sps = A * B * ssps;
 
-			cout << "sps = " << sps << "\n";
-			cout << "dps = " << dps << "\n";
-			cout << "alpha = ";
-			print_with_precision(alpha, 12);
-			cout << "beta = ";
-			print_with_precision(beta, 12);
+				const double den = sps + dps;
+				const double alpha = sps / den;
+				const double beta = dps / den;
 
-			normalized *= alpha;
-			normalized += beta / M_PI;
+				cout << "sps = " << sps << "\n";
+				cout << "dps = " << dps << "\n";
+				cout << "alpha = ";
+				print_with_precision(alpha, 12);
+				cout << "beta = ";
+				print_with_precision(beta, 12);
 
-			// const auto output = (normalized * alpha) + beta / M_PI;
-			normalized.print_with_bars();
+				normalized *= alpha;
+				normalized += beta / M_PI;
+
+				normalized.print_with_bars();
+			}
 		}
 	}
-
-	// void run() {
-	// 	PartonicGenerator generator = create_generator();
-	// 	std::vector<CorrelationAnalyzer> analyzers;
-
-	// 	for (auto &run : runs) {
-	// 		analyzers.emplace_back(run, bins);
-	// 	}
-
-	// 	generator.generate_at_loop([&analyzers]
-	// 		(std::vector<ParticleContainer> particles, [[maybe_unused]] ParticleGenerator *particle_generator, bool last_event) {
-	// 		for (auto &analyzer : analyzers) {
-	// 			analyzer.book(&particles);
-	// 		}
-
-	// 		if (last_event) {
-	// 			for (auto &analyzer : analyzers) {
-	// 				#pragma omp critical
-	// 				analyzer.finalize(particle_generator);
-	// 			}
-	// 		}
-	// 	}, [&analyzers, this] {
-	// 		for (auto &analyzer : analyzers) {
-	// 			const auto normalized = normalize(Normalization::Unity, analyzer.histogram);
-	// 			normalized.print_with_bars();
-
-	// 			const double dps = (m * A * B / sigma_eff) * analyzer.sigmas[0].value * analyzer.sigmas[1].value;
-	// 			const double sps = A * B * analyzer.sigmas[2].value;
-
-	// 			const double den = sps + dps;
-	// 			const double alpha = sps / den;
-	// 			const double beta = dps / den;
-
-	// 			cout << "sps = " << sps << "\n";
-	// 			cout << "dps = " << dps << "\n";
-	// 			cout << "alpha = ";
-	// 			print_with_precision(alpha, 12);
-	// 			cout << "beta = ";
-	// 			print_with_precision(beta, 12);
-
-	// 			const auto output = (normalized * alpha) + beta / M_PI;
-	// 			output.print_with_bars();
-	// 		}
-	// 	});
-	// }
 };
 
 int main() {
 	DPSExperiment dps;
 
 	dps.energy = 200;
-	dps.count = 100'000 / 16;
-	dps.mpi = false;
+	dps.count = 1'000'000 / 16;
+	dps.mpi_strategy = DPSExperiment::MPIStrategy::DPS;
 	dps.bins = fixed_range(0.0, M_PI, 20);
 	dps.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.0, std::nullopt));
 

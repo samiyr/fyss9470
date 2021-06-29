@@ -76,8 +76,8 @@ public:
 
 			generator.initialize();
 			
-			generator.generate([&lambda, &generator](std::vector<ParticleContainer> particles, bool last_event) {
-				lambda(particles, &generator, last_event);
+			generator.generate([&lambda, &generator](std::vector<ParticleContainer> particles) {
+				lambda(particles, &generator);
 			});
 		}
 		completion();

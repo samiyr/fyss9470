@@ -22,14 +22,6 @@ public:
 	double sigma_sps_2 = 0.0;
 	double sigma_sps = 0.0;
 
-	// Disgusting hack
-	// 0.0 * 1.0 * 2.0 * 3.0 * 4.0 * 5.0 * 6.0
-	//  |___SPS_1___|___SPS_2___|___SPS_T___|
-	// ValueHistogram<double> sigmas = ValueHistogram<double>({RangedContainer<double>(0.0, 2.0, 0.0), RangedContainer<double>(2.0, 4.0, 0.0), RangedContainer<double>(4.0, 6.0, 0.0)});
-	// ValueHistogram<double> sigma_sps_2 = ValueHistogram<double>({-1.0, 1.0});
-	// ValueHistogram<double> sigma_sps_1 = ValueHistogram<double>({-1.0, 1.0});
-	// ValueHistogram<double> sigma_sps = ValueHistogram<double>({-1.0, 1.0});
-
 	Analyzer(AnalysisParameters params, std::vector<double> b) {
 		parameters = params;
 		bins = b;
@@ -47,13 +39,9 @@ public:
 
 			// pT and/or y ranges are assumed to be non-overlapping, i.e. a particle passes at most one filter
 			if (check11) {
-				// #pragma omp atomic
 				sigma_sps_1 += particle1.event_weight;
-				// sigmas.fill(1.0, particle1.event_weight);
 			} else if (check12) {
-				// #pragma omp atomic
 				sigma_sps_2 += particle1.event_weight;
-				// sigmas.fill(3.0, particle1.event_weight);
 			} else {
 				continue;
 			}
@@ -72,8 +60,6 @@ public:
 				const double value = min(delta_phi, 2 * M_PI - delta_phi);
 
 				sigma_sps += particle1.event_weight;
-				// cout << "filling pair: " << particle1.event_weight << "\n";
-				// sigmas.fill(5.0, particle1.event_weight);
 
 				lambda(value);
 			}
