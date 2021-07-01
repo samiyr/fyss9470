@@ -7,6 +7,7 @@
 #include "Analyzer.cc"
 #include "Constants.cc"
 #include "EventGenerator.cc"
+#include "Beam.cc"
 
 using namespace Pythia8;
 
@@ -16,47 +17,69 @@ using namespace Pythia8;
  */
 class Experiment {
 public:
+	/**
+	 * Types of normalization to apply in data analysis.
+	 */
 	enum class Normalization {
-		None, Unity, Count
+		/// No normalization
+		None, 
+		/// Normalize by integral
+		Unity, 
+		/// Normalize by event count
+		Count
 	};
-	/// Center-of-mass energy in GeV.
+	/// Center-of-mass energy in GeV. Required.
 	double energy;
-	/// Number of events per partonic bin.
+	/// Number of events per partonic bin. Required.
 	int count;
-	/// Histogram bins.
+	/// Histogram bins. Required, must be non-empty.
 	std::vector<double> bins;
-	/// Partonic bins for generating high-pT particles.
+	/// Partonic bins for generating high-pT particles. Required, must be non-empty.
 	std::vector<OptionalRange<double>> pT_hat_bins;
-	/// Allowed rapidity range.
-	OptionalRange<double> y_range;
-	/// Allowed transverse momentum range.
-	OptionalRange<double> pT_range;
-	/// Whether to include decayed particles.
+	/// Allowed rapidity range. Defaults to (-inf, inf).
+	OptionalRange<double> y_range = OptionalRange<double>();
+	/// Allowed transverse momentum range. Defaults to (-inf, inf).
+	OptionalRange<double> pT_range = OptionalRange<double>();
+	/// Whether to include decayed particles. Default specified in Constants.cc.
 	bool include_decayed = Defaults::include_decayed;
-	/// Whether to use partonic pT biasing.
+	/// Whether to use partonic pT biasing. Default specified in Constants.cc.
 	bool use_biasing = Defaults::use_biasing;
 	/// The power to which partonic pT will be raised when biasing.
+	/// Default specified in Constants.cc.
 	/// Ignored if `use_biasing` is set to `false`.
 	double bias_power = Defaults::bias_power;
-
+	/// Reference bias used in biasing.
+	/// Default specified in Constants.cc.
+	/// See Pythia's documentation for more.
+	/// Ignored if `use_biasing` is set to `false`.
 	double bias_reference = Defaults::bias_reference;
-	/// Use OpenMP multithreading if enabled.
+	/// Use OpenMP multithreading if enabled. Default specified in Constants.cc.
 	bool parallelize = Defaults::parallelize;
-	/// Controls the 'Print:quiet' Pythia flag.
+	/// Controls the 'Print:quiet' Pythia flag. Default specified in Constants.cc.
 	bool pythia_printing = Defaults::pythia_printing;
 	/// The base random seed used in Pythia. See also `variable_seed`.
+	/// Default specified in Constants.cc.
 	int random_seed = Defaults::random_seed;
 	/// If set, the random seed forwarded to Pythia will be
 	/// `random_seed` + i, where i is the iterator index of
 	/// the partonic pT bins `pT_hat_bins`.
+	/// Default specified in Constants.cc.
 	bool variable_seed = Defaults::variable_seed;
-	/// Whether to use multiparton interactions.
+	/// Whether to use Pythia's multiparton interactions. 
+	/// Default specified in Constants.cc.
+	/// Provided value superseded by `mpi_strategy` in `DPSExperiment`. 
 	bool mpi = Defaults::mpi;
 	/// Normalization type to use.
 	Normalization normalization;
+	/// Beam A parameters.
+	Beam beam_A;
+	/// Beam B parameters.
+	Beam beam_B;
+
 	/// Runs the experiment. Subclasses must implement this method.
 	virtual void run() = 0;
 
+	/// Packages the given parameters to a `GeneratorParameters` instance.
 	GeneratorParameters create_parameters() {
 		GeneratorParameters params;
 
@@ -72,29 +95,18 @@ public:
 		params.random_seed = random_seed;
 		params.mpi = mpi;
 		params.particle_ids = Constants::pions;
+		params.beam_A = beam_A;
+		params.beam_B = beam_B;
 
 		return params;
 	}
 
-	/// Initializes an instance of `PartonicGenerator`
-	/// with the appropriate parameters set.
+	/**
+	 * Initializes an instance of `PartonicGenerator`
+	 * with the appropriate parameters set.
+	 */
 	PartonicGenerator create_generator() {
 		GeneratorParameters params = create_parameters();
-		// GeneratorParameters params;
-
-		// params.cm_energy = energy;
-		// params.event_count = count;
-		// params.include_decayed = include_decayed;
-		// params.y_range = y_range;
-		// params.pT_range = pT_range;
-		// params.use_biasing = use_biasing;
-		// params.bias_power = bias_power;
-		// params.bias_reference = bias_reference;
-		// params.pythia_printing = pythia_printing;
-		// params.random_seed = random_seed;
-		// params.mpi = mpi;
-		// params.particle_ids = Constants::pions;
-
 		PartonicGenerator generator(params, pT_hat_bins);
 		generator.parallelize = parallelize;
 		generator.variable_seed = variable_seed;
@@ -102,6 +114,11 @@ public:
 		return generator;
 	}
 
+	/**
+	 * Normalizes a histogram according to the given normalization type.
+	 * \param _normalization The requested normalization, of type `Normalization`.
+	 * \param hist Input histogram.
+	 */
 	template<typename T>
 	ValueHistogram<T> normalize(Normalization _normalization, ValueHistogram<T> hist) {
 		switch (_normalization) {
@@ -116,7 +133,10 @@ public:
 				break;
 		}
 	}
-
+	/**
+	 * Normalizes a histogram according to the normalization type specified in member `normalization`.
+	 * \param hist Input histogram.
+	 */
 	template<typename T>
 	ValueHistogram<T> normalize(ValueHistogram<T> hist) {
 		return normalize(normalization, hist);
@@ -187,62 +207,103 @@ public:
 	}
 };
 
+/**
+ * DPS experiment.
+ */
 class DPSExperiment : public Experiment {
 public:
+	/**
+	 * Enum encapsulating the strategy with multiparton interactions.
+	 */
 	enum class MPIStrategy {
-		Disabled, PythiaMPI, DPS
+		/// No MPI
+		Disabled, 
+		/// Use Pythia's MPI model
+		PythiaMPI, 
+		/// Use an analytic DPS model
+		DPS
 	};
+	/**
+	 * A list of analysis parameters,
+	 * each of which will produce its own
+	 * analysis result using the same events.
+	 */
 	std::vector<AnalysisParameters> runs;
+	/**
+	 * Strategy for dealing with multiparton interactions.
+	 * This setting will automatically change the `mpi` field.
+	 * Manually changing the `mpi` field has no effect.
+	 */
 	MPIStrategy mpi_strategy;
 
-	double m;
-	int A;
-	int B;
-	double sigma_eff;
-
 	void run() {
+		// Set the `mpi` field to the appropriate field.
 		switch(mpi_strategy) {
+			// MPI disabled ==> mpi = false;
 			case MPIStrategy::Disabled:
 				mpi = false;
 				break;
+			// Use Pythia's model ==> mpi = true;
 			case MPIStrategy::PythiaMPI:
 				mpi = true;
 				break;
+			// Use DPS model ==> mpi = false to avoid double counting.
 			case MPIStrategy::DPS:
 				mpi = false;
 				break;
 		}
 
+		// Initalize a shared vector collecting the results from each thread.
 		std::vector<std::vector<EventGenerator::Result>> per_thread_results;
 		#pragma omp parallel if(parallelize)
 		{
+			// A local variable for collecting an individual thread's results.
 			std::vector<std::vector<EventGenerator::Result>> _results;
+			// Loop over partonic pT bins in parallel (if enabled)
 			#pragma omp for nowait
 			for (std::vector<OptionalRange<double>>::size_type i = 0; i < pT_hat_bins.size(); i++) {
 				auto params = create_parameters();
+				// Change seeds if needed
 				if (variable_seed) {
 					params.random_seed += i;
 				}
 				auto const range = pT_hat_bins[i];
+				// Create an event generator with the given parameters
 				EventGenerator gen(params, bins, range, runs);
-
+				// Generate events and collect results...
 				std::vector<EventGenerator::Result> result = gen.run();
+				// ...and append to the local variable
 				_results.push_back(result);
 			}
+			// Collect per-thread results to the shared variable, one thread at a time to avoid data races
 			#pragma omp critical
 			per_thread_results.insert(per_thread_results.end(), _results.begin(), _results.end());
 		}
-
+		// Combine the per-thread results to a single list of results, each corresponding to a single run
 		std::vector<EventGenerator::Result> results = EventGenerator::Result::combine(per_thread_results);
-
-		for (auto &result : results) {
+		// Analyze the results, one run at a time
+		for (std::vector<EventGenerator::Result>::size_type run_index = 0; run_index < results.size(); run_index++) {
+			auto result = results[run_index];
 			auto normalized = normalize(Normalization::Unity, result.histogram);
-			normalized.print_with_bars();
+
+			cout << "\n";
+			cout << "*------------------------------------------------------------------------------------*" << "\n";
+			cout << "|                                                                                    |" << "\n";
+			cout << "|                                       RUN #" << run_index + 1 << "                                       |\n";
+			cout << "|                                                                                    |" << "\n";
+			cout << "*------------------------------------------------------------------------------------*" << "\n";
+			cout << "\n";
 
 			if (mpi_strategy == MPIStrategy::DPS) {
+				const int A = beam_A.nucleus.mass_number;
+				const int B = beam_B.nucleus.mass_number;
+
 				const double sps1 = result.sigma_sps_1 / pT_hat_bins.size();
 				const double sps2 = result.sigma_sps_2 / pT_hat_bins.size();
 				const double ssps = result.sigma_sps / pT_hat_bins.size();
+
+				const double m = result.parameters.m;
+				const double sigma_eff = result.parameters.sigma_eff;
 
 				const double dps = (m * A * B / sigma_eff) * sps1 * sps2;
 				const double sps = A * B * ssps;
@@ -251,27 +312,39 @@ public:
 				const double alpha = sps / den;
 				const double beta = dps / den;
 
-				cout << "sps = " << sps << "\n";
-				cout << "dps = " << dps << "\n";
-				cout << "alpha = ";
-				print_with_precision(alpha, 12);
-				cout << "beta = ";
-				print_with_precision(beta, 12);
+				cout << "pT_1\t\t= " << result.parameters.pT_small.extent() << "\n";
+				cout << "pT_2\t\t= " << result.parameters.pT_large.extent() << "\n";
+				cout << "y_1\t\t\t= " << result.parameters.y_small.extent() << "\n";
+				cout << "y_2\t\t\t= " << result.parameters.y_large.extent() << "\n";
+				cout << "m\t\t\t= " << m << "\n";
+				cout << "sigma_eff\t= " << sigma_eff << "\n";
+				cout << "sps1\t\t= "; print_with_precision(sps1, 6);
+				cout << "sps2\t\t= "; print_with_precision(sps2, 6);
+				cout << "ssps\t\t= "; print_with_precision(ssps, 6);
+				cout << "sps\t\t\t= "; print_with_precision(sps, 6);
+				cout << "dps\t\t\t= "; print_with_precision(dps, 6);
+				cout << "alpha\t\t= "; print_with_precision(alpha, 6);
+				cout << "beta\t\t= "; print_with_precision(beta, 6);
 
 				normalized *= alpha;
 				normalized += beta / M_PI;
+			}
+			normalized.print_with_bars();
 
-				normalized.print_with_bars();
+			if (result.parameters.filename) {
+				normalized.export_histogram(*result.parameters.filename);
 			}
 		}
 	}
 };
 
 int main() {
+	/* --- DPS --- */
+
 	DPSExperiment dps;
 
 	dps.energy = 200;
-	dps.count = 1'000'000 / 16;
+	dps.count = 10'000'000 / 16;
 	dps.mpi_strategy = DPSExperiment::MPIStrategy::DPS;
 	dps.bins = fixed_range(0.0, M_PI, 20);
 	dps.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.0, std::nullopt));
@@ -282,7 +355,57 @@ int main() {
 			1.4, 2.0,
 			2.6, 4.1,
 			2.6, 4.1,
-			std::nullopt)
+			"Tests/delta_phi_1e7_1014_1420_2641_2641_10_100_dps.csv",
+			1.0,
+			10.0),
+		AnalysisParameters(
+			1.0, 1.4,
+			1.4, 2.0,
+			2.6, 4.1,
+			2.6, 4.1,
+			"Tests/delta_phi_1e7_1014_1420_2641_2641_10_250_dps.csv",
+			1.0,
+			25.0),
+		AnalysisParameters(
+			1.0, 1.4,
+			1.4, 2.0,
+			2.6, 4.1,
+			2.6, 4.1,
+			"Tests/delta_phi_1e7_1014_1420_2641_2641_10_500_dps.csv",
+			1.0,
+			50.0),
+		AnalysisParameters(
+			1.0, 1.4,
+			1.4, 2.0,
+			2.6, 4.1,
+			2.6, 4.1,
+			"Tests/delta_phi_1e7_1014_1420_2641_2641_10_1000_dps.csv",
+			1.0,
+			100.0),
+		AnalysisParameters(
+			1.0, 1.4,
+			1.4, 2.0,
+			2.6, 4.1,
+			2.6, 4.1,
+			"Tests/delta_phi_1e7_1014_1420_2641_2641_10_2000_dps.csv",
+			1.0,
+			200.0),
+		AnalysisParameters(
+			1.0, 1.4,
+			1.4, 2.0,
+			2.6, 4.1,
+			2.6, 4.1,
+			"Tests/delta_phi_1e7_1014_1420_2641_2641_10_10000_dps.csv",
+			1.0,
+			1000.0),
+		AnalysisParameters(
+			1.0, 1.4,
+			1.4, 2.0,
+			2.6, 4.1,
+			2.6, 4.1,
+			"Tests/delta_phi_1e7_1014_1420_2641_2641_10_1000000_dps.csv",
+			1.0,
+			100000.0),
 	};
 
 	dps.pT_range = OptionalRange<double>(1.0, 2.0);
@@ -296,10 +419,8 @@ int main() {
 	dps.variable_seed = true;
 	dps.random_seed = 1;
 
-	dps.m = 1;
-	dps.A = 1;
-	dps.B = 1;
-	dps.sigma_eff = 10;
+	dps.beam_A = Beam();
+	dps.beam_B = Beam();
 
 	dps.run();
 

@@ -107,6 +107,7 @@ public:
 	}
 
 	void print_with_bars() const {
+		cout << "\n";
 		T total = T(0);
 		for (auto &container : containers) {
 			total += container.value;
@@ -121,6 +122,7 @@ public:
 			}
 			cout << "\n";
 		}
+		cout << "\n";
 	}
 	/// Exports the histogram to a file `filename`.
 	void export_histogram(std::string filename, int precision = 12) const {

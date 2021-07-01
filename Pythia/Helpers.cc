@@ -96,6 +96,20 @@ struct OptionalRange {
 		}
 		return lower + middle + upper;
 	}
+	static bool disjoint(OptionalRange<T> a, OptionalRange<T> b) {
+		const auto start_A = a.start ? *a.start : -std::numeric_limits<T>::infinity();
+		const auto end_A = a.end ? *a.end : std::numeric_limits<T>::infinity();
+		const auto start_B = b.start ? *b.start : -std::numeric_limits<T>::infinity();
+		const auto end_B = b.end ? *b.end : std::numeric_limits<T>::infinity();
+
+		const bool comparison = end_A <= start_B || end_B <= start_A;
+		const bool either_complemented = a.complement || b.complement;
+		if (either_complemented) {
+			return !comparison;
+		} else {
+			return comparison;
+		}
+	}
 };
 
 std::vector<Particle> all_particles(std::vector<Event> events) {

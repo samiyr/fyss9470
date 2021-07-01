@@ -10,9 +10,11 @@ namespace Defaults {
 	static double bias_reference 	= 10.0;
 	static int random_seed			= -1;
 	static bool variable_seed		= false;
-	static int pythia_next 			= 10990;
+	static int pythia_next 			= 10000;
 	static bool parallelize			= false;
 	static int status_threshold 	= 100;
+	static double sigma_eff			= 1.0;
+	static double m 				= 0.0;
 }
 
 #include "AnalysisParameters.cc"

@@ -2,6 +2,7 @@
 #define GENERATOR_PARAMETERS_H
 
 #include "Helpers.cc"
+#include "Beam.cc"
 
 struct GeneratorParameters {
 	double cm_energy;
@@ -22,6 +23,9 @@ struct GeneratorParameters {
 	int random_seed;
 
 	std::vector<int> particle_ids;
+
+	Beam beam_A;
+	Beam beam_B;
 };
 
 #endif // GENERATOR_PARAMETER_H

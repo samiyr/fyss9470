@@ -16,6 +16,9 @@ public:
 		double sigma_gen;
 		double total_weight;
 
+		AnalysisParameters parameters;
+		std::vector<Analyzer>::size_type run_index;
+
 		Result& operator+=(Result rhs) {
 			histogram += rhs.histogram;
 			sigma_sps_1 += rhs.sigma_sps_1;
@@ -70,6 +73,9 @@ public:
         settings.mode("Random:seed", params.random_seed);
         settings.flag("PartonLevel:MPI", params.mpi);
 
+        params.beam_A.apply_to(settings, "A");
+        params.beam_B.apply_to(settings, "B");
+
 		pythia.init();
 	}
 
@@ -87,7 +93,8 @@ public:
 
 		std::vector<Result> result_vector;
 
-		for (auto &analyzer : analyzers) {
+		for (std::vector<Analyzer>::size_type i = 0; i < analyzers.size(); i++) {
+			auto analyzer = analyzers[i];
 			const auto factor = sigma_gen / total_weight;
 			Result result;
 			result.histogram = analyzer.histogram;
@@ -96,6 +103,8 @@ public:
 			result.sigma_sps = analyzer.sigma_sps * factor;
 			result.sigma_gen = sigma_gen;
 			result.total_weight = total_weight;
+			result.parameters = analyzer.parameters;
+			result.run_index = i;
 			result_vector.push_back(result);
 		}
 
