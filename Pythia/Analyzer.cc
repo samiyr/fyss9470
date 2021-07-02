@@ -6,7 +6,6 @@
 #include "Helpers.cc"
 #include "Constants.cc"
 #include "ParticleGenerator.cc"
-#include "AnalysisParameters.cc"
 
 using namespace Pythia8;
 
@@ -30,7 +29,7 @@ public:
 			return OptionalRange<double>::disjoint(pT_small, pT_large) || OptionalRange<double>::disjoint(y_small, y_large);
 		}
 
-		AnalysisParameters() {
+		Parameters() {
 			pT_small = OptionalRange<double>();
 			pT_large = OptionalRange<double>();
 			y_small = OptionalRange<double>();
@@ -40,7 +39,7 @@ public:
 			m = Defaults::m;
 		}
 
-		AnalysisParameters(
+		Parameters(
 			OptionalRange<double> pT_1, 
 			OptionalRange<double> pT_2, 
 			OptionalRange<double> y_1, 
@@ -58,7 +57,7 @@ public:
 			assert(parameter_validation());
 		}
 
-		AnalysisParameters(
+		Parameters(
 			std::optional<double> pT_1_l,
 			std::optional<double> pT_1_u,
 			std::optional<double> pT_2_l,
@@ -80,7 +79,7 @@ public:
 			assert(parameter_validation());
 		}
 	};
-	AnalysisParameters parameters;
+	Analyzer::Parameters parameters;
 
 	std::vector<double> bins;
 
@@ -90,7 +89,7 @@ public:
 	double sigma_sps_2 = 0.0;
 	double sigma_sps = 0.0;
 
-	Analyzer(AnalysisParameters params, std::vector<double> b) {
+	Analyzer(Analyzer::Parameters params, std::vector<double> b) {
 		parameters = params;
 		bins = b;
 		histogram = ValueHistogram<double>(bins);
@@ -133,17 +132,6 @@ public:
 			}
 		}
 	}
-
-	// void finalize(ParticleGenerator *particle_generator) {
-	// 	// #pragma omp critical
-	// 	// {
-	// 		// const double factor = particle_generator->sigma() / particle_generator->total_weight();
-	// 		// cout << "factor: " << factor << "\n";
-	// 		// sigmas *= factor;
-	// 		// sigma_sps_2 *= factor;
-	// 	// }
-		
-	// }
 
 	void book(std::vector<ParticleContainer> *input) {
 		book(input, [this](double value) {

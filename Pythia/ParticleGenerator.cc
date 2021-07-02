@@ -18,7 +18,7 @@ public:
 		params = p;
 	}
 	void initialize() {
-		pythia = new Pythia("../share/Pythia8/xmldoc", false);
+		pythia = new Pythia("../share/Pythia8/xmldoc", params.pythia_printing);
 		Settings &settings = pythia->settings;
 
 		pythia->readFile(Constants::cmnd_input);
@@ -32,6 +32,9 @@ public:
         settings.mode("Next:numberCount", Defaults::pythia_next);
         settings.mode("Random:seed", params.random_seed);
         settings.flag("PartonLevel:MPI", params.mpi);
+
+        params.beam_A.apply_to(settings, "A");
+        params.beam_B.apply_to(settings, "B");
 
 		pythia->init();
 	}

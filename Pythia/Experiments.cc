@@ -178,7 +178,7 @@ public:
 
 class AzimuthCorrelationExperiment : public Experiment {
 public:
-	std::vector<AnalysisParameters> runs;
+	std::vector<Analyzer::Parameters> runs;
 
 	void run() {
 		PartonicGenerator generator = create_generator();
@@ -228,7 +228,7 @@ public:
 	 * each of which will produce its own
 	 * analysis result using the same events.
 	 */
-	std::vector<AnalysisParameters> runs;
+	std::vector<Analyzer::Parameters> runs;
 	/**
 	 * Strategy for dealing with multiparton interactions.
 	 * This setting will automatically change the `mpi` field.
@@ -314,15 +314,15 @@ public:
 
 				cout << "pT_1\t\t= " << result.parameters.pT_small.extent() << "\n";
 				cout << "pT_2\t\t= " << result.parameters.pT_large.extent() << "\n";
-				cout << "y_1\t\t\t= " << result.parameters.y_small.extent() << "\n";
-				cout << "y_2\t\t\t= " << result.parameters.y_large.extent() << "\n";
-				cout << "m\t\t\t= " << m << "\n";
+				cout << "y_1\t\t= " << result.parameters.y_small.extent() << "\n";
+				cout << "y_2\t\t= " << result.parameters.y_large.extent() << "\n";
+				cout << "m\t\t= " << m << "\n";
 				cout << "sigma_eff\t= " << sigma_eff << "\n";
 				cout << "sps1\t\t= "; print_with_precision(sps1, 6);
 				cout << "sps2\t\t= "; print_with_precision(sps2, 6);
 				cout << "ssps\t\t= "; print_with_precision(ssps, 6);
-				cout << "sps\t\t\t= "; print_with_precision(sps, 6);
-				cout << "dps\t\t\t= "; print_with_precision(dps, 6);
+				cout << "sps\t\t= "; print_with_precision(sps, 6);
+				cout << "dps\t\t= "; print_with_precision(dps, 6);
 				cout << "alpha\t\t= "; print_with_precision(alpha, 6);
 				cout << "beta\t\t= "; print_with_precision(beta, 6);
 
@@ -344,68 +344,20 @@ int main() {
 	DPSExperiment dps;
 
 	dps.energy = 200;
-	dps.count = 10'000'000 / 16;
+	dps.count = 10'000 / 16;
 	dps.mpi_strategy = DPSExperiment::MPIStrategy::DPS;
 	dps.bins = fixed_range(0.0, M_PI, 20);
 	dps.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.0, std::nullopt));
 
 	dps.runs = {
-		AnalysisParameters(
+		Analyzer::Parameters(
 			1.0, 1.4,
 			1.4, 2.0,
 			2.6, 4.1,
 			2.6, 4.1,
-			"Tests/delta_phi_1e7_1014_1420_2641_2641_10_100_dps.csv",
+			std::nullopt,//"STAR7/delta_phi_1e7_1014_1420_2641_2641_250_dps_Al_3.csv",
 			1.0,
-			10.0),
-		AnalysisParameters(
-			1.0, 1.4,
-			1.4, 2.0,
-			2.6, 4.1,
-			2.6, 4.1,
-			"Tests/delta_phi_1e7_1014_1420_2641_2641_10_250_dps.csv",
-			1.0,
-			25.0),
-		AnalysisParameters(
-			1.0, 1.4,
-			1.4, 2.0,
-			2.6, 4.1,
-			2.6, 4.1,
-			"Tests/delta_phi_1e7_1014_1420_2641_2641_10_500_dps.csv",
-			1.0,
-			50.0),
-		AnalysisParameters(
-			1.0, 1.4,
-			1.4, 2.0,
-			2.6, 4.1,
-			2.6, 4.1,
-			"Tests/delta_phi_1e7_1014_1420_2641_2641_10_1000_dps.csv",
-			1.0,
-			100.0),
-		AnalysisParameters(
-			1.0, 1.4,
-			1.4, 2.0,
-			2.6, 4.1,
-			2.6, 4.1,
-			"Tests/delta_phi_1e7_1014_1420_2641_2641_10_2000_dps.csv",
-			1.0,
-			200.0),
-		AnalysisParameters(
-			1.0, 1.4,
-			1.4, 2.0,
-			2.6, 4.1,
-			2.6, 4.1,
-			"Tests/delta_phi_1e7_1014_1420_2641_2641_10_10000_dps.csv",
-			1.0,
-			1000.0),
-		AnalysisParameters(
-			1.0, 1.4,
-			1.4, 2.0,
-			2.6, 4.1,
-			2.6, 4.1,
-			"Tests/delta_phi_1e7_1014_1420_2641_2641_10_1000000_dps.csv",
-			1.0,
-			100000.0),
+			25.0 / (1 + 25.0 * 1.7)),
 	};
 
 	dps.pT_range = OptionalRange<double>(1.0, 2.0);
@@ -414,13 +366,13 @@ int main() {
 	dps.include_decayed = true;
 	dps.use_biasing = true;
 	dps.parallelize = true;
-	dps.pythia_printing = false;
+	dps.pythia_printing = true;
 
 	dps.variable_seed = true;
 	dps.random_seed = 1;
 
 	dps.beam_A = Beam();
-	dps.beam_B = Beam();
+	dps.beam_B = Beam(13, 27);
 
 	dps.run();
 
@@ -475,7 +427,7 @@ int main() {
 	ac.normalization = Experiment::Normalization::Unity;
 
 	ac.runs = {
-		AnalysisParameters(
+		Analyzer::Parameters(
 			1.0, 1.4,
 			1.4, 2.0,
 			2.6, 4.1,
