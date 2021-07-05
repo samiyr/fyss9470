@@ -8,6 +8,7 @@
 #include "Constants.cc"
 #include "EventGenerator.cc"
 #include "Beam.cc"
+#include "Around.cc"
 
 using namespace Pythia8;
 
@@ -298,19 +299,20 @@ public:
 				const int A = beam_A.nucleus.mass_number;
 				const int B = beam_B.nucleus.mass_number;
 
-				const double sps1 = result.sigma_sps_1 / pT_hat_bins.size();
-				const double sps2 = result.sigma_sps_2 / pT_hat_bins.size();
-				const double ssps = result.sigma_sps / pT_hat_bins.size();
+				const Around<double> sps1 = Around(result.sigma_sps_1);
+				const Around<double> sps2 = Around(result.sigma_sps_2);
+				const Around<double> ssps = Around(result.sigma_sps);
 
 				const double m = result.parameters.m;
-				const double sigma_eff = result.parameters.sigma_eff;
+				const double sigma_pp = result.parameters.sigma_eff;
+				const double sigma_eff = calculate_sigma_eff(beam_B, sigma_pp);
 
-				const double dps = (m * A * B / sigma_eff) * sps1 * sps2;
-				const double sps = A * B * ssps;
+				const Around<double> dps = (m * A * B / sigma_eff) * sps1 * sps2;
+				const Around<double> sps = (double)A * (double)B * ssps;
 
-				const double den = sps + dps;
-				const double alpha = sps / den;
-				const double beta = dps / den;
+				const Around<double> den = sps + dps;
+				const Around<double> alpha = sps / den;
+				const Around<double> beta = dps / den;
 
 				cout << "pT_1\t\t= " << result.parameters.pT_small.extent() << "\n";
 				cout << "pT_2\t\t= " << result.parameters.pT_large.extent() << "\n";
@@ -326,8 +328,8 @@ public:
 				cout << "alpha\t\t= "; print_with_precision(alpha, 6);
 				cout << "beta\t\t= "; print_with_precision(beta, 6);
 
-				normalized *= alpha;
-				normalized += beta / M_PI;
+				normalized *= alpha.value;
+				normalized += beta.value / M_PI;
 			}
 			normalized.print_with_bars();
 
@@ -344,7 +346,7 @@ int main() {
 	DPSExperiment dps;
 
 	dps.energy = 200;
-	dps.count = 10'000 / 16;
+	dps.count = 10'000'000 / 16;
 	dps.mpi_strategy = DPSExperiment::MPIStrategy::DPS;
 	dps.bins = fixed_range(0.0, M_PI, 20);
 	dps.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.0, std::nullopt));
@@ -355,9 +357,9 @@ int main() {
 			1.4, 2.0,
 			2.6, 4.1,
 			2.6, 4.1,
-			std::nullopt,//"STAR7/delta_phi_1e7_1014_1420_2641_2641_250_dps_Al_3.csv",
+			"STAR7/delta_phi_1e7_1014_1420_2641_2641_250_dps_Al.csv",
 			1.0,
-			25.0 / (1 + 25.0 * 1.7)),
+			25.0),
 	};
 
 	dps.pT_range = OptionalRange<double>(1.0, 2.0);
@@ -366,7 +368,7 @@ int main() {
 	dps.include_decayed = true;
 	dps.use_biasing = true;
 	dps.parallelize = true;
-	dps.pythia_printing = true;
+	dps.pythia_printing = false;
 
 	dps.variable_seed = true;
 	dps.random_seed = 1;

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include "ParticleContainer.cc"
+#include "Beam.cc"
 
 using namespace Pythia8;
 
@@ -155,6 +156,19 @@ template <typename T>
 T mean(std::vector<T> v) {
 	return sum(v) / v.size();
 }
+template <typename T>
+T variance(std::vector<T> v) {
+	const T m = mean(v);
+	T accum = 0.0;
+	std::for_each (std::begin(v), std::end(v), [&](const T d) {
+	    accum += (d - m) * (d - m);
+	});
+	return accum / (v.size() - 1);
+}
+template <typename T>
+T standard_error_of_mean(std::vector<T> v) {
+	return sqrt(variance(v) / v.size());
+}
 
 void print_event(Event event) {
 	for (int i = 0; i < event.size(); ++i) {
@@ -223,6 +237,28 @@ std::vector<T> product(const std::vector<T> v1, const std::vector<T> v2) {
 	r.reserve(v1.size());
 	std::transform(v1.begin(), v1.end(), v2.begin(), std::back_inserter(r), std::multiplies<T>());
 	return r;
+}
+
+double calculate_sigma_eff(Beam b, double sigma_pp) {
+	double geometric_integral;
+	const int B = b.nucleus.mass_number;
+
+	switch(B) {
+		case 1:
+			geometric_integral = 0.0;
+			break;
+		case 197:
+			geometric_integral = 29.353;
+			break;
+		case 27:
+			geometric_integral = 1.700;
+			break;
+		default:
+			assert(false);
+			break;
+	}
+
+	return (B * B * sigma_pp) / (B * B + (B - 1) * geometric_integral * sigma_pp);
 }
 
 #endif // HELPERS_H

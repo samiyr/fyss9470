@@ -5,9 +5,9 @@ class EventGenerator {
 public:
 	struct Result {
 		ValueHistogram<double> histogram;
-		double sigma_sps_1;
-		double sigma_sps_2;
-		double sigma_sps;
+		std::vector<double> sigma_sps_1;
+		std::vector<double> sigma_sps_2;
+		std::vector<double> sigma_sps;
 
 		double sigma_gen;
 		double total_weight;
@@ -17,9 +17,12 @@ public:
 
 		Result& operator+=(Result rhs) {
 			histogram += rhs.histogram;
-			sigma_sps_1 += rhs.sigma_sps_1;
-			sigma_sps_2 += rhs.sigma_sps_2;
-			sigma_sps += rhs.sigma_sps;
+			sigma_sps_1.insert(sigma_sps_1.end(), rhs.sigma_sps_1.begin(), rhs.sigma_sps_1.end());
+			// sigma_sps_1 += rhs.sigma_sps_1;
+			// sigma_sps_2 += rhs.sigma_sps_2;
+			// sigma_sps += rhs.sigma_sps;
+			sigma_sps_2.insert(sigma_sps_2.end(), rhs.sigma_sps_2.begin(), rhs.sigma_sps_2.end());
+			sigma_sps.insert(sigma_sps.end(), rhs.sigma_sps.begin(), rhs.sigma_sps.end());
 			sigma_gen += rhs.sigma_gen;
 			total_weight += rhs.total_weight;
 			return *this;
@@ -72,9 +75,9 @@ public:
 			const auto factor = sigma_gen / total_weight;
 			Result result;
 			result.histogram = analyzer.histogram;
-			result.sigma_sps_1 = analyzer.sigma_sps_1 * factor;
-			result.sigma_sps_2 = analyzer.sigma_sps_2 * factor;
-			result.sigma_sps = analyzer.sigma_sps * factor;
+			result.sigma_sps_1 = {analyzer.sigma_sps_1 * factor};
+			result.sigma_sps_2 = {analyzer.sigma_sps_2 * factor};
+			result.sigma_sps = {analyzer.sigma_sps * factor};
 			result.sigma_gen = sigma_gen;
 			result.total_weight = total_weight;
 			result.parameters = analyzer.parameters;
