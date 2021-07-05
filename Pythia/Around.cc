@@ -25,6 +25,10 @@ struct Around {
 			return os << around.value;
 		}
     }
+    Around<T>& operator+=(T c) {
+		value += c;
+		return *this;
+	}
 };
 
 template <typename T>

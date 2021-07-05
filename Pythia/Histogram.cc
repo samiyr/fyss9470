@@ -2,6 +2,7 @@
 #define HISTOGRAM_H
 
 #include "Helpers.cc"
+#include "Around.cc"
 #include <iostream>
 
 /**
@@ -46,11 +47,10 @@ struct RangedContainer {
 	/// Extent of the bin, [range.start, range.end).
 	Range<double> range;
 	/// Value associated with the bin.
-	T value;
+	Around<T> value;
 	/// Initializes a bin.
-	RangedContainer(double l, double u, T v) : range(l, u) {
-		value = v;
-	}
+	RangedContainer(double l, double u, T v) : range(l, u), value(v) { }
+	RangedContainer(double l, double u, Around<T> v) : range(l, u), value(v) { }
 };
 
 /**
@@ -100,7 +100,7 @@ public:
 	/// Prints the histogram to stdout.
 	void print() const {
 		for (auto container : containers) {
-			const T value = container.value;
+			const Around<T> value = container.value;
 			cout << container.range.extent() << ": ";
 			print_with_precision(value, 8);
 		}
@@ -110,11 +110,11 @@ public:
 		cout << "\n";
 		T total = T(0);
 		for (auto &container : containers) {
-			total += container.value;
+			total += container.value.value;
 		}
 		for (auto &container : containers) {
-			const T value = container.value;
-			const T percentage = ((double)value / (double)total) * 100;
+			const Around<T> value = container.value;
+			const T percentage = ((double)value.value / (double)total) * 100;
 			const int count = round(percentage);
 			cout << container.range.extent() << ": " << "(" << value << ")\t";
 			for (int i = 0; i < count; i++) {
@@ -131,15 +131,16 @@ public:
 		file << std::setprecision(precision);
 		for (auto container : containers) {
 			const double center = container.range.center();
-			const T value = container.value;
-			file << center << "," << value << "\n";
+			const Around<T> value = container.value;
+			const T error = value.error ? *value.error : T(0);
+			file << center << "," << value.value << "," << error << "\n";
 		}
 		file.close();
 	}
 
 	double total() const {
 		return std::accumulate(containers.begin(), containers.end(), 0.0, [](double partial, RangedContainer<T> current) {
-			return partial + current.value;
+			return partial + current.value.value;
 		});
 	}
 
@@ -147,7 +148,7 @@ public:
 		ValueHistogram<double> normalized;
 		const double sum_total = total();
 		for (auto container : containers) {
-			const double new_value = (double)container.value / (container.range.width() * sum_total);
+			const Around<double> new_value = container.value / (container.range.width() * sum_total);
 			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
 			normalized.containers.push_back(new_container);
 		}
@@ -173,10 +174,10 @@ public:
 			const double lower = reference[i].range.start;
 			const double upper = reference[i].range.end;
 
-			T value = 0;
+			Around<T> value = Around(0.0);
 
 			for (typename std::vector<RangedContainer<T>>::size_type j = 0; j < _containers.size(); j++) {
-				value += _containers[j][i].value;
+				value = value + _containers[j][i].value;
 			}
 
 			const RangedContainer<T> container(lower, upper, value);
@@ -195,7 +196,16 @@ public:
 	ValueHistogram<double>& operator+=(double constant) {
 		for (typename std::vector<RangedContainer<double>>::size_type i = 0; i < size(); i++) {
 			const auto container = containers[i];
-			const double new_value = (double)container.value + constant;
+			const Around<double> new_value = container.value + constant;
+			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
+			containers[i] = new_container;
+		}
+		return *this;
+	}
+	ValueHistogram<double>& operator+=(Around<double> constant) {
+		for (typename std::vector<RangedContainer<double>>::size_type i = 0; i < size(); i++) {
+			const auto container = containers[i];
+			const Around<double> new_value = container.value + constant;
 			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
 			containers[i] = new_container;
 		}
@@ -209,11 +219,20 @@ public:
 	ValueHistogram<double>& operator*=(double constant) {
 		for (typename std::vector<RangedContainer<double>>::size_type i = 0; i < size(); i++) {
 			const auto container = containers[i];
-			const double new_value = (double)container.value * constant;
+			const Around<double> new_value = container.value * constant;
 			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
 			containers[i] = new_container;
 		}
 		return *this;	
+	}
+	ValueHistogram<double>& operator*=(Around<double> constant) {
+		for (typename std::vector<RangedContainer<double>>::size_type i = 0; i < size(); i++) {
+			const auto container = containers[i];
+			const Around<double> new_value = container.value * constant;
+			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
+			containers[i] = new_container;
+		}
+		return *this;
 	}
 	ValueHistogram<double> operator*(double constant) const {
 		ValueHistogram<double> h = *this;
