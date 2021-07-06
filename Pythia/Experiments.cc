@@ -357,7 +357,7 @@ int main() {
 			1.4, 2.0,
 			2.6, 4.1,
 			2.6, 4.1,
-			"STAR7/delta_phi_1e7_1014_1420_2641_2641_250_dps_Au.csv",
+			"STAR7/delta_phi_1e7_1014_1420_2641_2641_250_dps_Al_2.csv",
 			1.0,
 			25.0),
 	};
@@ -374,7 +374,7 @@ int main() {
 	dps.random_seed = 1;
 
 	dps.beam_A = Beam();
-	dps.beam_B = Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, true);
+	dps.beam_B = Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, false);
 
 	dps.run();
 
