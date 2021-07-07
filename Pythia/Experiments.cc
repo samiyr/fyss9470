@@ -349,7 +349,7 @@ int main() {
 	dps.count = 10'000'000 / 16;
 	dps.mpi_strategy = DPSExperiment::MPIStrategy::DPS;
 	dps.bins = fixed_range(0.0, M_PI, 20);
-	dps.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.0, std::nullopt));
+	dps.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(10.0, std::nullopt));
 
 	dps.runs = {
 		Analyzer::Parameters(
@@ -357,7 +357,7 @@ int main() {
 			1.4, 2.0,
 			2.6, 4.1,
 			2.6, 4.1,
-			"STAR7/delta_phi_1e7_1014_1420_2641_2641_250_dps_Al_2.csv",
+			"STAR7/delta_phi_1e7_1014_1420_2641_2641_250_dps_pp_100.csv",
 			1.0,
 			25.0),
 	};
@@ -374,7 +374,8 @@ int main() {
 	dps.random_seed = 1;
 
 	dps.beam_A = Beam();
-	dps.beam_B = Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, false);
+	dps.beam_B = Beam();
+	// dps.beam_B = Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, false);
 
 	dps.run();
 

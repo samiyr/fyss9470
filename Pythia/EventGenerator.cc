@@ -58,6 +58,7 @@ public:
 
 	std::vector<Result> run() {
 		ParticleGenerator generator(params);
+		generator.pT_hat_range = pT_hat_range;
 		generator.initialize();
 		generator.generate([this](std::vector<ParticleContainer> particles) {			
 			for (auto &analyzer : analyzers) {
