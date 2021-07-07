@@ -1,0 +1,17 @@
+[0] Config.pm:311> INFO - This is Biber 2.16
+[0] Config.pm:314> INFO - Logfile is '/Users/samiyrjanheikki/Documents/FYS/FYSS9470 ErikoistyoÌ/Thesis/.texpadtmp/Research Training Thesis.blg'
+[85] biber-darwin:340> INFO - === Tue Jul  6, 2021, 12:02:33
+[259] Biber.pm:415> INFO - Reading '/Users/samiyrjanheikki/Documents/FYS/FYSS9470 Erikoistyö/Thesis/.texpadtmp/Research Training Thesis.bcf'
+[360] Biber.pm:949> INFO - Using all citekeys in bib section 0
+[373] Biber.pm:4340> INFO - Processing section 0
+[385] Biber.pm:4531> INFO - Looking for bibtex format file 'Library2.bib' for section 0
+[533] bibtex.pm:1689> INFO - LaTeX decoding ...
+[554] bibtex.pm:1494> INFO - Found BibTeX data source '/Users/samiyrjanheikki/Documents/Bibliography/Library2.bib'
+[605] Utils.pm:411> ERROR - Name "Frank W. J. Olver, Daniel W. Lozier, Ronald F. Boisvert, Charles W. Clark" has too many commas, skipping entry 'FrankWJOlverDanielWLozierRonaldFBoisvertCharlesWClark2010'
+[672] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[672] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[672] Biber.pm:4168> INFO - Sorting list 'none/global//global/global' of type 'entry' with template 'none' and locale 'en-US'
+[672] Biber.pm:4174> INFO - No sort tailoring available for locale 'en-US'
+[683] bbl.pm:654> INFO - Writing '/Users/samiyrjanheikki/Documents/FYS/FYSS9470 ErikoistyoÌ/Thesis/.texpadtmp/Research Training Thesis.bbl' with encoding 'UTF-8'
+[692] bbl.pm:757> INFO - Output to /Users/samiyrjanheikki/Documents/FYS/FYSS9470 ErikoistyoÌ/Thesis/.texpadtmp/Research Training Thesis.bbl
+[692] Biber.pm:132> INFO - ERRORS: 1

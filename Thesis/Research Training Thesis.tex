@@ -1,0 +1,140 @@
+\documentclass[final]{thesis} %% Tulostaa tutkielman kuvioiden kanssa!
+%\documentclass[draft]{thesis} %% Tulostaa tutkielman ilman kuvioita!
+
+% Tämä tiedostopohja käyttää biblatexia!
+
+\newcommand{\thesisname}{Pion azimuthal correlations}
+\DeclareUnicodeCharacter{2009}{\,} %https://tex.stackexchange.com/questions/438214/package-inputenc-error-unicode-char-â€-u2009-thin-space
+
+%----------------------------------------------------------------------------------------
+% PDF-TIEDOSTON INFORMAATIO
+%----------------------------------------------------------------------------------------
+\hypersetup{%
+	pdftitle    = {\thesisname},%
+	pdfauthor   = {Sami Yrjänheikki},%
+	pdfsubject  = {Research training (FYSS9470) report},%
+	pdfproducer = {pdfTeX}
+}
+
+%----------------------------------------------------------------------------------------
+% LÄHDELUETTELON MUOTOILU BibLaTeXin käytettäessä
+%----------------------------------------------------------------------------------------
+\usepackage{csquotes}
+\usepackage[backend=biber,style=numeric-comp,sorting=none,maxnames=3,minnames=1,giveninits=true]{biblatex}
+\DefineBibliographyStrings{finnish}{%
+    andothers  = {ym.},%
+    references = {Lähteet},%
+    mathesis   = {pro gradu~-tutkielma},%
+    phdthesis  = {väitöskirja}
+}
+\addbibresource{Library2.bib}%----------------------------------------------------------------------------------------
+% KANSILEHDEN SISÄLTÖ
+%----------------------------------------------------------------------------------------
+
+\title{\thesisname}
+\author{Sami Yrjänheikki}
+\supervisor{Ilkka Helenius\\Hannu Paukkunen}
+\project{Research Training (FYSS9470) report}
+\date{XX.XX.2021}
+
+%----------------------------------------------------------------------------------------
+% KÄYTTÖÖN OTETUT MAKROPAKETIT
+% (joita ei ole määritelty dokumenttiluokassa.)
+%----------------------------------------------------------------------------------------
+\usepackage{amsmath}
+
+\newcommand{\pythia}{\textsc{Pythia }}
+
+%----------------------------------------------------------------------------------------
+% VARSINAINEN DOKUMENTTI
+%----------------------------------------------------------------------------------------
+\begin{document}
+%----------------------------------------------------------------------------------------
+% KANSILEHTI
+%----------------------------------------------------------------------------------------
+\titleJYFL
+
+
+%----------------------------------------------------------------------------------------
+%	ABSTRACT
+%----------------------------------------------------------------------------------------
+\section*{Abstract}
+\addcontentsline{toc}{section}{Abstract}
+
+% Bibliographic information
+\begin{singlespace}
+	Yrjänheikki, Sami\\
+	\thesisname \\
+	Research training (FYSS9470) report \\
+	Department of Physics, University of Jyväskylä, 2021, \pageref{LastPage}~pages.
+\end{singlespace}
+
+\bigskip
+
+% Abstract text
+\noindent \lipsum[1]
+
+\bigskip 
+
+% Keywords
+\noindent Keywords: Thesis, abstract, writing, instructions
+
+% --------------------------------------------------------------------------
+% ESIPUHE
+% --------------------------------------------------------------------------
+\section*{Preface}
+\addcontentsline{toc}{section}{Preface}
+
+Esipuheen teksti tulee tähän. \lipsum[1]
+
+\bigskip
+
+\noindent Jyväskylä January 1, 2020
+
+\bigskip
+
+\noindent Olli Opiskelija
+
+% --------------------------------------------------------------------------
+% SISÄLLYS
+% --------------------------------------------------------------------------
+\tableofcontents
+
+% --------------------------------------------------------------------------
+% VARSINAINEN TEKSTIOSA
+% --------------------------------------------------------------------------
+\section{Introduction}
+\label{sec:introduction}
+
+\section{Pythia}
+
+\subsection{Parallelization in Pythia}
+
+In order to obtain good statistics, a large number of events are required. This is due to the fact that pion generation is a fairly rare event (???). Modern CPUs feature multiple cores, and spreading the workload across multiple cores is a significant performance improvement. \pythia itself is single-threaded, meaning that the work is done on a single core. However, as a single \pythia instance is completely independent [source], it's possible to create multiple \pythia instances and run each independently on its own thread, and combine the results at the end. 
+
+To achieve this, we encapsulate the creation of a \pythia instance and the associated event loop into a single class, \verb#EventGenerator#. This class abstracts the event generation and analysis process, and simply returns the desired results. Then, we create a \verb#for# loop, where in each iteration we create an \verb#EventGenerator# instance, generate the events and obtain the results. These results are placed into a vector to be combined later. The \verb#for# loop can be parallelized using the open-source software \verb#OpenMP#. 
+
+An important aspect of such a parallelization procedure is to ensure that each \pythia instance has a unique random seed. This seed is used in the random number generator. If the seed was the same across all \pythia instances, they would produce identical results, making the parallelization useless. In our case this is achieved by setting the first instance's random seed to 1, the second instance's seed to 2, and so forth.
+
+A complication of parallelism is avoiding data races. Data races occur when two threads try to write to the same variable, and this results in corrupted data. To avoid this, each thread stores its results in a per-thread local variable. Then, these results are appended to a variable on the main thread by marking the code section critical. Critical code sections are executed by a single thread at a time. This ensures data integrity, but introduces a performance penalty. This penalty, however, is insignificant, as most of the execution time is spent in the event loop.
+
+\section{Conclusions}
+\label{sec:conclusions}
+
+\nocite{*}
+
+% --------------------------------------------------------------------------
+% LÄHTEET
+% --------------------------------------------------------------------------
+\addcontentsline{toc}{section}{References}
+\printbibliography
+
+% --------------------------------------------------------------------------
+% LIITTEET
+% --------------------------------------------------------------------------
+\appendix
+
+
+
+\end{document}
+

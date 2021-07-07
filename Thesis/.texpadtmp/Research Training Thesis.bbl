@@ -1,0 +1,589 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.1 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global}
+    \entry{AdlerSSandAfanasievSandAidalaCandAjitanandNNandAkibaYandAlexanderJandAmirikasRandAphecetcheLandAronsonSHandAverbeckRandetal2003}{article}{}
+      \name{author}{11}{}{%
+        {{hash=178c02f4377deb4434d0231f27e77e5a}{%
+           family={Adler},
+           familyi={A\bibinitperiod},
+           given={S.\bibnamedelimi S.},
+           giveni={S\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
+        {{hash=5cdf0b34deb2d623ca453cdbf4ec4fd1}{%
+           family={Afanasiev},
+           familyi={A\bibinitperiod},
+           given={S.},
+           giveni={S\bibinitperiod}}}%
+        {{hash=576c65febc33309bbdf9f856bcee9d86}{%
+           family={Aidala},
+           familyi={A\bibinitperiod},
+           given={C.},
+           giveni={C\bibinitperiod}}}%
+        {{hash=87737f2368e0fa4b772ae3ead20f39aa}{%
+           family={Ajitanand},
+           familyi={A\bibinitperiod},
+           given={N.\bibnamedelimi N.},
+           giveni={N\bibinitperiod\bibinitdelim N\bibinitperiod}}}%
+        {{hash=6f08b036764e95b32db7d42f8e56ed03}{%
+           family={Akiba},
+           familyi={A\bibinitperiod},
+           given={Y.},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=6c28f96a1bb58f31e4da203f199ddbda}{%
+           family={Alexander},
+           familyi={A\bibinitperiod},
+           given={J.},
+           giveni={J\bibinitperiod}}}%
+        {{hash=7ba668b83684df5488020e4edea5b691}{%
+           family={Amirikas},
+           familyi={A\bibinitperiod},
+           given={R.},
+           giveni={R\bibinitperiod}}}%
+        {{hash=5fc9e9511c8a1361f7661d0d4a614600}{%
+           family={Aphecetche},
+           familyi={A\bibinitperiod},
+           given={L.},
+           giveni={L\bibinitperiod}}}%
+        {{hash=7de5808f4ae2642831547e58e5aeb742}{%
+           family={Aronson},
+           familyi={A\bibinitperiod},
+           given={S.\bibnamedelimi H.},
+           giveni={S\bibinitperiod\bibinitdelim H\bibinitperiod}}}%
+        {{hash=773d2979326622e6685b0b46fa00de3b}{%
+           family={Averbeck},
+           familyi={A\bibinitperiod},
+           given={R.},
+           giveni={R\bibinitperiod}}}%
+        {{hash=38026ba4ee6b102b47bf3ffb41325c8f}{%
+           family={al.},
+           familyi={a\bibinitperiod},
+           prefix={et},
+           prefixi={e\bibinitperiod}}}%
+      }
+      \strng{namehash}{e536d50514909939814b54ef16865529}
+      \strng{fullhash}{19c88cb58e02ef7670218c59ae62d38c}
+      \strng{bibnamehash}{e536d50514909939814b54ef16865529}
+      \strng{authorbibnamehash}{e536d50514909939814b54ef16865529}
+      \strng{authornamehash}{e536d50514909939814b54ef16865529}
+      \strng{authorfullhash}{19c88cb58e02ef7670218c59ae62d38c}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Physical Review Letters}
+      \field{number}{24}
+      \field{title}{Midrapidity Neutral-Pion Production in Proton-Proton Collisions ats=200  GeV}
+      \field{volume}{91}
+      \field{year}{2003}
+      \true{nocite}
+    \endentry
+    \entry{AndrewZangwill2013}{book}{}
+      \name{author}{1}{}{%
+        {{hash=0af3221ab096b39212832c8247bf8151}{%
+           family={Zangwill},
+           familyi={Z\bibinitperiod},
+           given={Andrew},
+           giveni={A\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Cambridge}%
+      }
+      \list{publisher}{1}{%
+        {Cambridge University Press}%
+      }
+      \strng{namehash}{0af3221ab096b39212832c8247bf8151}
+      \strng{fullhash}{0af3221ab096b39212832c8247bf8151}
+      \strng{bibnamehash}{0af3221ab096b39212832c8247bf8151}
+      \strng{authorbibnamehash}{0af3221ab096b39212832c8247bf8151}
+      \strng{authornamehash}{0af3221ab096b39212832c8247bf8151}
+      \strng{authorfullhash}{0af3221ab096b39212832c8247bf8151}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Modern electrodynamics}
+      \field{year}{2013}
+      \true{nocite}
+    \endentry
+    \entry{dEnterriaDavidandSnigirevAlexander2018}{article}{}
+      \name{author}{2}{}{%
+        {{hash=074cf544b5b41abbdf7aa26be2196c09}{%
+           family={Enterria},
+           familyi={E\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod},
+           prefix={d’},
+           prefixi={d\bibinitperiod}}}%
+        {{hash=3f0e5e8994a120d69a8411592f7bf017}{%
+           family={Snigirev},
+           familyi={S\bibinitperiod},
+           given={Alexander},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{2f01745f0504da49c9810de26c3a5d74}
+      \strng{fullhash}{2f01745f0504da49c9810de26c3a5d74}
+      \strng{bibnamehash}{2f01745f0504da49c9810de26c3a5d74}
+      \strng{authorbibnamehash}{2f01745f0504da49c9810de26c3a5d74}
+      \strng{authornamehash}{2f01745f0504da49c9810de26c3a5d74}
+      \strng{authorfullhash}{2f01745f0504da49c9810de26c3a5d74}
+      \field{extraname}{1}
+      \field{sortinit}{3}
+      \field{sortinithash}{ad6fe7482ffbd7b9f99c9e8b5dccd3d7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Advanced Series on Directions in High Energy Physics}
+      \field{title}{Double, Triple, and n-Parton Scatterings in High-Energy Proton and Nuclear Collisions}
+      \field{year}{2018}
+      \true{nocite}
+      \field{pages}{159\bibrangedash 187}
+      \range{pages}{29}
+    \endentry
+    \entry{dEnterriaDavidandSnigirevAlexanderM2017}{article}{}
+      \name{author}{2}{}{%
+        {{hash=074cf544b5b41abbdf7aa26be2196c09}{%
+           family={Enterria},
+           familyi={E\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod},
+           prefix={d’},
+           prefixi={d\bibinitperiod}}}%
+        {{hash=ab330f45c96c51b6abfef4b4a45ce451}{%
+           family={Snigirev},
+           familyi={S\bibinitperiod},
+           given={Alexander\bibnamedelima M.},
+           giveni={A\bibinitperiod\bibinitdelim M\bibinitperiod}}}%
+      }
+      \strng{namehash}{048789fc1fa9684b1c3e7838c64f507d}
+      \strng{fullhash}{048789fc1fa9684b1c3e7838c64f507d}
+      \strng{bibnamehash}{048789fc1fa9684b1c3e7838c64f507d}
+      \strng{authorbibnamehash}{048789fc1fa9684b1c3e7838c64f507d}
+      \strng{authornamehash}{048789fc1fa9684b1c3e7838c64f507d}
+      \strng{authorfullhash}{048789fc1fa9684b1c3e7838c64f507d}
+      \field{extraname}{2}
+      \field{sortinit}{4}
+      \field{sortinithash}{9381316451d1b9788675a07e972a12a7}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Physical Review Letters}
+      \field{number}{12}
+      \field{title}{Triple Parton Scatterings in High-Energy Proton-Proton Collisions}
+      \field{volume}{118}
+      \field{year}{2017}
+      \true{nocite}
+    \endentry
+    \entry{DasAshok2013}{article}{}
+      \name{author}{1}{}{%
+        {{hash=d4dc61fa37928dba0c93895351f16175}{%
+           family={Das},
+           familyi={D\bibinitperiod},
+           given={Ashok},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{d4dc61fa37928dba0c93895351f16175}
+      \strng{fullhash}{d4dc61fa37928dba0c93895351f16175}
+      \strng{bibnamehash}{d4dc61fa37928dba0c93895351f16175}
+      \strng{authorbibnamehash}{d4dc61fa37928dba0c93895351f16175}
+      \strng{authornamehash}{d4dc61fa37928dba0c93895351f16175}
+      \strng{authorfullhash}{d4dc61fa37928dba0c93895351f16175}
+      \field{sortinit}{5}
+      \field{sortinithash}{20e9b4b0b173788c5dace24730f47d8c}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Lectures on Electromagnetism}
+      \field{year}{2013}
+      \true{nocite}
+    \endentry
+    \entry{DiehlMarkusandGauntJonathanR2018}{article}{}
+      \name{author}{2}{}{%
+        {{hash=b254935ddf2b1a10e940541377e9d966}{%
+           family={Diehl},
+           familyi={D\bibinitperiod},
+           given={Markus},
+           giveni={M\bibinitperiod}}}%
+        {{hash=ba27eb928dbc336668a7eefa20663c54}{%
+           family={Gaunt},
+           familyi={G\bibinitperiod},
+           given={Jonathan\bibnamedelima R.},
+           giveni={J\bibinitperiod\bibinitdelim R\bibinitperiod}}}%
+      }
+      \strng{namehash}{7850762530a8bc9e673beb72c68f724d}
+      \strng{fullhash}{7850762530a8bc9e673beb72c68f724d}
+      \strng{bibnamehash}{7850762530a8bc9e673beb72c68f724d}
+      \strng{authorbibnamehash}{7850762530a8bc9e673beb72c68f724d}
+      \strng{authornamehash}{7850762530a8bc9e673beb72c68f724d}
+      \strng{authorfullhash}{7850762530a8bc9e673beb72c68f724d}
+      \field{sortinit}{6}
+      \field{sortinithash}{b33bc299efb3c36abec520a4c896a66d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Advanced Series on Directions in High Energy Physics}
+      \field{title}{Double Parton Scattering Theory Overview}
+      \field{year}{2018}
+      \true{nocite}
+      \field{pages}{7\bibrangedash 28}
+      \range{pages}{22}
+    \endentry
+    \entry{DwightENeuenschwander2015}{book}{}
+      \name{author}{1}{}{%
+        {{hash=6e0ffba3651a3b84aa85ceb4f7b9f2a6}{%
+           family={Neuenschwander},
+           familyi={N\bibinitperiod},
+           given={Dwight.\bibnamedelimi E.},
+           giveni={D\bibinitperiod\bibinitdelim E\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Johns Hopkins Uni- versity Press}%
+      }
+      \strng{namehash}{6e0ffba3651a3b84aa85ceb4f7b9f2a6}
+      \strng{fullhash}{6e0ffba3651a3b84aa85ceb4f7b9f2a6}
+      \strng{bibnamehash}{6e0ffba3651a3b84aa85ceb4f7b9f2a6}
+      \strng{authorbibnamehash}{6e0ffba3651a3b84aa85ceb4f7b9f2a6}
+      \strng{authornamehash}{6e0ffba3651a3b84aa85ceb4f7b9f2a6}
+      \strng{authorfullhash}{6e0ffba3651a3b84aa85ceb4f7b9f2a6}
+      \field{sortinit}{7}
+      \field{sortinithash}{108d0be1b1bee9773a1173443802c0a3}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{edition}{1}
+      \field{title}{Tensor Calculus for Physics}
+      \field{year}{2015}
+      \true{nocite}
+    \endentry
+    \entry{GeorgeBArfkenHansJWeberFrankEHarris2012}{book}{}
+      \name{author}{1}{}{%
+        {{hash=25ed54d7bc1177a332844ca9e529e5c8}{%
+           family={George\bibnamedelimb B.\bibnamedelimi Arfken},
+           familyi={G\bibinitperiod\bibinitdelim B\bibinitperiod\bibinitdelim A\bibinitperiod},
+           given={Frank\bibnamedelimb E.\bibnamedelimi Harris},
+           giveni={F\bibinitperiod\bibinitdelim E\bibinitperiod\bibinitdelim H\bibinitperiod},
+           suffix={Hans\bibnamedelimb J.\bibnamedelimi Weber},
+           suffixi={H\bibinitperiod\bibinitdelim J\bibinitperiod\bibinitdelim W\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Academic Press}%
+      }
+      \strng{namehash}{25ed54d7bc1177a332844ca9e529e5c8}
+      \strng{fullhash}{25ed54d7bc1177a332844ca9e529e5c8}
+      \strng{bibnamehash}{25ed54d7bc1177a332844ca9e529e5c8}
+      \strng{authorbibnamehash}{25ed54d7bc1177a332844ca9e529e5c8}
+      \strng{authornamehash}{25ed54d7bc1177a332844ca9e529e5c8}
+      \strng{authorfullhash}{25ed54d7bc1177a332844ca9e529e5c8}
+      \field{sortinit}{8}
+      \field{sortinithash}{a231b008ebf0ecbe0b4d96dcc159445f}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{edition}{7}
+      \field{title}{Mathematical Methods for Physicists}
+      \field{year}{2012}
+      \true{nocite}
+    \endentry
+    \entry{GieresFrançois2000}{article}{}
+      \name{author}{1}{}{%
+        {{hash=20d45d661dd413a2f0e0d3c5f3259def}{%
+           family={Gieres},
+           familyi={G\bibinitperiod},
+           given={Fran{\cc}ois},
+           giveni={F\bibinitperiod}}}%
+      }
+      \strng{namehash}{20d45d661dd413a2f0e0d3c5f3259def}
+      \strng{fullhash}{20d45d661dd413a2f0e0d3c5f3259def}
+      \strng{bibnamehash}{20d45d661dd413a2f0e0d3c5f3259def}
+      \strng{authorbibnamehash}{20d45d661dd413a2f0e0d3c5f3259def}
+      \strng{authornamehash}{20d45d661dd413a2f0e0d3c5f3259def}
+      \strng{authorfullhash}{20d45d661dd413a2f0e0d3c5f3259def}
+      \field{sortinit}{9}
+      \field{sortinithash}{0a5ebc79d83c96b6579069544c73c7d4}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Reports on Progress in Physics}
+      \field{number}{12}
+      \field{title}{Mathematical surprises and Dirac’s formalism in quantum mechanics}
+      \field{volume}{63}
+      \field{year}{2000}
+      \true{nocite}
+      \field{pages}{1893\bibrangedash 1931}
+      \range{pages}{39}
+    \endentry
+    \entry{HeleniusIlkkaandPaukkunenHannu2020}{article}{}
+      \name{author}{2}{}{%
+        {{hash=2cddf7b2307493500b64084a048940fa}{%
+           family={Helenius},
+           familyi={H\bibinitperiod},
+           given={Ilkka},
+           giveni={I\bibinitperiod}}}%
+        {{hash=5a2b6834bbcde7fba95f201b613fa47c}{%
+           family={Paukkunen},
+           familyi={P\bibinitperiod},
+           given={Hannu},
+           giveni={H\bibinitperiod}}}%
+      }
+      \strng{namehash}{9b1ce9ce58dd9ebc01ff0eb225a68413}
+      \strng{fullhash}{9b1ce9ce58dd9ebc01ff0eb225a68413}
+      \strng{bibnamehash}{9b1ce9ce58dd9ebc01ff0eb225a68413}
+      \strng{authorbibnamehash}{9b1ce9ce58dd9ebc01ff0eb225a68413}
+      \strng{authornamehash}{9b1ce9ce58dd9ebc01ff0eb225a68413}
+      \strng{authorfullhash}{9b1ce9ce58dd9ebc01ff0eb225a68413}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Physics Letters B}
+      \field{title}{Double D-meson production in proton-proton and proton-lead collisions at the LHC}
+      \field{volume}{800}
+      \field{year}{2020}
+      \true{nocite}
+      \field{pages}{135084}
+      \range{pages}{1}
+    \endentry
+    \entry{ISGradshteinDanielZwillinger2014}{book}{}
+      \name{author}{1}{}{%
+        {{hash=d15b753a1763e36f79de968f03db3de1}{%
+           family={Zwillinger},
+           familyi={Z\bibinitperiod},
+           given={I.\bibnamedelimi S.\bibnamedelimi Gradshtein\bibnamedelimb &\bibnamedelima Daniel},
+           giveni={I\bibinitperiod\bibinitdelim S\bibinitperiod\bibinitdelim G\bibinitperiod\bibinitdelim &\bibinitperiod\bibinitdelim D\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Elsevier Science & Technology Books}%
+      }
+      \strng{namehash}{d15b753a1763e36f79de968f03db3de1}
+      \strng{fullhash}{d15b753a1763e36f79de968f03db3de1}
+      \strng{bibnamehash}{d15b753a1763e36f79de968f03db3de1}
+      \strng{authorbibnamehash}{d15b753a1763e36f79de968f03db3de1}
+      \strng{authornamehash}{d15b753a1763e36f79de968f03db3de1}
+      \strng{authorfullhash}{d15b753a1763e36f79de968f03db3de1}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{edition}{Eighth edition.}
+      \field{title}{Table of Integrals, Series, and Products}
+      \field{year}{2014}
+      \true{nocite}
+    \endentry
+    \entry{JohnDavidJackson1999}{book}{}
+      \name{author}{1}{}{%
+        {{hash=bc51fc62aec5c2fb2968eb631d48cf2a}{%
+           family={Jackson},
+           familyi={J\bibinitperiod},
+           given={John\bibnamedelima David},
+           giveni={J\bibinitperiod\bibinitdelim D\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {New York}%
+      }
+      \list{publisher}{1}{%
+        {Wiley}%
+      }
+      \strng{namehash}{bc51fc62aec5c2fb2968eb631d48cf2a}
+      \strng{fullhash}{bc51fc62aec5c2fb2968eb631d48cf2a}
+      \strng{bibnamehash}{bc51fc62aec5c2fb2968eb631d48cf2a}
+      \strng{authorbibnamehash}{bc51fc62aec5c2fb2968eb631d48cf2a}
+      \strng{authornamehash}{bc51fc62aec5c2fb2968eb631d48cf2a}
+      \strng{authorfullhash}{bc51fc62aec5c2fb2968eb631d48cf2a}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{edition}{3rd ed.}
+      \field{title}{Classical electrodynamics}
+      \field{year}{1999}
+      \true{nocite}
+    \endentry
+    \entry{JohnRTaylor1996}{book}{}
+      \name{author}{1}{}{%
+        {{hash=13cd2b5c9128bffc38d1f40b64e3f67c}{%
+           family={Taylor},
+           familyi={T\bibinitperiod},
+           given={John\bibnamedelima R.},
+           giveni={J\bibinitperiod\bibinitdelim R\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Sausalito, Calif.}%
+      }
+      \list{publisher}{1}{%
+        {University Science Books}%
+      }
+      \strng{namehash}{13cd2b5c9128bffc38d1f40b64e3f67c}
+      \strng{fullhash}{13cd2b5c9128bffc38d1f40b64e3f67c}
+      \strng{bibnamehash}{13cd2b5c9128bffc38d1f40b64e3f67c}
+      \strng{authorbibnamehash}{13cd2b5c9128bffc38d1f40b64e3f67c}
+      \strng{authornamehash}{13cd2b5c9128bffc38d1f40b64e3f67c}
+      \strng{authorfullhash}{13cd2b5c9128bffc38d1f40b64e3f67c}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{edition}{2nd ed.}
+      \field{title}{An Introduction to Error Analysis}
+      \field{year}{1996}
+      \true{nocite}
+    \endentry
+    \entry{KłusekGawendaMariola2015}{thesis}{}
+      \name{author}{1}{}{%
+        {{hash=294de64f8bfe5493031444741042c2ec}{%
+           family={K{ł}usek-Gawenda},
+           familyi={K\bibinithyphendelim G\bibinitperiod},
+           given={Mariola},
+           giveni={M\bibinitperiod}}}%
+      }
+      \list{institution}{1}{%
+        {Institute of Nuclear Physics Polish Academy of Sciences}%
+      }
+      \strng{namehash}{294de64f8bfe5493031444741042c2ec}
+      \strng{fullhash}{294de64f8bfe5493031444741042c2ec}
+      \strng{bibnamehash}{294de64f8bfe5493031444741042c2ec}
+      \strng{authorbibnamehash}{294de64f8bfe5493031444741042c2ec}
+      \strng{authornamehash}{294de64f8bfe5493031444741042c2ec}
+      \strng{authorfullhash}{294de64f8bfe5493031444741042c2ec}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{Doctoral Thesis}
+      \field{title}{Production of pairs of mesons, leptons and quarks in ultraperipheral ultrarelativistic heavy ion collisions}
+      \field{type}{mathesis}
+      \field{year}{2015}
+      \true{nocite}
+    \endentry
+    \entry{MaryLBoasMaryLayneBoas2006}{book}{}
+      \name{author}{1}{}{%
+        {{hash=687a82f1aa480e74206d8cf2a477dd54}{%
+           family={Boas},
+           familyi={B\bibinitperiod},
+           given={Mary\bibnamedelimb L.\bibnamedelimi Boas\bibnamedelimb &\bibnamedelimb Mary\bibnamedelima Layne},
+           giveni={M\bibinitperiod\bibinitdelim L\bibinitperiod\bibinitdelim B\bibinitperiod\bibinitdelim &\bibinitperiod\bibinitdelim M\bibinitperiod\bibinitdelim L\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Hoboken, NJ}%
+      }
+      \list{publisher}{1}{%
+        {Wiley}%
+      }
+      \strng{namehash}{687a82f1aa480e74206d8cf2a477dd54}
+      \strng{fullhash}{687a82f1aa480e74206d8cf2a477dd54}
+      \strng{bibnamehash}{687a82f1aa480e74206d8cf2a477dd54}
+      \strng{authorbibnamehash}{687a82f1aa480e74206d8cf2a477dd54}
+      \strng{authornamehash}{687a82f1aa480e74206d8cf2a477dd54}
+      \strng{authorfullhash}{687a82f1aa480e74206d8cf2a477dd54}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{edition}{3rd ed.}
+      \field{title}{Mathematical methods in the physical sciences}
+      \field{year}{2006}
+      \true{nocite}
+    \endentry
+    \entry{ShannonCE1948}{article}{}
+      \name{author}{1}{}{%
+        {{hash=22e2130b8d96f93daba648ff62af869b}{%
+           family={Shannon},
+           familyi={S\bibinitperiod},
+           given={C.\bibnamedelimi E.},
+           giveni={C\bibinitperiod\bibinitdelim E\bibinitperiod}}}%
+      }
+      \strng{namehash}{22e2130b8d96f93daba648ff62af869b}
+      \strng{fullhash}{22e2130b8d96f93daba648ff62af869b}
+      \strng{bibnamehash}{22e2130b8d96f93daba648ff62af869b}
+      \strng{authorbibnamehash}{22e2130b8d96f93daba648ff62af869b}
+      \strng{authornamehash}{22e2130b8d96f93daba648ff62af869b}
+      \strng{authorfullhash}{22e2130b8d96f93daba648ff62af869b}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Bell System Technical Journal}
+      \field{number}{3}
+      \field{title}{A Mathematical Theory of Communication}
+      \field{volume}{27}
+      \field{year}{1948}
+      \true{nocite}
+      \field{pages}{379\bibrangedash 423}
+      \range{pages}{45}
+    \endentry
+    \entry{TomasKasemets2013}{thesis}{}
+      \name{author}{1}{}{%
+        {{hash=1b6b57486dfb4bc843a7f0fc114d5877}{%
+           family={Kasemets},
+           familyi={K\bibinitperiod},
+           given={Tomas},
+           giveni={T\bibinitperiod}}}%
+      }
+      \list{institution}{1}{%
+        {Universität Hamburg}%
+      }
+      \strng{namehash}{1b6b57486dfb4bc843a7f0fc114d5877}
+      \strng{fullhash}{1b6b57486dfb4bc843a7f0fc114d5877}
+      \strng{bibnamehash}{1b6b57486dfb4bc843a7f0fc114d5877}
+      \strng{authorbibnamehash}{1b6b57486dfb4bc843a7f0fc114d5877}
+      \strng{authornamehash}{1b6b57486dfb4bc843a7f0fc114d5877}
+      \strng{authorfullhash}{1b6b57486dfb4bc843a7f0fc114d5877}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{PhD}
+      \field{title}{Double parton scattering - a tale of two partons}
+      \field{type}{mathesis}
+      \field{year}{2013}
+      \true{nocite}
+    \endentry
+    \entry{vanHamerenAndreasandMaciułaRafałandSzczurekAntoni2014}{article}{}
+      \name{author}{3}{}{%
+        {{hash=d3e119c84a13d38943669861cff85eb8}{%
+           family={Hameren},
+           familyi={H\bibinitperiod},
+           given={Andreas},
+           giveni={A\bibinitperiod},
+           prefix={van},
+           prefixi={v\bibinitperiod}}}%
+        {{hash=6b721b41da0be355d6ba74beb74ec689}{%
+           family={Maciu{ł}a},
+           familyi={M\bibinitperiod},
+           given={Rafa{ł}},
+           giveni={R\bibinitperiod}}}%
+        {{hash=64a1f938e1424fb24001f274fca8abd3}{%
+           family={Szczurek},
+           familyi={S\bibinitperiod},
+           given={Antoni},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{950eb05c04a9e4d52991cce2a8c4ba5d}
+      \strng{fullhash}{950eb05c04a9e4d52991cce2a8c4ba5d}
+      \strng{bibnamehash}{950eb05c04a9e4d52991cce2a8c4ba5d}
+      \strng{authorbibnamehash}{950eb05c04a9e4d52991cce2a8c4ba5d}
+      \strng{authornamehash}{950eb05c04a9e4d52991cce2a8c4ba5d}
+      \strng{authorfullhash}{950eb05c04a9e4d52991cce2a8c4ba5d}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Physical Review D}
+      \field{number}{9}
+      \field{title}{Single-parton scattering versus double-parton scattering in the production of twocc¯pairs and charmed meson correlations at the LHC}
+      \field{volume}{89}
+      \field{year}{2014}
+      \true{nocite}
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+
