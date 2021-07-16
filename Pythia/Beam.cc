@@ -32,7 +32,7 @@ struct Beam {
 			isomer_level = I;
 		}
 
-		int pdg_code() {
+		int pdg_code() const {
 			int base = 1'000'000'000;
 			int L = strange_count * 10'000'000;
 			int Z = atomic_number * 10'000;
@@ -74,6 +74,34 @@ struct Beam {
 		settings.mode("PDF:nPDFSet" + beam, static_cast<int>(pdf));
 		settings.mode("PDF:nPDFBeam" + beam, nucleus.pdg_code());
 	}
+	friend ostream& operator<<(ostream& os, Beam const & beam) {
+		os << beam.nucleus.atomic_number << ", " << beam.nucleus.mass_number << ", " << beam.nucleus.pdg_code() << "; ";
+		switch(beam.pdf) {
+			case NuclearPDF::None:
+				os << "None";
+				break;
+			case NuclearPDF::EPS09LO:
+				os << "EPS09LO";
+				break;
+			case NuclearPDF::EPS09NLO:
+				os << "EPS09NLO";
+				break;
+			case NuclearPDF::EPPS16NLO:
+				os << "EPPS16NLO";
+				break;
+		}
+		if (beam.use_hard_npdf) {
+			os << " (nPDF on)";
+		} else {
+			os << " (nPDF off)";
+		}
+		return os;
+    }
+};
+
+enum class Process {
+	HardQCD,
+	SoftQCDNonDiffractive
 };
 
 #endif // BEAM_H

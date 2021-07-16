@@ -26,6 +26,8 @@ struct GeneratorParameters {
 
 	Beam beam_A;
 	Beam beam_B;
+
+	Process process;
 };
 
 #endif // GENERATOR_PARAMETER_H

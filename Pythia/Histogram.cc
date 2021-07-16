@@ -106,23 +106,26 @@ public:
 		}
 	}
 
-	void print_with_bars() const {
-		cout << "\n";
+	friend ostream& operator<<(ostream& os, ValueHistogram<T> const & hist) {
+		os << "\n";
 		T total = T(0);
-		for (auto &container : containers) {
+		for (auto &container : hist.containers) {
 			total += container.value.value;
 		}
-		for (auto &container : containers) {
+		for (auto &container : hist.containers) {
 			const Around<T> value = container.value;
 			const T percentage = ((double)value.value / (double)total) * 100;
 			const int count = round(percentage);
-			cout << container.range.extent() << ": " << "(" << value << ")\t";
+			os << container.range.extent() << ": " << "(" << value << ")\t";
 			for (int i = 0; i < count; i++) {
-				cout << "#";
+				os << "#";
 			}
-			cout << "\n";
+			os << "\n";
 		}
-		cout << "\n";
+		return os << "\n";
+    }
+	void print_with_bars() const {
+		cout << *this;
 	}
 	/// Exports the histogram to a file `filename`.
 	void export_histogram(std::string filename, int precision = 12) const {
@@ -148,7 +151,20 @@ public:
 		ValueHistogram<double> normalized;
 		const double sum_total = total();
 		for (auto container : containers) {
-			const Around<double> new_value = container.value / (container.range.width() * sum_total);
+			const double factor = container.range.width() * sum_total;
+			const Around<double> new_value = factor == 0 ? 0 : container.value / factor;
+			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
+			normalized.containers.push_back(new_container);
+		}
+		return normalized;
+	}
+
+	ValueHistogram<double> normalize_to_star_C(double N_trig) const {
+		ValueHistogram<double> normalized;
+		for (auto container : containers) {
+			const double delta_phi = container.range.width();
+			const double factor = N_trig * delta_phi;
+			const Around<double> new_value = factor == 0 ? 0 : container.value / factor;
 			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
 			normalized.containers.push_back(new_container);
 		}

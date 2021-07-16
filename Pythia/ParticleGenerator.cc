@@ -33,6 +33,15 @@ public:
         settings.mode("Random:seed", params.random_seed);
         settings.flag("PartonLevel:MPI", params.mpi);
 
+        switch(params.process) {
+        	case Process::HardQCD:
+        		settings.flag("HardQCD:all", true);
+        		break;
+        	case Process::SoftQCDNonDiffractive:
+        		settings.flag("SoftQCD:nonDiffractive", true);
+        		break;
+        }
+
         params.beam_A.apply_to(settings, "A");
         params.beam_B.apply_to(settings, "B");
 

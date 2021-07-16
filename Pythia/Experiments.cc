@@ -9,6 +9,7 @@
 #include "EventGenerator.cc"
 #include "Beam.cc"
 #include "Around.cc"
+#include <chrono>
 
 using namespace Pythia8;
 
@@ -18,17 +19,6 @@ using namespace Pythia8;
  */
 class Experiment {
 public:
-	/**
-	 * Types of normalization to apply in data analysis.
-	 */
-	enum class Normalization {
-		/// No normalization
-		None, 
-		/// Normalize by integral
-		Unity, 
-		/// Normalize by event count
-		Count
-	};
 	/// Center-of-mass energy in GeV. Required.
 	double energy;
 	/// Number of events per partonic bin. Required.
@@ -77,6 +67,12 @@ public:
 	/// Beam B parameters.
 	Beam beam_B;
 
+	Process process;
+
+	std::optional<string> working_directory;
+	string histogram_file_extension;
+	string run_data_file_extension;
+
 	/// Runs the experiment. Subclasses must implement this method.
 	virtual void run() = 0;
 
@@ -98,6 +94,7 @@ public:
 		params.particle_ids = Constants::pions;
 		params.beam_A = beam_A;
 		params.beam_B = beam_B;
+		params.process = process;
 
 		return params;
 	}
@@ -121,7 +118,7 @@ public:
 	 * \param hist Input histogram.
 	 */
 	template<typename T>
-	ValueHistogram<T> normalize(Normalization _normalization, ValueHistogram<T> hist) {
+	ValueHistogram<T> normalize(Normalization _normalization, ValueHistogram<T> hist, double param = 0.0) {
 		switch (_normalization) {
 			case Normalization::Unity:
 				return hist.normalize_to_unity();
@@ -129,8 +126,28 @@ public:
 			case Normalization::Count:
 				return hist.normalize_by(hist.total());
 				break;
+			case Normalization::STARC:
+				return hist.normalize_to_star_C(param);
+				break;
 			default:
 				return hist;
+				break;
+		}
+	}
+
+	ValueHistogram<double> normalize(Normalization _normalization, EventGenerator::Result result) {
+		switch (_normalization) {
+			case Normalization::Unity:
+				return result.histogram.normalize_to_unity();
+				break;
+			case Normalization::Count:
+				return result.histogram.normalize_by(result.histogram.total());
+				break;
+			case Normalization::STARC:
+				return result.histogram.normalize_to_star_C(result.N_trigger);
+				break;
+			default:
+				return result.histogram;
 				break;
 		}
 	}
@@ -139,8 +156,12 @@ public:
 	 * \param hist Input histogram.
 	 */
 	template<typename T>
-	ValueHistogram<T> normalize(ValueHistogram<T> hist) {
-		return normalize(normalization, hist);
+	ValueHistogram<T> normalize(ValueHistogram<T> hist, double param = 0.0) {
+		return normalize(normalization, hist, param);
+	}
+
+	ValueHistogram<double> normalize(EventGenerator::Result result) {
+		return normalize(normalization, result);
 	}
 };
 
@@ -213,17 +234,7 @@ public:
  */
 class DPSExperiment : public Experiment {
 public:
-	/**
-	 * Enum encapsulating the strategy with multiparton interactions.
-	 */
-	enum class MPIStrategy {
-		/// No MPI
-		Disabled, 
-		/// Use Pythia's MPI model
-		PythiaMPI, 
-		/// Use an analytic DPS model
-		DPS
-	};
+
 	/**
 	 * A list of analysis parameters,
 	 * each of which will produce its own
@@ -238,6 +249,7 @@ public:
 	MPIStrategy mpi_strategy;
 
 	void run() {
+		const auto start_time = std::chrono::high_resolution_clock::now();
 		// Set the `mpi` field to the appropriate field.
 		switch(mpi_strategy) {
 			// MPI disabled ==> mpi = false;
@@ -285,15 +297,22 @@ public:
 		// Analyze the results, one run at a time
 		for (std::vector<EventGenerator::Result>::size_type run_index = 0; run_index < results.size(); run_index++) {
 			auto result = results[run_index];
-			auto normalized = normalize(Normalization::Unity, result.histogram);
+			auto normalized = normalize(result);
 
-			cout << "\n";
-			cout << "*------------------------------------------------------------------------------------*" << "\n";
-			cout << "|                                                                                    |" << "\n";
-			cout << "|                                       RUN #" << run_index + 1 << "                                       |\n";
-			cout << "|                                                                                    |" << "\n";
-			cout << "*------------------------------------------------------------------------------------*" << "\n";
-			cout << "\n";
+			const auto end_time = std::chrono::high_resolution_clock::now();
+			const std::chrono::duration<double> elapsed_duration = end_time - start_time;
+			const double elapsed_time = elapsed_duration.count();
+
+			const string prefix = working_directory ? *working_directory : "";
+			ofstream file;
+			if (result.parameters.filename) {
+				const string filename = prefix + *result.parameters.filename + run_data_file_extension;
+				file.open(filename);
+				file << std::setprecision(6);
+
+				file << "elapsed_time\t= " << elapsed_time << " s\n\n";
+			}
+			
 
 			if (mpi_strategy == MPIStrategy::DPS) {
 				const int A = beam_A.nucleus.mass_number;
@@ -314,27 +333,57 @@ public:
 				const Around<double> alpha = sps / den;
 				const Around<double> beta = dps / den;
 
-				cout << "pT_1\t\t= " << result.parameters.pT_small.extent() << "\n";
-				cout << "pT_2\t\t= " << result.parameters.pT_large.extent() << "\n";
-				cout << "y_1\t\t= " << result.parameters.y_small.extent() << "\n";
-				cout << "y_2\t\t= " << result.parameters.y_large.extent() << "\n";
-				cout << "m\t\t= " << m << "\n";
-				cout << "sigma_eff\t= " << sigma_eff << "\n";
-				cout << "sps1\t\t= "; print_with_precision(sps1, 6);
-				cout << "sps2\t\t= "; print_with_precision(sps2, 6);
-				cout << "ssps\t\t= "; print_with_precision(ssps, 6);
-				cout << "sps\t\t= "; print_with_precision(sps, 6);
-				cout << "dps\t\t= "; print_with_precision(dps, 6);
-				cout << "alpha\t\t= "; print_with_precision(alpha, 6);
-				cout << "beta\t\t= "; print_with_precision(beta, 6);
+				if (result.parameters.filename) {
+					file << "eCM\t\t= " << energy << "\n";
+					file << "count\t\t= " << count * pT_hat_bins.size() << "\n\n";
+
+					file << "process\t\t= " << to_string(process) << "\n";
+					file << "include_decayed\t= " << bool_to_string(include_decayed) << "\n";
+					file << "mpi\t\t= " << to_string(mpi_strategy) << "\n\n";
+					file << "normalization\t= " << to_string(normalization) << "\n\n";
+
+					file << "beam_A\t\t= " << beam_A << "\n";
+					file << "beam_B\t\t= " << beam_B << "\n\n";
+
+					file << "use_biasing\t= " << bool_to_string(use_biasing) << "\n";
+					file << "bias_power\t= " << bias_power << "\n";
+					file << "bias_reference\t= " << bias_reference << "\n\n";
+
+					file << "pT_1\t\t= " << result.parameters.pT_small.extent() << "\n";
+					file << "pT_2\t\t= " << result.parameters.pT_large.extent() << "\n";
+					file << "y_1\t\t= " << result.parameters.y_small.extent() << "\n";
+					file << "y_2\t\t= " << result.parameters.y_large.extent() << "\n\n";
+
+					file << "m\t\t= " << m << "\n";
+					file << "sigma_pp\t= " << sigma_pp << "\n";
+					file << "sigma_eff\t= " << sigma_eff << "\n\n";
+
+					file << "sps1\t\t= " << sps1 << "\n";
+					file << "sps2\t\t= " << sps2 << "\n";
+					file << "ssps\t\t= " << ssps << "\n\n";
+
+					file << "sps\t\t= " << sps << "\n";
+					file << "dps\t\t= " << dps << "\n\n";
+
+					file << "alpha\t\t= " << alpha << "\n";
+					file << "beta\t\t= " << beta << "\n\n";
+				}
 
 				normalized *= alpha;
 				normalized += beta / M_PI;
 			}
-			normalized.print_with_bars();
+			cout << normalized;
 
 			if (result.parameters.filename) {
-				normalized.export_histogram(*result.parameters.filename);
+				file << "azimuthal histogram:";
+				file << normalized;
+				file << "\n";
+				file << "pT_hat_bins:\n";
+				for (auto bin : pT_hat_bins) {
+					file << bin.extent() << "\n";
+				}
+				file.close();
+				normalized.export_histogram(prefix + *result.parameters.filename + histogram_file_extension);
 			}
 		}
 	}
@@ -345,11 +394,13 @@ int main() {
 
 	DPSExperiment dps;
 
+	dps.process = Process::SoftQCDNonDiffractive;
 	dps.energy = 200;
-	dps.count = 10'000'000 / 16;
-	dps.mpi_strategy = DPSExperiment::MPIStrategy::DPS;
+	dps.count = 100'000'000 / 16;
+	dps.mpi_strategy = MPIStrategy::DPS;
+	dps.normalization = Normalization::Unity;
 	dps.bins = fixed_range(0.0, M_PI, 20);
-	dps.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(10.0, std::nullopt));
+	dps.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.5, std::nullopt));
 
 	dps.runs = {
 		Analyzer::Parameters(
@@ -357,7 +408,15 @@ int main() {
 			1.4, 2.0,
 			2.6, 4.1,
 			2.6, 4.1,
-			"STAR7/delta_phi_1e7_1014_1420_2641_2641_250_dps_pp_100.csv",
+			"Au_10",
+			1.0,
+			10.0),
+		Analyzer::Parameters(
+			1.0, 1.4,
+			1.4, 2.0,
+			2.6, 4.1,
+			2.6, 4.1,
+			"Au_25",
 			1.0,
 			25.0),
 	};
@@ -366,7 +425,7 @@ int main() {
 	dps.y_range = OptionalRange<double>(2.6, 4.1);
 
 	dps.include_decayed = true;
-	dps.use_biasing = true;
+	dps.use_biasing = false;
 	dps.parallelize = true;
 	dps.pythia_printing = false;
 
@@ -374,8 +433,13 @@ int main() {
 	dps.random_seed = 1;
 
 	dps.beam_A = Beam();
-	dps.beam_B = Beam();
-	// dps.beam_B = Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, false);
+	// dps.beam_B = Beam();
+	// dps.beam_B = Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, true);
+	dps.beam_B = Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, true);
+
+	dps.working_directory = "Tests/Nuclear/SoftQCD/";
+	dps.histogram_file_extension = ".csv";
+	dps.run_data_file_extension = ".txt";
 
 	dps.run();
 
@@ -427,7 +491,7 @@ int main() {
 	ac.variable_seed = true;
 	ac.random_seed = 1;
 
-	ac.normalization = Experiment::Normalization::Unity;
+	ac.normalization = Normalization::Unity;
 
 	ac.runs = {
 		Analyzer::Parameters(

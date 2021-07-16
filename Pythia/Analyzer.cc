@@ -85,9 +85,9 @@ public:
 
 	ValueHistogram<double> histogram;
 
-	double sigma_sps_1 = 0.0;
-	double sigma_sps_2 = 0.0;
-	double sigma_sps = 0.0;
+	double N_trigger = 0.0;
+	double N_assoc = 0.0;
+	double N_pair = 0.0;
 
 	Analyzer(Analyzer::Parameters params, std::vector<double> b) {
 		parameters = params;
@@ -95,8 +95,7 @@ public:
 		histogram = ValueHistogram<double>(bins);
 	}
 
-	template <typename F>
-	void book(std::vector<ParticleContainer> *input, F lambda) {
+	void book(std::vector<ParticleContainer> *input) {
 		const auto N = input->size();
 
 		for (std::vector<ParticleContainer>::size_type i = 0; i < N; i++) {
@@ -106,9 +105,9 @@ public:
 
 			// pT and/or y ranges are assumed to be non-overlapping, i.e. a particle passes at most one filter
 			if (check11) {
-				sigma_sps_1 += particle1.event_weight;
+				N_trigger += particle1.event_weight;
 			} else if (check12) {
-				sigma_sps_2 += particle1.event_weight;
+				N_assoc += particle1.event_weight;
 			} else {
 				continue;
 			}
@@ -126,18 +125,13 @@ public:
 				const double delta_phi = abs(phi1 - phi2);
 				const double value = min(delta_phi, 2 * M_PI - delta_phi);
 
-				sigma_sps += particle1.event_weight;
+				N_pair += particle1.event_weight;
 
-				lambda(value);
+				histogram.fill(value, particle1.event_weight);
 			}
 		}
 	}
 
-	void book(std::vector<ParticleContainer> *input) {
-		book(input, [this](double value) {
-			histogram.fill(value);
-		});
-	}
 };
 
 #endif // CORRELATION_ANALYZER_H

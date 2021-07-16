@@ -261,4 +261,71 @@ double calculate_sigma_eff(Beam b, double sigma_pp) {
 	return (B * B * sigma_pp) / (B * B + (B - 1) * geometric_integral * sigma_pp);
 }
 
+std::string bool_to_string(bool in) {
+	return in ? "true" : "false";
+}
+
+	/**
+	 * Types of normalization to apply in data analysis.
+	 */
+	enum class Normalization {
+		/// No normalization
+		None, 
+		/// Normalize by integral
+		Unity, 
+		/// Normalize by event count
+		Count,
+
+		STARC
+	};
+	/**
+	 * Enum encapsulating the strategy with multiparton interactions.
+	 */
+	enum class MPIStrategy {
+		/// No MPI
+		Disabled, 
+		/// Use Pythia's MPI model
+		PythiaMPI, 
+		/// Use an analytic DPS model
+		DPS
+	};
+std::string to_string(Normalization norm) {
+	switch(norm) {
+		case Normalization::None:
+			return "none";
+			break;
+		case Normalization::Unity:
+			return "unity";
+			break;
+		case Normalization::Count:
+			return "count";
+			break;
+		case Normalization::STARC:
+			return "STARC";
+			break;
+	}
+}
+std::string to_string(Process in) {
+	switch(in) {
+		case Process::HardQCD:
+			return "HardQCD";
+			break;
+		case Process::SoftQCDNonDiffractive:
+			return "SoftQCDNonDiffractive";
+			break;
+	}
+}
+std::string to_string(MPIStrategy mpi) {
+	switch(mpi) {
+		case MPIStrategy::Disabled:
+			return "disabled";
+			break;
+		case MPIStrategy::PythiaMPI:
+			return "PythiaMPI";
+			break;
+		case MPIStrategy::DPS:
+			return "DPS";
+			break;
+	}
+}
 #endif // HELPERS_H

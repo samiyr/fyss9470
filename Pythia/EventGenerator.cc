@@ -5,6 +5,9 @@ class EventGenerator {
 public:
 	struct Result {
 		ValueHistogram<double> histogram;
+
+		double N_trigger;
+
 		std::vector<double> sigma_sps_1;
 		std::vector<double> sigma_sps_2;
 		std::vector<double> sigma_sps;
@@ -17,10 +20,8 @@ public:
 
 		Result& operator+=(Result rhs) {
 			histogram += rhs.histogram;
+			N_trigger += rhs.N_trigger;
 			sigma_sps_1.insert(sigma_sps_1.end(), rhs.sigma_sps_1.begin(), rhs.sigma_sps_1.end());
-			// sigma_sps_1 += rhs.sigma_sps_1;
-			// sigma_sps_2 += rhs.sigma_sps_2;
-			// sigma_sps += rhs.sigma_sps;
 			sigma_sps_2.insert(sigma_sps_2.end(), rhs.sigma_sps_2.begin(), rhs.sigma_sps_2.end());
 			sigma_sps.insert(sigma_sps.end(), rhs.sigma_sps.begin(), rhs.sigma_sps.end());
 			sigma_gen += rhs.sigma_gen;
@@ -76,9 +77,10 @@ public:
 			const auto factor = sigma_gen / total_weight;
 			Result result;
 			result.histogram = analyzer.histogram;
-			result.sigma_sps_1 = {analyzer.sigma_sps_1 * factor};
-			result.sigma_sps_2 = {analyzer.sigma_sps_2 * factor};
-			result.sigma_sps = {analyzer.sigma_sps * factor};
+			result.N_trigger = analyzer.N_trigger;
+			result.sigma_sps_1 = {analyzer.N_trigger * factor};
+			result.sigma_sps_2 = {analyzer.N_assoc * factor};
+			result.sigma_sps = {analyzer.N_pair * factor};
 			result.sigma_gen = sigma_gen;
 			result.total_weight = total_weight;
 			result.parameters = analyzer.parameters;
