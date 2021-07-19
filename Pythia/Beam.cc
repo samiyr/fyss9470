@@ -18,19 +18,9 @@ struct Beam {
 		int strange_count;
 		int isomer_level;
 
-		Nucleus() {
-			atomic_number = 1;
-			mass_number = 1;
-			strange_count = 0;
-			isomer_level = 0;
-		}
+		Nucleus() : Nucleus(1, 1, 0, 0) {}
 
-		Nucleus(int Z, int A, int ns = 0, int I = 0) {
-			atomic_number = Z;
-			mass_number = A;
-			strange_count = ns;
-			isomer_level = I;
-		}
+		Nucleus(int Z, int A, int ns = 0, int I = 0) : atomic_number(Z), mass_number(A), strange_count(ns), isomer_level(I) {}
 
 		int pdg_code() const {
 			int base = 1'000'000'000;
@@ -39,13 +29,6 @@ struct Beam {
 			int A = mass_number * 10;
 			int I = isomer_level;
 			return base + L + Z + A + I;
-		}
-
-		static Nucleus proton() {
-			return Nucleus();
-		}
-		static Nucleus Pb() {
-			return Nucleus(82, 208);
 		}
 	};
 
@@ -59,16 +42,10 @@ struct Beam {
 		use_hard_npdf = false;
 	}
 
-	Beam(Nucleus _nucleus, NuclearPDF _pdf = NuclearPDF::None, bool _use_hard_npdf = false) {
-		nucleus = _nucleus;
-		pdf = _pdf;
-		use_hard_npdf = _use_hard_npdf;
-	}
-	Beam(int Z, int A, NuclearPDF _pdf = NuclearPDF::None, bool _use_hard_npdf = false) {
-		nucleus = Nucleus(Z, A);
-		pdf = _pdf;
-		use_hard_npdf = _use_hard_npdf;
-	}
+	Beam(Nucleus nucleus, NuclearPDF pdf = NuclearPDF::None, bool use_hard_npdf = false) : nucleus(nucleus), pdf(pdf), use_hard_npdf(use_hard_npdf) {}
+
+	Beam(int Z, int A, NuclearPDF pdf = NuclearPDF::None, bool use_hard_npdf = false) : nucleus(Nucleus(Z, A)), pdf(pdf), use_hard_npdf(use_hard_npdf) {}
+
 	void apply_to(Settings &settings, string beam) {
 		settings.flag("PDF:useHardNPDF" + beam, use_hard_npdf);
 		settings.mode("PDF:nPDFSet" + beam, static_cast<int>(pdf));

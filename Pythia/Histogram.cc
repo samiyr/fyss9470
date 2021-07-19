@@ -25,10 +25,7 @@ struct Bin {
 		return std::accumulate(weights.begin(), weights.end(), typename std::vector<T>::value_type(0.0));
 	}
 	/// Initializes a bin, with no content by default.
-	Bin(double l, double u, std::vector<T> c = {}, std::vector<T> w = {}) : range(l, u) {
-		contents = c;
-		weights = w;
-	}
+	Bin(double l, double u, std::vector<T> c = {}, std::vector<T> w = {}) : range(l, u), contents(c), weights(w) {}
 	/// Returns the number of items stored.
 	auto size() {
 		return contents.size();
@@ -49,8 +46,8 @@ struct RangedContainer {
 	/// Value associated with the bin.
 	Around<T> value;
 	/// Initializes a bin.
-	RangedContainer(double l, double u, T v) : range(l, u), value(v) { }
-	RangedContainer(double l, double u, Around<T> v) : range(l, u), value(v) { }
+	RangedContainer(double l, double u, T v) : range(l, u), value(v) {}
+	RangedContainer(double l, double u, Around<T> v) : range(l, u), value(v) {}
 };
 
 /**
@@ -63,9 +60,7 @@ public:
 	/// Bins stored in the histogram.
 	std::vector<RangedContainer<T>> containers;
 	/// Initializes a histogram, with no content by default.
-	ValueHistogram(std::vector<RangedContainer<T>> c = {}) {
-		containers = c;
-	}
+	ValueHistogram(std::vector<RangedContainer<T>> c = {}) : containers(c) {}
 	/// Initializes a histogram and reserves capacity.
 	ValueHistogram(int capacity) {
 		containers.reserve(capacity);

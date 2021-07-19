@@ -22,22 +22,14 @@ public:
 		/// If set to `nullopt`, no data is exported.
 		std::optional<std::string> filename;
 
-		double sigma_eff;
 		double m;
+		double sigma_eff;
 
 		bool parameter_validation() {
 			return OptionalRange<double>::disjoint(pT_small, pT_large) || OptionalRange<double>::disjoint(y_small, y_large);
 		}
 
-		Parameters() {
-			pT_small = OptionalRange<double>();
-			pT_large = OptionalRange<double>();
-			y_small = OptionalRange<double>();
-			y_large = OptionalRange<double>();
-			filename = std::nullopt;
-			sigma_eff = Defaults::sigma_eff;
-			m = Defaults::m;
-		}
+		Parameters() : Parameters(OptionalRange<double>(), OptionalRange<double>(), OptionalRange<double>(), OptionalRange<double>()) {}
 
 		Parameters(
 			OptionalRange<double> pT_1, 
@@ -45,15 +37,15 @@ public:
 			OptionalRange<double> y_1, 
 			OptionalRange<double> y_2, 
 			std::optional<std::string> fn = std::nullopt,
-			double _m = Defaults::m,
-			double seff = Defaults::sigma_eff) {
-			pT_small = pT_1;
-			pT_large = pT_2;
-			y_small = y_1;
-			y_large = y_2;
-			filename = fn;
-			m = _m;
-			sigma_eff = seff;
+			double m = Defaults::m,
+			double sigma_eff = Defaults::sigma_eff)
+			:pT_small(pT_1), 
+			pT_large(pT_2), 
+			y_small(y_1), 
+			y_large(y_2), 
+			filename(fn), 
+			m(m), 
+			sigma_eff(sigma_eff) {
 			assert(parameter_validation());
 		}
 
@@ -67,15 +59,15 @@ public:
 			std::optional<double> y_2_l,
 			std::optional<double> y_2_u,
 			std::optional<string> fn = std::nullopt,
-			double _m = Defaults::m,
-			double seff = Defaults::sigma_eff) {
-			pT_small = OptionalRange<double>(pT_1_l, pT_1_u);
-			pT_large = OptionalRange<double>(pT_2_l, pT_2_u);
-			y_small = OptionalRange<double>(y_1_l, y_1_u);
-			y_large = OptionalRange<double>(y_2_l, y_2_u);
-			filename = fn;
-			m = _m;
-			sigma_eff = seff;
+			double m = Defaults::m,
+			double sigma_eff = Defaults::sigma_eff)
+			:pT_small(OptionalRange<double>(pT_1_l, pT_1_u)), 
+			pT_large(OptionalRange<double>(pT_2_l, pT_2_u)),
+			y_small(OptionalRange<double>(y_1_l, y_1_u)), 
+			y_large(OptionalRange<double>(y_2_l, y_2_u)),
+			filename(fn), 
+			m(m), 
+			sigma_eff(sigma_eff) {
 			assert(parameter_validation());
 		}
 	};
@@ -89,11 +81,7 @@ public:
 	double N_assoc = 0.0;
 	double N_pair = 0.0;
 
-	Analyzer(Analyzer::Parameters params, std::vector<double> b) {
-		parameters = params;
-		bins = b;
-		histogram = ValueHistogram<double>(bins);
-	}
+	Analyzer(Analyzer::Parameters params, std::vector<double> b) : parameters(params), bins(b), histogram(ValueHistogram<double>(bins)) {}
 
 	void book(std::vector<ParticleContainer> *input) {
 		const auto N = input->size();

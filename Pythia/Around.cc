@@ -8,10 +8,8 @@ struct Around {
 	T value;
 	std::optional<T> error;
 
-	Around(T _value, std::optional<T> _error = std::nullopt) {
-		value = _value;
-		error = _error;
-	}
+	Around(T value, std::optional<T> error = std::nullopt) : value(value), error(error) {}
+
 	Around(std::vector<T> v) {
 		assert(v.size() != 0);
 		value = mean(v);

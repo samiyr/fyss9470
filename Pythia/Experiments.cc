@@ -1,7 +1,6 @@
 #ifndef EXPERIMENTS_H
 #define EXPERIMENTS_H
 
-#include "Pythia8/Pythia.h"
 #include "PartonicGenerator.cc"
 #include "Histogram.cc"
 #include "Analyzer.cc"
@@ -10,8 +9,6 @@
 #include "Beam.cc"
 #include "Around.cc"
 #include <chrono>
-
-using namespace Pythia8;
 
 /**
  * Represents a generic Pythia experiment.
@@ -55,6 +52,8 @@ public:
 	/// `random_seed` + i, where i is the iterator index of
 	/// the partonic pT bins `pT_hat_bins`.
 	/// Default specified in Constants.cc.
+	/// Should be enabled when parallelizing Pythia by specifying
+	/// multiple pT_hat bins.
 	bool variable_seed = Defaults::variable_seed;
 	/// Whether to use Pythia's multiparton interactions. 
 	/// Default specified in Constants.cc.
@@ -62,16 +61,24 @@ public:
 	bool mpi = Defaults::mpi;
 	/// Normalization type to use.
 	Normalization normalization;
-	/// Beam A parameters.
-	Beam beam_A;
-	/// Beam B parameters.
+	/// Beam A parameters. Should be a proton since nuclear structure is not
+	/// taken into account when calculating the effective cross section (sigma_eff).
+	Beam beam_A = Beam();
+	/// Beam B parameters. Required.
 	Beam beam_B;
-
+	/// Type of process, e.g. Process::HardQCD or Process::SoftQCDNonDiffractive. Required.
 	Process process;
-
-	std::optional<string> working_directory;
-	string histogram_file_extension;
-	string run_data_file_extension;
+	/// Path component appended to the filename during export.
+	/// Either the filename or the working directory has to include
+	/// a path component separator '/' since one isn't automatically
+	/// appended to the export file. Defaults to nullopt.
+	std::optional<string> working_directory = std::nullopt;
+	/// The file extension used in the exported histogram. 
+	/// Default specified in Constants.cc.
+	string histogram_file_extension = Defaults::histogram_file_extension;
+	/// The file extension used in the exported parameter data file. 
+	/// Default specified in Constants.cc.
+	string run_data_file_extension = Defaults::run_data_file_extension;
 
 	/// Runs the experiment. Subclasses must implement this method.
 	virtual void run() = 0;
@@ -249,6 +256,7 @@ public:
 	MPIStrategy mpi_strategy;
 
 	void run() {
+		// Start the clock.
 		const auto start_time = std::chrono::high_resolution_clock::now();
 		// Set the `mpi` field to the appropriate field.
 		switch(mpi_strategy) {
@@ -298,21 +306,22 @@ public:
 		for (std::vector<EventGenerator::Result>::size_type run_index = 0; run_index < results.size(); run_index++) {
 			auto result = results[run_index];
 			auto normalized = normalize(result);
-
+			// Stop the clock
 			const auto end_time = std::chrono::high_resolution_clock::now();
 			const std::chrono::duration<double> elapsed_duration = end_time - start_time;
 			const double elapsed_time = elapsed_duration.count();
-
+			// Prefix for the export file path.
 			const string prefix = working_directory ? *working_directory : "";
+			// Initialize data parameter output file.
 			ofstream file;
 			if (result.parameters.filename) {
+				// Construct data output file path.
 				const string filename = prefix + *result.parameters.filename + run_data_file_extension;
 				file.open(filename);
 				file << std::setprecision(6);
 
 				file << "elapsed_time\t= " << elapsed_time << " s\n\n";
 			}
-			
 
 			if (mpi_strategy == MPIStrategy::DPS) {
 				const int A = beam_A.nucleus.mass_number;

@@ -16,14 +16,7 @@ struct ParticleContainer {
 	int id;
 	bool is_final;
 
-	ParticleContainer(Particle p, double w) {
-		pT = p.pT();
-		y = p.y();
-		phi = p.phi();
-		event_weight = w;
-		id = p.id();
-		is_final = p.isFinal();
-	}
+	ParticleContainer(Particle p, double w) : pT(p.pT()), y(p.y()), phi(p.phi()), event_weight(w), id(p.id()), is_final(p.isFinal()) {}
 };
 
 #endif // PARTICLE_CONTAINER_H

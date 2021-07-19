@@ -47,11 +47,8 @@ public:
 	std::vector<Analyzer::Parameters> runs;
 	std::vector<Analyzer> analyzers;
 
-	EventGenerator(GeneratorParameters _params, std::vector<double> _bins, OptionalRange<double> _pT_hat_range, std::vector<Analyzer::Parameters> _runs) {
-		params = _params;
-		bins = _bins;
-		pT_hat_range = _pT_hat_range;
-		runs = _runs;
+	EventGenerator(GeneratorParameters params, std::vector<double> bins, OptionalRange<double> pT_hat_range, std::vector<Analyzer::Parameters> runs)
+		:params(params), bins(bins), pT_hat_range(pT_hat_range), runs(runs) {
 		for (auto &run : runs) {
 			analyzers.emplace_back(run, bins);
 		}
