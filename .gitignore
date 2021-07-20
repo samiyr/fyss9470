@@ -1,7 +1,8 @@
 */*
+.DS_Store
 !*.h
 !*.c
 !*.cpp
-!Pythia/*.cc
+!*.cc
 !*.nb
 !.gitignore
