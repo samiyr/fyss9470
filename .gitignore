@@ -1,6 +1,7 @@
-Materiaali/
-.DS_Store
-*.py
-*.dat
-*.output
-*.trace
+*
+!*.h
+!*.c
+!*.cpp
+!*.cc
+!*.nb
+!.gitignore
