@@ -2,6 +2,7 @@
 #define BEAM_H
 
 #include "Pythia8/Pythia.h"
+#include <cassert>
 
 using namespace Pythia8;
 
@@ -76,9 +77,27 @@ struct Beam {
     }
 };
 
-enum class Process {
-	HardQCD,
-	SoftQCDNonDiffractive
-};
+
+double calculate_sigma_eff(Beam b, double sigma_pp) {
+	double geometric_integral;
+	const int B = b.nucleus.mass_number;
+
+	switch(B) {
+		case 1:
+			geometric_integral = 0.0;
+			break;
+		case 197:
+			geometric_integral = 29.353;
+			break;
+		case 27:
+			geometric_integral = 1.700;
+			break;
+		default:
+			assert(false);
+			break;
+	}
+
+	return (B * B * sigma_pp) / (B * B + (B - 1) * geometric_integral * sigma_pp);
+}
 
 #endif // BEAM_H

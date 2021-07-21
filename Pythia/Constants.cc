@@ -32,202 +32,6 @@ namespace Constants {
 	static std::vector<int> pions = {111};
 
 	namespace RunParameters {
-		static std::vector<Analyzer::Parameters> STAR7 = {
-			Analyzer::Parameters(
-				1.0, 1.4,
-				1.4, 2.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR7/delta_phi_1e7_2641_2641_1014_1420_mpi_unity.csv"),
-			Analyzer::Parameters(
-				1.0, 1.4,
-				2.0, 2.4,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR7/delta_phi_1e7_2641_2641_1014_2024_mpi_unity.csv"),
-			Analyzer::Parameters(
-				1.0, 1.4,
-				2.4, 2.8,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR7/delta_phi_1e7_2641_2641_1014_2428_mpi_unity.csv"),
-			Analyzer::Parameters(
-				1.0, 1.4,
-				2.8, 5.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR7/delta_phi_1e7_2641_2641_1014_2850_mpi_unity.csv"),
-
-			Analyzer::Parameters(
-				1.4, 2.0,
-				2.0, 2.4,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR7/delta_phi_1e7_2641_2641_1420_2024_mpi_unity.csv"),
-			Analyzer::Parameters(
-				1.4, 2.0,
-				2.4, 2.8,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR7/delta_phi_1e7_2641_2641_1420_2428_mpi_unity.csv"),
-			Analyzer::Parameters(
-				1.4, 2.0,
-				2.8, 5.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR7/delta_phi_1e7_2641_2641_1420_2850_mpi_unity.csv"),
-
-			Analyzer::Parameters(
-				2.0, 2.4,
-				2.4, 2.8,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR7/delta_phi_1e7_2641_2641_2024_2428_mpi_unity.csv"),
-			Analyzer::Parameters(
-				2.0, 2.4,
-				2.8, 5.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR7/delta_phi_1e7_2641_2641_2024_2850_mpi_unity.csv"),
-
-			Analyzer::Parameters(
-				2.4, 2.8,
-				2.8, 5.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR7/delta_phi_1e7_2641_2641_2428_2850_mpi_unity.csv"),
-		};
-		static std::vector<Analyzer::Parameters> STAR8 = {
-			Analyzer::Parameters(
-				1.0, 1.4,
-				1.4, 2.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR8/delta_phi_1e8_2641_2641_1014_1420_mpi__.csv"),
-			Analyzer::Parameters(
-				1.0, 1.4,
-				2.0, 2.4,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR8/delta_phi_1e8_2641_2641_1014_2024_mpi__.csv"),
-			Analyzer::Parameters(
-				1.0, 1.4,
-				2.4, 2.8,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR8/delta_phi_1e8_2641_2641_1014_2428_mpi__.csv"),
-			Analyzer::Parameters(
-				1.0, 1.4,
-				2.8, 5.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR8/delta_phi_1e8_2641_2641_1014_2850_mpi__.csv"),
-
-			Analyzer::Parameters(
-				1.4, 2.0,
-				2.0, 2.4,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR8/delta_phi_1e8_2641_2641_1420_2024_mpi__.csv"),
-			Analyzer::Parameters(
-				1.4, 2.0,
-				2.4, 2.8,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR8/delta_phi_1e8_2641_2641_1420_2428_mpi__.csv"),
-			Analyzer::Parameters(
-				1.4, 2.0,
-				2.8, 5.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR8/delta_phi_1e8_2641_2641_1420_2850_mpi__.csv"),
-
-			Analyzer::Parameters(
-				2.0, 2.4,
-				2.4, 2.8,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR8/delta_phi_1e8_2641_2641_2024_2428_mpi__.csv"),
-			Analyzer::Parameters(
-				2.0, 2.4,
-				2.8, 5.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR8/delta_phi_1e8_2641_2641_2024_2850_mpi__.csv"),
-
-			Analyzer::Parameters(
-				2.4, 2.8,
-				2.8, 5.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR8/delta_phi_1e8_2641_2641_2428_2850_mpi__.csv"),
-		};
-
-		static std::vector<Analyzer::Parameters> STAR9 = {
-			Analyzer::Parameters(
-				1.0, 1.4,
-				1.4, 2.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR9/delta_phi_1e9_2641_2641_1014_1420_mpi__.csv"),
-			Analyzer::Parameters(
-				1.0, 1.4,
-				2.0, 2.4,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR9/delta_phi_1e9_2641_2641_1014_2024_mpi__.csv"),
-			Analyzer::Parameters(
-				1.0, 1.4,
-				2.4, 2.8,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR9/delta_phi_1e9_2641_2641_1014_2428_mpi__.csv"),
-			Analyzer::Parameters(
-				1.0, 1.4,
-				2.8, 5.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR9/delta_phi_1e9_2641_2641_1014_2850_mpi__.csv"),
-
-			Analyzer::Parameters(
-				1.4, 2.0,
-				2.0, 2.4,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR9/delta_phi_1e9_2641_2641_1420_2024_mpi__.csv"),
-			Analyzer::Parameters(
-				1.4, 2.0,
-				2.4, 2.8,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR9/delta_phi_1e9_2641_2641_1420_2428_mpi__.csv"),
-			Analyzer::Parameters(
-				1.4, 2.0,
-				2.8, 5.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR9/delta_phi_1e9_2641_2641_1420_2850_mpi__.csv"),
-
-			Analyzer::Parameters(
-				2.0, 2.4,
-				2.4, 2.8,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR9/delta_phi_1e9_2641_2641_2024_2428_mpi__.csv"),
-			Analyzer::Parameters(
-				2.0, 2.4,
-				2.8, 5.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR9/delta_phi_1e9_2641_2641_2024_2850_mpi__.csv"),
-
-			Analyzer::Parameters(
-				2.4, 2.8,
-				2.8, 5.0,
-				2.6, 4.1,
-				2.6, 4.1,
-				"STAR9/delta_phi_1e9_2641_2641_2428_2850_mpi__.csv"),
-		};
 		static std::vector<Analyzer::Parameters> STAR = {
 			Analyzer::Parameters(
 				1.0, 1.4,
@@ -293,25 +97,95 @@ namespace Constants {
 				2.6, 4.1,
 				"delta_phi_2641_2641_2428_2850"),
 		};
-		static std::vector<Analyzer::Parameters> birapidity_window_test = {
-			Analyzer::Parameters(
-				1.0, 1.4,
-				1.4, 2.0,
-				2.6, 4.1,
-				std::nullopt, std::nullopt,
-				"delta_phi_1e7_2641__1014_1420_mpi__.csv"),
-			Analyzer::Parameters(
-				OptionalRange<double>(1.0, 1.4),
-				OptionalRange<double>(1.4, 2.0),
-				OptionalRange<double>(2.6, 4.1),
-				OptionalRange<double>(2.6, 4.1, true),
-				"delta_phi_1e7_2641_2641c_1014_1420_mpi__.csv"),
+		static std::vector<Analyzer::Parameters> moving_pT_window_25 = {
 			Analyzer::Parameters(
 				1.0, 1.4,
 				1.4, 2.0,
 				2.6, 4.1,
 				2.6, 4.1,
-				"delta_phi_1e7_2641_2641_1014_1420_mpi__.csv"),
+				"data1",
+				1.0,
+				25.0),
+			Analyzer::Parameters(
+				1.1, 1.5,
+				1.5, 2.1,
+				2.6, 4.1,
+				2.6, 4.1,
+				"data2",
+				1.0,
+				25.0),
+			Analyzer::Parameters(
+				1.2, 1.6,
+				1.6, 2.2,
+				2.6, 4.1,
+				2.6, 4.1,
+				"data3",
+				1.0,
+				25.0),
+			Analyzer::Parameters(
+				1.3, 1.7,
+				1.7, 2.3,
+				2.6, 4.1,
+				2.6, 4.1,
+				"data4",
+				1.0,
+				25.0),
+			Analyzer::Parameters(
+				1.4, 1.8,
+				1.8, 2.4,
+				2.6, 4.1,
+				2.6, 4.1,
+				"data5",
+				1.0,
+				25.0),
+			Analyzer::Parameters(
+				1.5, 1.9,
+				1.9, 2.5,
+				2.6, 4.1,
+				2.6, 4.1,
+				"data6",
+				1.0,
+				25.0),
+			Analyzer::Parameters(
+				1.6, 2.0,
+				2.0, 2.6,
+				2.6, 4.1,
+				2.6, 4.1,
+				"data7",
+				1.0,
+				25.0),
+			Analyzer::Parameters(
+				1.7, 2.1,
+				2.1, 2.7,
+				2.6, 4.1,
+				2.6, 4.1,
+				"data8",
+				1.0,
+				25.0),
+			Analyzer::Parameters(
+				1.8, 2.2,
+				2.2, 2.8,
+				2.6, 4.1,
+				2.6, 4.1,
+				"data9",
+				1.0,
+				25.0),
+			Analyzer::Parameters(
+				1.9, 2.3,
+				2.3, 2.9,
+				2.6, 4.1,
+				2.6, 4.1,
+				"data10",
+				1.0,
+				25.0),
+			Analyzer::Parameters(
+				2.0, 2.4,
+				2.4, 3.0,
+				2.6, 4.1,
+				2.6, 4.1,
+				"data11",
+				1.0,
+				25.0),
 		};
 	}
 }

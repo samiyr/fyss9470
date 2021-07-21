@@ -6,6 +6,7 @@
 #include "Helpers.cc"
 #include "Constants.cc"
 #include "ParticleGenerator.cc"
+#include <cassert>
 
 using namespace Pythia8;
 

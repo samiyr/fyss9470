@@ -11,6 +11,42 @@
 
 using namespace Pythia8;
 
+/**
+ * 
+ * Miscellaneous types
+ * 
+ */
+
+/**
+ * Types of normalization to apply in data analysis.
+ */
+enum class Normalization {
+	/// No normalization
+	None, 
+	/// Normalize by integral
+	Unity, 
+	/// Normalize by event count
+	Count,
+
+	STARC
+};
+/**
+ * Enum encapsulating the strategy with multiparton interactions.
+ */
+enum class MPIStrategy {
+	/// No MPI
+	Disabled, 
+	/// Use Pythia's MPI model
+	PythiaMPI, 
+	/// Use an analytic DPS model
+	DPS
+};
+
+enum class Process {
+	HardQCD,
+	SoftQCDNonDiffractive
+};
+
 template <typename T>
 bool contains(std::vector<T> *vec, T element) {
 	for (auto &v : *vec) {
@@ -165,6 +201,10 @@ T variance(std::vector<T> v) {
 	});
 	return accum / (v.size() - 1);
 }
+template<typename T>
+T standard_deviation(std::vector<T> v) {
+	return sqrt(variance(v));
+}
 template <typename T>
 T standard_error_of_mean(std::vector<T> v) {
 	return sqrt(variance(v) / v.size());
@@ -239,56 +279,11 @@ std::vector<T> product(const std::vector<T> v1, const std::vector<T> v2) {
 	return r;
 }
 
-double calculate_sigma_eff(Beam b, double sigma_pp) {
-	double geometric_integral;
-	const int B = b.nucleus.mass_number;
-
-	switch(B) {
-		case 1:
-			geometric_integral = 0.0;
-			break;
-		case 197:
-			geometric_integral = 29.353;
-			break;
-		case 27:
-			geometric_integral = 1.700;
-			break;
-		default:
-			assert(false);
-			break;
-	}
-
-	return (B * B * sigma_pp) / (B * B + (B - 1) * geometric_integral * sigma_pp);
-}
-
 std::string bool_to_string(bool in) {
 	return in ? "true" : "false";
 }
 
-	/**
-	 * Types of normalization to apply in data analysis.
-	 */
-	enum class Normalization {
-		/// No normalization
-		None, 
-		/// Normalize by integral
-		Unity, 
-		/// Normalize by event count
-		Count,
 
-		STARC
-	};
-	/**
-	 * Enum encapsulating the strategy with multiparton interactions.
-	 */
-	enum class MPIStrategy {
-		/// No MPI
-		Disabled, 
-		/// Use Pythia's MPI model
-		PythiaMPI, 
-		/// Use an analytic DPS model
-		DPS
-	};
 std::string to_string(Normalization norm) {
 	switch(norm) {
 		case Normalization::None:

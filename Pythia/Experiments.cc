@@ -80,6 +80,9 @@ public:
 	/// Default specified in Constants.cc. Must include '.', e.g. '.txt'.
 	string run_data_file_extension = Defaults::run_data_file_extension;
 
+	bool cross_section_error;
+	bool histogram_fluctuation_error;
+
 	/// Runs the experiment. Subclasses must implement this method.
 	virtual void run() = 0;
 
@@ -143,18 +146,19 @@ public:
 	}
 
 	ValueHistogram<double> normalize(Normalization _normalization, EventGenerator::Result result) {
+		const auto histogram = ValueHistogram<double>::combine(result.histograms, histogram_fluctuation_error);
 		switch (_normalization) {
 			case Normalization::Unity:
-				return result.histogram.normalize_to_unity();
+				return histogram.normalize_to_unity();
 				break;
 			case Normalization::Count:
-				return result.histogram.normalize_by(result.histogram.total());
+				return histogram.normalize_by(histogram.total());
 				break;
 			case Normalization::STARC:
-				return result.histogram.normalize_to_star_C(result.N_trigger);
+				return histogram.normalize_to_star_C(result.N_trigger);
 				break;
 			default:
-				return result.histogram;
+				return histogram;
 				break;
 		}
 	}
@@ -241,7 +245,6 @@ public:
  */
 class DPSExperiment : public Experiment {
 public:
-
 	/**
 	 * A list of analysis parameters,
 	 * each of which will produce its own
@@ -327,9 +330,15 @@ public:
 				const int A = beam_A.nucleus.mass_number;
 				const int B = beam_B.nucleus.mass_number;
 
-				const Around<double> sps1 = Around(result.sigma_sps_1);
-				const Around<double> sps2 = Around(result.sigma_sps_2);
-				const Around<double> ssps = Around(result.sigma_sps);
+				Around<double> sps1 = Around(result.sigma_sps_1);
+				Around<double> sps2 = Around(result.sigma_sps_2);
+				Around<double> ssps = Around(result.sigma_sps);
+
+				if (!cross_section_error) {
+					sps1.error = std::nullopt;
+					sps2.error = std::nullopt;
+					ssps.error = std::nullopt;
+				}
 
 				const double m = result.parameters.m;
 				const double sigma_pp = result.parameters.sigma_eff;
@@ -399,17 +408,34 @@ public:
 };
 
 int main() {
+	ValueHistogram<double> h1({0.0, 1.0, 2.0});
+	h1.fill(0.5, 3.0);
+	h1.fill(1.5, 1.0);
+
+	ValueHistogram<double> h2({0.0, 1.0, 2.0});
+	h2.fill(0.7, 3.0);
+	h2.fill(1.3, 1.0);
+
+	ValueHistogram<double> h3({0.0, 1.0, 2.0});
+	h3.fill(0.5, 2.0);
+	h3.fill(1.5, 2.0);
+
+	cout << ValueHistogram<double>::combine({h1, h2});
+	cout << ValueHistogram<double>::combine({h2, h3});
+
 	/* --- DPS --- */
 
 	DPSExperiment dps;
 
-	dps.process = Process::SoftQCDNonDiffractive;
+	dps.process = Process::HardQCD;
 	dps.energy = 200;
-	dps.count = 10'000'000 / 16;
+	dps.count = 100'000'000 / 16;
 	dps.mpi_strategy = MPIStrategy::DPS;
-	dps.normalization = Normalization::STARC;
+	dps.normalization = Normalization::Unity;
 	dps.bins = fixed_range(0.0, M_PI, 20);
 	dps.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.5, std::nullopt));
+	dps.cross_section_error = true;
+	dps.histogram_fluctuation_error = true;
 
 	dps.runs = {
 		Analyzer::Parameters(
@@ -417,15 +443,87 @@ int main() {
 			1.4, 2.0,
 			2.6, 4.1,
 			2.6, 4.1,
-			"Au_10",
+			"data1",
 			1.0,
-			10.0),
+			25.0),
 		Analyzer::Parameters(
-			1.0, 1.4,
-			1.4, 2.0,
+			1.1, 1.5,
+			1.5, 2.1,
 			2.6, 4.1,
 			2.6, 4.1,
-			"Au_25",
+			"data2",
+			1.0,
+			25.0),
+		Analyzer::Parameters(
+			1.2, 1.6,
+			1.6, 2.2,
+			2.6, 4.1,
+			2.6, 4.1,
+			"data3",
+			1.0,
+			25.0),
+		Analyzer::Parameters(
+			1.3, 1.7,
+			1.7, 2.3,
+			2.6, 4.1,
+			2.6, 4.1,
+			"data4",
+			1.0,
+			25.0),
+		Analyzer::Parameters(
+			1.4, 1.8,
+			1.8, 2.4,
+			2.6, 4.1,
+			2.6, 4.1,
+			"data5",
+			1.0,
+			25.0),
+		Analyzer::Parameters(
+			1.5, 1.9,
+			1.9, 2.5,
+			2.6, 4.1,
+			2.6, 4.1,
+			"data6",
+			1.0,
+			25.0),
+		Analyzer::Parameters(
+			1.6, 2.0,
+			2.0, 2.6,
+			2.6, 4.1,
+			2.6, 4.1,
+			"data7",
+			1.0,
+			25.0),
+		Analyzer::Parameters(
+			1.7, 2.1,
+			2.1, 2.7,
+			2.6, 4.1,
+			2.6, 4.1,
+			"data8",
+			1.0,
+			25.0),
+		Analyzer::Parameters(
+			1.8, 2.2,
+			2.2, 2.8,
+			2.6, 4.1,
+			2.6, 4.1,
+			"data9",
+			1.0,
+			25.0),
+		Analyzer::Parameters(
+			1.9, 2.3,
+			2.3, 2.9,
+			2.6, 4.1,
+			2.6, 4.1,
+			"data10",
+			1.0,
+			25.0),
+		Analyzer::Parameters(
+			2.0, 2.4,
+			2.4, 3.0,
+			2.6, 4.1,
+			2.6, 4.1,
+			"data11",
 			1.0,
 			25.0),
 	};
@@ -446,11 +544,11 @@ int main() {
 	// dps.beam_B = Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, true);
 	// dps.beam_B = Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, true);
 
-	dps.working_directory = "Tests/Nuclear/STARC/";
+	dps.working_directory = "Tests/pT/HardQCD/";
 	dps.histogram_file_extension = ".csv";
 	dps.run_data_file_extension = ".txt";
 
-	dps.run();
+	// dps.run();
 
 
 	CrossSectionExperiment cs;

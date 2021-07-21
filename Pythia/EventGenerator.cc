@@ -4,7 +4,8 @@
 class EventGenerator {
 public:
 	struct Result {
-		ValueHistogram<double> histogram;
+		std::vector<ValueHistogram<double>> histograms;
+		// ValueHistogram<double> histogram;
 
 		double N_trigger;
 
@@ -19,7 +20,8 @@ public:
 		std::vector<Analyzer>::size_type run_index;
 
 		Result& operator+=(Result rhs) {
-			histogram += rhs.histogram;
+			histograms.insert(histograms.end(), rhs.histograms.begin(), rhs.histograms.end());
+			// histogram += rhs.histogram;
 			N_trigger += rhs.N_trigger;
 			sigma_sps_1.insert(sigma_sps_1.end(), rhs.sigma_sps_1.begin(), rhs.sigma_sps_1.end());
 			sigma_sps_2.insert(sigma_sps_2.end(), rhs.sigma_sps_2.begin(), rhs.sigma_sps_2.end());
@@ -73,7 +75,8 @@ public:
 			auto analyzer = analyzers[i];
 			const auto factor = sigma_gen / total_weight;
 			Result result;
-			result.histogram = analyzer.histogram;
+			// result.histogram = analyzer.histogram;
+			result.histograms = {analyzer.histogram};
 			result.N_trigger = analyzer.N_trigger;
 			result.sigma_sps_1 = {analyzer.N_trigger * factor};
 			result.sigma_sps_2 = {analyzer.N_assoc * factor};

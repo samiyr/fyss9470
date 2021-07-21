@@ -2,6 +2,7 @@
 #define AROUND_H
 
 #include "Helpers.cc"
+#include <cassert>
 
 template <typename T>
 struct Around {

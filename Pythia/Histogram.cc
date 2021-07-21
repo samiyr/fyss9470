@@ -177,7 +177,7 @@ public:
 		// }
 		// return normalized;	
 	}
-	static ValueHistogram<T> combine(std::vector<ValueHistogram<T>> _containers) {
+	static ValueHistogram<T> combine(std::vector<ValueHistogram<T>> _containers, bool calculate_error = true) {
 		auto reference = _containers.front();
 		const auto N = reference.size();
 		ValueHistogram<T> result(N);
@@ -185,13 +185,18 @@ public:
 			const double lower = reference[i].range.start;
 			const double upper = reference[i].range.end;
 
-			Around<T> value = Around(0.0);
+			std::vector<T> values;
 
 			for (typename std::vector<RangedContainer<T>>::size_type j = 0; j < _containers.size(); j++) {
-				value = value + _containers[j][i].value;
+				const auto v = _containers[j][i].value;
+				values.push_back(v.value);
 			}
+			const auto value = sum(values);
+			const auto error = standard_error_of_mean(values);
 
-			const RangedContainer<T> container(lower, upper, value);
+			const Around<T> c_value = calculate_error ? Around<T>(value, error) : Around<T>(value);
+
+			const RangedContainer<T> container(lower, upper, c_value);
 			result.containers.push_back(container);
 		}
 		return result;
