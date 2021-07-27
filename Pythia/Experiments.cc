@@ -407,24 +407,151 @@ public:
 	}
 };
 
-int main() {
-	ValueHistogram<double> h1({0.0, 1.0, 2.0});
-	h1.fill(0.5, 3.0);
-	h1.fill(1.5, 1.0);
+CrossSectionExperiment pT_template(int count) {
+	CrossSectionExperiment cs;
 
-	ValueHistogram<double> h2({0.0, 1.0, 2.0});
-	h2.fill(0.7, 3.0);
-	h2.fill(1.3, 1.0);
+	cs.process = Process::HardQCD;
+	cs.energy = 200;
+	cs.count = count;
+	cs.bins = {
+		1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 8.0, 9.0, 10.0, 12.0, 15.0
+	};
 
-	ValueHistogram<double> h3({0.0, 1.0, 2.0});
-	h3.fill(0.5, 2.0);
-	h3.fill(1.5, 2.0);
+	cs.y_range = OptionalRange<double>(-0.35, 0.35);
+	cs.pT_range = OptionalRange<double>();
+	cs.include_decayed = true;
+	cs.bias_power = 4.0;
+	cs.parallelize = true;
+	cs.pythia_printing = false;
+	cs.normalization = Normalization::None;
 
-	cout << ValueHistogram<double>::combine({h1, h2});
-	cout << ValueHistogram<double>::combine({h2, h3});
+	return cs;
+}
 
-	/* --- DPS --- */
+void pT_cross_section(int count, bool biasing, bool subdivision, string fn, int seed = -1) {
+	CrossSectionExperiment cs = pT_template(count);
 
+	if (subdivision) {
+		cs.pT_hat_bins = {
+			OptionalRange<double>(2.0, 5.0),
+			OptionalRange<double>(5.0, 10.0),
+			OptionalRange<double>(10.0, 20.0),
+			OptionalRange<double>(20.0, 40.0),
+			OptionalRange<double>(40.0, std::nullopt)
+		};		
+	} else {
+		cs.pT_hat_bins = {OptionalRange<double>(2.0, std::nullopt)};
+	}
+
+	cs.use_biasing = biasing;
+	cs.filename = "Tests/pT cross section/" + fn;
+	cs.random_seed = seed;
+
+	cs.run();
+}
+
+void run_pT_experiment() {
+	const auto t1 = std::chrono::high_resolution_clock::now();
+	// pT_cross_section(10'000'000, true, true, "pT.csv");
+	const auto t2 = std::chrono::high_resolution_clock::now();
+	pT_cross_section(100'000, false, false, "pT_raw.csv");	
+	const auto t3 = std::chrono::high_resolution_clock::now();
+	pT_cross_section(100'000, true, false, "pT_bias.csv");
+	const auto t4 = std::chrono::high_resolution_clock::now();
+	pT_cross_section(100'000 / 5, false, true, "pT_subdivision.csv");
+	const auto t5 = std::chrono::high_resolution_clock::now();
+	pT_cross_section(100'000 / 5, true, true, "pT_bias_subdivision.csv");
+	const auto t6 = std::chrono::high_resolution_clock::now();
+
+	const std::chrono::duration<double> duration1 = t2 - t1;
+	const std::chrono::duration<double> duration2 = t3 - t2;
+	const std::chrono::duration<double> duration3 = t4 - t3;
+	const std::chrono::duration<double> duration4 = t5 - t4;
+	const std::chrono::duration<double> duration5 = t6 - t5;
+	
+	cout << "pT1 = " << duration1.count() << "\n";	
+	cout << "pT2 = " << duration2.count() << "\n";	
+	cout << "pT3 = " << duration3.count() << "\n";	
+	cout << "pT4 = " << duration4.count() << "\n";	
+	cout << "pT5 = " << duration5.count() << "\n";
+}
+
+void run_pT_error_experiment() {
+	pT_cross_section(100'000 / 5, true, true, "pT5_1.csv", 1000);
+	pT_cross_section(100'000 / 5, true, true, "pT5_2.csv", 2000);
+	pT_cross_section(100'000 / 5, true, true, "pT5_3.csv", 3000);
+	pT_cross_section(100'000 / 5, true, true, "pT5_4.csv", 4000);
+
+	pT_cross_section(1'000'000 / 5, true, true, "pT6_1.csv", 1000);
+	pT_cross_section(1'000'000 / 5, true, true, "pT6_2.csv", 2000);
+	pT_cross_section(1'000'000 / 5, true, true, "pT6_3.csv", 3000);
+	pT_cross_section(1'000'000 / 5, true, true, "pT6_4.csv", 4000);
+}
+
+DPSExperiment dps_template(int count) {
+	DPSExperiment dps;
+
+	dps.energy = 200;
+	dps.count = count / 16;
+	dps.mpi_strategy = MPIStrategy::DPS;
+	dps.normalization = Normalization::Unity;
+	dps.bins = fixed_range(0.0, M_PI, 20);
+	dps.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.5, std::nullopt));
+	dps.cross_section_error = true;
+	dps.histogram_fluctuation_error = true;
+
+	dps.include_decayed = true;
+	dps.use_biasing = false;
+	dps.parallelize = true;
+	dps.pythia_printing = false;
+
+	dps.variable_seed = true;
+	dps.random_seed = 1;
+
+	dps.beam_A = Beam();
+
+	return dps;
+}
+
+void dps_error(int count, string fn, Process process, int seed = 1) {
+	DPSExperiment dps = dps_template(count);
+
+	dps.process = process;
+	dps.cross_section_error = true;
+	dps.histogram_fluctuation_error = false;
+
+	dps.runs = {
+		Analyzer::Parameters(
+			1.0, 1.4,
+			1.4, 2.0,
+			2.6, 4.1,
+			2.6, 4.1,
+			fn,
+			0.5, 10.0)
+	};
+	dps.pT_range = OptionalRange<double>(1.0, 2.0);
+	dps.y_range = OptionalRange<double>(2.6, 4.1);
+
+	dps.beam_B = Beam();
+	dps.working_directory = "Tests/Error Analysis/";
+	dps.random_seed = seed;
+
+	dps.run();
+}
+
+void run_dps_error_experiment() {
+	// dps_error(10'000'000, "pp7_hard_1", Process::HardQCD, 1000);
+	// dps_error(10'000'000, "pp7_hard_2", Process::HardQCD, 2000);
+	// dps_error(10'000'000, "pp7_hard_3", Process::HardQCD, 3000);
+	// dps_error(10'000'000, "pp7_hard_4", Process::HardQCD, 4000);
+	
+	dps_error(10'000'000, "pp7_soft_1", Process::SoftQCDNonDiffractive, 1000);
+	dps_error(10'000'000, "pp7_soft_2", Process::SoftQCDNonDiffractive, 2000);
+	dps_error(10'000'000, "pp7_soft_3", Process::SoftQCDNonDiffractive, 3000);
+	dps_error(10'000'000, "pp7_soft_4", Process::SoftQCDNonDiffractive, 4000);
+}
+
+void dps() {
 	DPSExperiment dps;
 
 	dps.process = Process::HardQCD;
@@ -443,88 +570,16 @@ int main() {
 			1.4, 2.0,
 			2.6, 4.1,
 			2.6, 4.1,
-			"data1",
-			1.0,
-			25.0),
+			"Al_10",
+			0.5,
+			10.0),
 		Analyzer::Parameters(
-			1.1, 1.5,
-			1.5, 2.1,
+			1.0, 1.4,
+			1.4, 2.0,
 			2.6, 4.1,
 			2.6, 4.1,
-			"data2",
-			1.0,
-			25.0),
-		Analyzer::Parameters(
-			1.2, 1.6,
-			1.6, 2.2,
-			2.6, 4.1,
-			2.6, 4.1,
-			"data3",
-			1.0,
-			25.0),
-		Analyzer::Parameters(
-			1.3, 1.7,
-			1.7, 2.3,
-			2.6, 4.1,
-			2.6, 4.1,
-			"data4",
-			1.0,
-			25.0),
-		Analyzer::Parameters(
-			1.4, 1.8,
-			1.8, 2.4,
-			2.6, 4.1,
-			2.6, 4.1,
-			"data5",
-			1.0,
-			25.0),
-		Analyzer::Parameters(
-			1.5, 1.9,
-			1.9, 2.5,
-			2.6, 4.1,
-			2.6, 4.1,
-			"data6",
-			1.0,
-			25.0),
-		Analyzer::Parameters(
-			1.6, 2.0,
-			2.0, 2.6,
-			2.6, 4.1,
-			2.6, 4.1,
-			"data7",
-			1.0,
-			25.0),
-		Analyzer::Parameters(
-			1.7, 2.1,
-			2.1, 2.7,
-			2.6, 4.1,
-			2.6, 4.1,
-			"data8",
-			1.0,
-			25.0),
-		Analyzer::Parameters(
-			1.8, 2.2,
-			2.2, 2.8,
-			2.6, 4.1,
-			2.6, 4.1,
-			"data9",
-			1.0,
-			25.0),
-		Analyzer::Parameters(
-			1.9, 2.3,
-			2.3, 2.9,
-			2.6, 4.1,
-			2.6, 4.1,
-			"data10",
-			1.0,
-			25.0),
-		Analyzer::Parameters(
-			2.0, 2.4,
-			2.4, 3.0,
-			2.6, 4.1,
-			2.6, 4.1,
-			"data11",
-			1.0,
+			"Al_25",
+			0.5,
 			25.0),
 	};
 
@@ -540,76 +595,21 @@ int main() {
 	dps.random_seed = 1;
 
 	dps.beam_A = Beam();
-	dps.beam_B = Beam();
-	// dps.beam_B = Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, true);
+	// dps.beam_B = Beam();
+	dps.beam_B = Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, false);
 	// dps.beam_B = Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, true);
 
-	dps.working_directory = "Tests/pT/HardQCD/";
+	dps.working_directory = "Tests/Nuclear/nPDF/";
 	dps.histogram_file_extension = ".csv";
 	dps.run_data_file_extension = ".txt";
 
-	// dps.run();
+	dps.run();
+}
 
-
-	CrossSectionExperiment cs;
-
-	cs.energy = 200;
-	cs.count = 10000;
-	cs.bins = {
-		1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 8.0, 9.0, 10.0, 12.0, 15.0
-	};
-	cs.pT_hat_bins = {
-		OptionalRange<double>(2.0, 5.0),
-		OptionalRange<double>(5.0, 10.0),
-		OptionalRange<double>(10.0, 40.0),
-		OptionalRange<double>(40.0, std::nullopt)
-	};
-	cs.y_range = OptionalRange<double>(-0.35, 0.35);
-	cs.pT_range = OptionalRange<double>();
-	cs.include_decayed = true;
-	cs.use_biasing = true;
-	cs.bias_power = 4.0;
-	cs.parallelize = true;
-	cs.filename = "pT_histogram.csv";
-	cs.pythia_printing = false;
-
-	//cs.run();
-
-	
-	AzimuthCorrelationExperiment ac;
-
-	ac.energy = 200;
-	ac.count = 100'000 / 16;
-	ac.bins = fixed_range(0.0, M_PI, 20);
-
-	ac.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.0, std::nullopt));
-	ac.y_range = OptionalRange<double>();
-	ac.pT_range = OptionalRange<double>(1.0, 2.0);
-
-	ac.include_decayed = true;
-	ac.mpi = true;
-
-	ac.use_biasing = true;
-	ac.bias_power = 4.0;
-
-	ac.parallelize = true;
-	ac.pythia_printing = false;
-	
-	ac.variable_seed = true;
-	ac.random_seed = 1;
-
-	ac.normalization = Normalization::Unity;
-
-	ac.runs = {
-		Analyzer::Parameters(
-			1.0, 1.4,
-			1.4, 2.0,
-			2.6, 4.1,
-			2.6, 4.1,
-			std::nullopt)
-	};
-
-	// ac.run();
+int main() {
+	// run_pT_experiment();
+	// run_pT_error_experiment();
+	run_dps_error_experiment();
 
 	return 0;
 }
