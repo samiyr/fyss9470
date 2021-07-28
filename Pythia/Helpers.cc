@@ -8,6 +8,7 @@
 #include <fstream>
 #include "ParticleContainer.cc"
 #include "Beam.cc"
+#include <optional>
 
 using namespace Pythia8;
 
@@ -299,6 +300,7 @@ std::string to_string(Normalization norm) {
 			return "STARC";
 			break;
 	}
+	return "";
 }
 std::string to_string(Process in) {
 	switch(in) {
@@ -309,6 +311,7 @@ std::string to_string(Process in) {
 			return "SoftQCDNonDiffractive";
 			break;
 	}
+	return "";
 }
 std::string to_string(MPIStrategy mpi) {
 	switch(mpi) {
@@ -322,5 +325,6 @@ std::string to_string(MPIStrategy mpi) {
 			return "DPS";
 			break;
 	}
+	return "";
 }
 #endif // HELPERS_H

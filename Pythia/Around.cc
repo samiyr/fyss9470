@@ -3,13 +3,14 @@
 
 #include "Helpers.cc"
 #include <cassert>
+#include <optional>
 
 template <typename T>
 struct Around {
 	T value;
 	std::optional<T> error;
 
-	Around(T value, std::optional<T> error = std::nullopt) : value(value), error(error) {}
+	Around(T v, std::optional<T> e = std::nullopt) : value(v), error(e) {}
 
 	Around(std::vector<T> v) {
 		assert(v.size() != 0);

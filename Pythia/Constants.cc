@@ -12,7 +12,6 @@ namespace Defaults {
 	static bool variable_seed				= false;
 	static int pythia_next 					= 10000;
 	static bool parallelize					= false;
-	static int status_threshold 			= 100;
 	static double sigma_eff					= 1.0;
 	static double m 						= 0.0;
 	static string histogram_file_extension 	= ".csv";

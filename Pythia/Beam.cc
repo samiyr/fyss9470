@@ -43,9 +43,9 @@ struct Beam {
 		use_hard_npdf = false;
 	}
 
-	Beam(Nucleus nucleus, NuclearPDF pdf = NuclearPDF::None, bool use_hard_npdf = false) : nucleus(nucleus), pdf(pdf), use_hard_npdf(use_hard_npdf) {}
+	Beam(Nucleus _nucleus, NuclearPDF _pdf = NuclearPDF::None, bool _use_hard_npdf = false) : nucleus(_nucleus), pdf(_pdf), use_hard_npdf(_use_hard_npdf) {}
 
-	Beam(int Z, int A, NuclearPDF pdf = NuclearPDF::None, bool use_hard_npdf = false) : nucleus(Nucleus(Z, A)), pdf(pdf), use_hard_npdf(use_hard_npdf) {}
+	Beam(int Z, int A, NuclearPDF _pdf = NuclearPDF::None, bool _use_hard_npdf = false) : nucleus(Nucleus(Z, A)), pdf(_pdf), use_hard_npdf(_use_hard_npdf) {}
 
 	void apply_to(Settings &settings, string beam) {
 		settings.flag("PDF:useHardNPDF" + beam, use_hard_npdf);

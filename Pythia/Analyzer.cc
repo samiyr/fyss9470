@@ -39,15 +39,15 @@ public:
 			OptionalRange<double> y_1, 
 			OptionalRange<double> y_2, 
 			std::optional<std::string> fn = std::nullopt,
-			double m = Defaults::m,
-			double sigma_eff = Defaults::sigma_eff)
+			double _m = Defaults::m,
+			double _sigma_eff = Defaults::sigma_eff)
 			:pT_small(pT_1), 
 			pT_large(pT_2), 
 			y_small(y_1), 
 			y_large(y_2), 
 			filename(fn), 
-			m(m), 
-			sigma_eff(sigma_eff) {
+			m(_m), 
+			sigma_eff(_sigma_eff) {
 			assert(parameter_validation());
 		}
 
@@ -61,15 +61,15 @@ public:
 			std::optional<double> y_2_l,
 			std::optional<double> y_2_u,
 			std::optional<string> fn = std::nullopt,
-			double m = Defaults::m,
-			double sigma_eff = Defaults::sigma_eff)
+			double _m = Defaults::m,
+			double _sigma_eff = Defaults::sigma_eff)
 			:pT_small(OptionalRange<double>(pT_1_l, pT_1_u)), 
 			pT_large(OptionalRange<double>(pT_2_l, pT_2_u)),
 			y_small(OptionalRange<double>(y_1_l, y_1_u)), 
 			y_large(OptionalRange<double>(y_2_l, y_2_u)),
 			filename(fn), 
-			m(m), 
-			sigma_eff(sigma_eff) {
+			m(_m), 
+			sigma_eff(_sigma_eff) {
 			assert(parameter_validation());
 		}
 	};

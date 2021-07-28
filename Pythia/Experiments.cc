@@ -9,6 +9,9 @@
 #include "Beam.cc"
 #include "Around.cc"
 #include <chrono>
+#include <optional>
+
+#define THREAD_COUNT 16
 
 /**
  * Represents a generic Pythia experiment.
@@ -444,7 +447,7 @@ void pT_cross_section(int count, bool biasing, bool subdivision, string fn, int 
 	}
 
 	cs.use_biasing = biasing;
-	cs.filename = "Tests/pT cross section/" + fn;
+	cs.filename = "Data/pT cross section/" + fn;
 	cs.random_seed = seed;
 
 	cs.run();
@@ -492,11 +495,11 @@ DPSExperiment dps_template(int count) {
 	DPSExperiment dps;
 
 	dps.energy = 200;
-	dps.count = count / 16;
+	dps.count = count / THREAD_COUNT;
 	dps.mpi_strategy = MPIStrategy::DPS;
 	dps.normalization = Normalization::Unity;
 	dps.bins = fixed_range(0.0, M_PI, 20);
-	dps.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.5, std::nullopt));
+	dps.pT_hat_bins = std::vector<OptionalRange<double>>(THREAD_COUNT, OptionalRange<double>(1.5, std::nullopt));
 	dps.cross_section_error = true;
 	dps.histogram_fluctuation_error = true;
 
@@ -533,22 +536,87 @@ void dps_error(int count, string fn, Process process, int seed = 1) {
 	dps.y_range = OptionalRange<double>(2.6, 4.1);
 
 	dps.beam_B = Beam();
-	dps.working_directory = "Tests/Error Analysis/";
+	dps.working_directory = "Data/Error Analysis/";
 	dps.random_seed = seed;
 
 	dps.run();
 }
 
 void run_dps_error_experiment() {
-	// dps_error(10'000'000, "pp7_hard_1", Process::HardQCD, 1000);
-	// dps_error(10'000'000, "pp7_hard_2", Process::HardQCD, 2000);
-	// dps_error(10'000'000, "pp7_hard_3", Process::HardQCD, 3000);
-	// dps_error(10'000'000, "pp7_hard_4", Process::HardQCD, 4000);
+	dps_error(1'000'000, "pp6_hard_1", Process::HardQCD, 1000);
+	dps_error(1'000'000, "pp6_hard_2", Process::HardQCD, 2000);
+	dps_error(1'000'000, "pp6_hard_3", Process::HardQCD, 3000);
+	dps_error(1'000'000, "pp6_hard_4", Process::HardQCD, 4000);
+
+	dps_error(1'000'000, "pp6_soft_1", Process::SoftQCDNonDiffractive, 1000);
+	dps_error(1'000'000, "pp6_soft_2", Process::SoftQCDNonDiffractive, 2000);
+	dps_error(1'000'000, "pp6_soft_3", Process::SoftQCDNonDiffractive, 3000);
+	dps_error(1'000'000, "pp6_soft_4", Process::SoftQCDNonDiffractive, 4000);
+
+	dps_error(10'000'000, "pp7_hard_1", Process::HardQCD, 1000);
+	dps_error(10'000'000, "pp7_hard_2", Process::HardQCD, 2000);
+	dps_error(10'000'000, "pp7_hard_3", Process::HardQCD, 3000);
+	dps_error(10'000'000, "pp7_hard_4", Process::HardQCD, 4000);
 	
 	dps_error(10'000'000, "pp7_soft_1", Process::SoftQCDNonDiffractive, 1000);
 	dps_error(10'000'000, "pp7_soft_2", Process::SoftQCDNonDiffractive, 2000);
 	dps_error(10'000'000, "pp7_soft_3", Process::SoftQCDNonDiffractive, 3000);
 	dps_error(10'000'000, "pp7_soft_4", Process::SoftQCDNonDiffractive, 4000);
+}
+
+void dps_experiment(int count, bool hard) {
+	DPSExperiment dps = dps_template(count);
+	dps.process = hard ? Process::HardQCD : Process::SoftQCDNonDiffractive;
+	dps.mpi_strategy = MPIStrategy::DPS;
+
+	const string hs_string = hard ? "hard" : "soft";
+	dps.runs = {
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "pp_1014_1420_dps10_" + hs_string, 0.5, 10.0),
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "pp_1014_1420_dps25_" + hs_string, 0.5, 25.0),
+
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "pp_1014_2024_dps10_" + hs_string, 0.5, 10.0),
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "pp_1014_2024_dps25_" + hs_string, 0.5, 25.0),
+		
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "pp_1014_2428_dps10_" + hs_string, 0.5, 10.0),
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "pp_1014_2428_dps25_" + hs_string, 0.5, 25.0),
+		
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "pp_1014_2850_dps10_" + hs_string, 0.5, 10.0),
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "pp_1014_2850_dps25_" + hs_string, 0.5, 25.0),		
+	};
+	dps.pT_range = OptionalRange<double>(1.0, 5.0);
+	dps.y_range = OptionalRange<double>(2.6, 4.1);
+
+	dps.beam_B = Beam();
+	dps.working_directory = "Data/MPI/";
+
+	dps.run();	
+}
+void mpi_experiment(int count, bool hard) {
+	DPSExperiment dps = dps_template(count);
+	dps.process = hard ? Process::HardQCD : Process::SoftQCDNonDiffractive;
+	dps.mpi_strategy = MPIStrategy::PythiaMPI;
+
+	const string hs_string = hard ? "hard" : "soft";
+	dps.runs = {
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "pp_1014_1420_mpi_" + hs_string),
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "pp_1014_2024_mpi_" + hs_string),
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "pp_1014_2428_mpi_" + hs_string),
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "pp_1014_2850_mpi_" + hs_string),
+	};
+	dps.pT_range = OptionalRange<double>(1.0, 5.0);
+	dps.y_range = OptionalRange<double>(2.6, 4.1);
+
+	dps.beam_B = Beam();
+	dps.working_directory = "Data/MPI/";
+
+	dps.run();
+}
+
+void run_dps_mpi_experiment() {
+	dps_experiment(10'000'000, true);
+	dps_experiment(10'000'000, false);
+	mpi_experiment(10'000'000, true);
+	mpi_experiment(10'000'000, false);
 }
 
 void dps() {
@@ -609,7 +677,8 @@ void dps() {
 int main() {
 	// run_pT_experiment();
 	// run_pT_error_experiment();
-	run_dps_error_experiment();
+	// run_dps_error_experiment();
+	run_dps_mpi_experiment();
 
 	return 0;
 }
