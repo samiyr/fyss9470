@@ -674,5 +674,99 @@ void run_dps_mpi_experiment(int count) {
 	mpi_experiment(count, false);
 }
 
+DPSExperiment nuclear_run_template(int count, bool hard, string type) {
+	DPSExperiment dps = dps_template(count);
+	dps.process = hard ? Process::HardQCD : Process::SoftQCDNonDiffractive;
+	dps.mpi_strategy = MPIStrategy::DPS;
+
+	dps.runs = {
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, type + "_1014_1420_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, type + "_1014_1420_dps25", 0.5, 25.0),
+
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, type + "_1014_2024_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, type + "_1014_2024_dps25", 0.5, 25.0),
+		
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, type + "_1014_2428_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, type + "_1014_2428_dps25", 0.5, 25.0),
+		
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_1014_2850_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_1014_2850_dps25", 0.5, 25.0),		
+
+
+		Analyzer::Parameters(1.4, 2.0, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, type + "_1420_2024_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.4, 2.0, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, type + "_1420_2024_dps25", 0.5, 25.0),
+		
+		Analyzer::Parameters(1.4, 2.0, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, type + "_1420_2428_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.4, 2.0, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, type + "_1420_2428_dps25", 0.5, 25.0),
+		
+		Analyzer::Parameters(1.4, 2.0, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_1420_2850_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.4, 2.0, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_1420_2850_dps25", 0.5, 25.0),	
+
+
+		Analyzer::Parameters(2.0, 2.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, type + "_2024_2428_dps10", 0.5, 10.0),
+		Analyzer::Parameters(2.0, 2.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, type + "_2024_2428_dps25", 0.5, 25.0),
+		
+		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_2024_2850_dps10", 0.5, 10.0),
+		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_2024_2850_dps25", 0.5, 25.0),	
+
+
+		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_2428_2850_dps10", 0.5, 10.0),
+		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_2424_2850_dps25", 0.5, 25.0),	
+	};
+	dps.pT_range = OptionalRange<double>(1.0, 5.0);
+	dps.y_range = OptionalRange<double>(2.6, 4.1);
+
+	return dps;
+}
+
+void pp_run(int count, bool hard) {
+	DPSExperiment dps = nuclear_run_template(count, hard, "pp");
+	dps.beam_B = Beam();
+	const string hs_string = hard ? "Hard/" : "Soft/";
+	dps.working_directory = "Data/Nuclear/Comparison/pp/" + hs_string;
+
+	dps.run();
+}
+
+void Al_run(int count, bool hard, bool nPDF) {
+	DPSExperiment dps = nuclear_run_template(count, hard, "Al");
+	dps.beam_B = Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, nPDF);
+	const string hs_string = hard ? "Hard" : "Soft/";
+	const string npdf_string = nPDF ? " nPDF/" : "/";
+	dps.working_directory = "Data/Nuclear/Comparison/Al/" + hs_string + npdf_string;
+
+	dps.run();
+}
+
+void Au_run(int count, bool hard, bool nPDF) {
+	DPSExperiment dps = nuclear_run_template(count, hard, "Au");
+	dps.beam_B = Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, nPDF);
+	const string hs_string = hard ? "Hard" : "Soft/";
+	const string npdf_string = nPDF ? " nPDF/" : "/";
+	dps.working_directory = "Data/Nuclear/Comparison/Au/" + hs_string + npdf_string;
+
+	dps.run();
+}
+
+void run_hard_soft_npdf_experiment(int count) {
+	// HardQCD p+p
+	pp_run(count, true);
+	// SoftQCD p+p
+	pp_run(count, false);
+
+	// HardQCD p+Al
+	Al_run(count, true, false);
+	// HardQCD p+Al with nPDF
+	Al_run(count, true, true);
+	// SoftQCD p+Al
+	Al_run(count, false, false);
+
+	// HardQCD p+Au
+	Au_run(count, true, false);
+	// HardQCD p+Au with nPDF
+	Au_run(count, true, true);
+	// SoftQCD p+Au
+	Au_run(count, false, false);
+}
 
 #endif // EXPERIMENT_DEFS_H
