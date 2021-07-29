@@ -45,9 +45,11 @@ struct RangedContainer {
 	Range<double> range;
 	/// Value associated with the bin.
 	Around<T> value;
+
+	unsigned long long hit_count;
 	/// Initializes a bin.
-	RangedContainer(double l, double u, T v) : range(l, u), value(v) {}
-	RangedContainer(double l, double u, Around<T> v) : range(l, u), value(v) {}
+	RangedContainer(double l, double u, T v, unsigned long long h = 0) : range(l, u), value(v), hit_count(h) {}
+	RangedContainer(double l, double u, Around<T> v, unsigned long long h = 0) : range(l, u), value(v), hit_count(h) {}
 };
 
 /**
@@ -88,6 +90,7 @@ public:
 		for (auto &container : containers) {
 			if (container.range.in_range(v)) {
 				container.value += w;
+				container.hit_count += 1;
 				break;
 			}
 		}
@@ -148,7 +151,7 @@ public:
 		for (auto container : containers) {
 			const double factor = container.range.width() * sum_total;
 			const Around<double> new_value = factor == 0 ? 0 : container.value / factor;
-			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
+			RangedContainer<double> new_container(container.range.start, container.range.end, new_value, container.hit_count);
 			normalized.containers.push_back(new_container);
 		}
 		return normalized;
@@ -160,7 +163,7 @@ public:
 			const double delta_phi = container.range.width();
 			const double factor = N_trig * delta_phi;
 			const Around<double> new_value = factor == 0 ? 0 : container.value / factor;
-			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
+			RangedContainer<double> new_container(container.range.start, container.range.end, new_value, container.hit_count);
 			normalized.containers.push_back(new_container);
 		}
 		return normalized;
@@ -186,18 +189,34 @@ public:
 			const double upper = reference[i].range.end;
 
 			std::vector<T> values;
+			unsigned long long total_hits = 0;
 
 			for (typename std::vector<RangedContainer<T>>::size_type j = 0; j < _containers.size(); j++) {
-				const auto v = _containers[j][i].value;
+				const auto c = _containers[j][i];
+				const auto v = c.value;
 				values.push_back(v.value);
+				total_hits += c.hit_count;
 			}
 			const auto value = sum(values);
 			const auto error = standard_error_of_mean(values);
 
 			const Around<T> c_value = calculate_error ? Around<T>(value, error) : Around<T>(value);
 
-			const RangedContainer<T> container(lower, upper, c_value);
+			const RangedContainer<T> container(lower, upper, c_value, total_hits);
 			result.containers.push_back(container);
+		}
+		return result;
+	}
+	static ValueHistogram<double> calculate_statistical_error(ValueHistogram<double> hist) {
+		ValueHistogram<T> result;
+		for (auto container : hist.containers) {
+			const auto lower = container.range.start;
+			const auto upper = container.range.end;
+			const auto value = container.value.value;
+			const auto hit_count = container.hit_count;
+			const auto error = 1.0 / sqrt((double)hit_count);
+			const RangedContainer<double> new_container(lower, upper, Around<double>(value, error));
+			result.containers.push_back(new_container);
 		}
 		return result;
 	}
@@ -213,7 +232,7 @@ public:
 		for (typename std::vector<RangedContainer<double>>::size_type i = 0; i < size(); i++) {
 			const auto container = containers[i];
 			const Around<double> new_value = container.value + constant;
-			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
+			RangedContainer<double> new_container(container.range.start, container.range.end, new_value, container.hit_count);
 			containers[i] = new_container;
 		}
 		return *this;
@@ -222,7 +241,7 @@ public:
 		for (typename std::vector<RangedContainer<double>>::size_type i = 0; i < size(); i++) {
 			const auto container = containers[i];
 			const Around<double> new_value = container.value + constant;
-			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
+			RangedContainer<double> new_container(container.range.start, container.range.end, new_value, container.hit_count);
 			containers[i] = new_container;
 		}
 		return *this;
@@ -236,7 +255,7 @@ public:
 		for (typename std::vector<RangedContainer<double>>::size_type i = 0; i < size(); i++) {
 			const auto container = containers[i];
 			const Around<double> new_value = container.value * constant;
-			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
+			RangedContainer<double> new_container(container.range.start, container.range.end, new_value, container.hit_count);
 			containers[i] = new_container;
 		}
 		return *this;	
@@ -245,7 +264,7 @@ public:
 		for (typename std::vector<RangedContainer<double>>::size_type i = 0; i < size(); i++) {
 			const auto container = containers[i];
 			const Around<double> new_value = container.value * constant;
-			RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
+			RangedContainer<double> new_container(container.range.start, container.range.end, new_value, container.hit_count);
 			containers[i] = new_container;
 		}
 		return *this;
@@ -337,7 +356,8 @@ public:
 			const double dpT = bin.range.width();
 			// dsigma = 1 / 2π * N / N_ev * sigma / dy pT dpT
 			double dsigma = 0.0;
-			for (typename std::vector<T>::size_type i = 0; i < bin.contents.size(); i++) {
+			const auto size = bin.contents.size();
+			for (typename std::vector<T>::size_type i = 0; i < size; i++) {
 				const double pT = bin.contents[i];
 				double weight_factor = 1.0;
 				if (use_weights) {
@@ -346,7 +366,7 @@ public:
 				dsigma += weight_factor / pT;
 			}
 			dsigma *= sigma / (2 * M_PI * total_weight * dy * dpT);
-			RangedContainer<T> container(bin.range.start, bin.range.end, dsigma);
+			RangedContainer<T> container(bin.range.start, bin.range.end, dsigma, size);
 			normalized.containers.push_back(container);
 		}
 		return normalized;

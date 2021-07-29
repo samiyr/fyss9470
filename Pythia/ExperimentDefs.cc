@@ -85,6 +85,7 @@ public:
 
 	bool cross_section_error;
 	bool histogram_fluctuation_error;
+	bool experimental_histogram_error;
 
 	/// Runs the experiment. Subclasses must implement this method.
 	virtual void run() = 0;
@@ -200,8 +201,10 @@ public:
 			const auto partial_container = partial.normalize(total_weight, sigma, y_range, use_biasing);
 			containers.push_back(partial_container);
 		}, [&containers, this]{
-			const ValueHistogram<double> combined = normalize(ValueHistogram<double>::combine(containers));
-
+			ValueHistogram<double> combined = normalize(ValueHistogram<double>::combine(containers, histogram_fluctuation_error));
+			if (experimental_histogram_error) {
+				combined = ValueHistogram<double>::calculate_statistical_error(combined);
+			}
 			cout << "Normalized pT histogram" << "\n";
 			combined.print();
 			cout << "\n";
@@ -312,6 +315,10 @@ public:
 		for (std::vector<EventGenerator::Result>::size_type run_index = 0; run_index < results.size(); run_index++) {
 			auto result = results[run_index];
 			auto normalized = normalize(result);
+
+			if (experimental_histogram_error) {
+				normalized = ValueHistogram<double>::calculate_statistical_error(normalized);
+			}
 			// Stop the clock
 			const auto end_time = std::chrono::high_resolution_clock::now();
 			const std::chrono::duration<double> elapsed_duration = end_time - start_time;
@@ -431,7 +438,7 @@ CrossSectionExperiment pT_template(int count) {
 	return cs;
 }
 
-void pT_cross_section(int count, bool biasing, bool subdivision, string fn, int seed = -1) {
+void pT_cross_section(int count, bool biasing, bool subdivision, string fn, int seed = -1, bool experimental_histogram_error = false) {
 	CrossSectionExperiment cs = pT_template(count);
 
 	if (subdivision) {
@@ -449,6 +456,9 @@ void pT_cross_section(int count, bool biasing, bool subdivision, string fn, int 
 	cs.use_biasing = biasing;
 	cs.filename = "Data/pT cross section/" + fn;
 	cs.random_seed = seed;
+	cs.cross_section_error = false;
+	cs.histogram_fluctuation_error = false;
+	cs.experimental_histogram_error = experimental_histogram_error;
 
 	cs.run();
 }
@@ -516,7 +526,7 @@ DPSExperiment dps_template(int count) {
 	return dps;
 }
 
-void dps_error(int count, string fn, Process process, int seed = 1) {
+void dps_error(int count, string fn, Process process, int seed = 1, bool experimental_histogram_error = false) {
 	DPSExperiment dps = dps_template(count);
 
 	dps.process = process;
@@ -538,6 +548,9 @@ void dps_error(int count, string fn, Process process, int seed = 1) {
 	dps.beam_B = Beam();
 	dps.working_directory = "Data/Error Analysis/";
 	dps.random_seed = seed;
+	dps.cross_section_error = false;
+	dps.histogram_fluctuation_error = false;
+	dps.experimental_histogram_error = experimental_histogram_error;
 
 	dps.run();
 }
@@ -562,6 +575,13 @@ void run_dps_error_experiment() {
 	dps_error(10'000'000, "pp7_soft_2", Process::SoftQCDNonDiffractive, 2000);
 	dps_error(10'000'000, "pp7_soft_3", Process::SoftQCDNonDiffractive, 3000);
 	dps_error(10'000'000, "pp7_soft_4", Process::SoftQCDNonDiffractive, 4000);
+}
+
+void run_experimental_dps_error_experiment() {
+	dps_error(1'000'000, "Experimental/pp6_hard", Process::HardQCD, 1, true);
+	dps_error(1'000'000, "Experimental/pp6_soft", Process::SoftQCDNonDiffractive, 1, true);
+	dps_error(10'000'000, "Experimental/pp7_hard", Process::HardQCD, 1, true);
+	dps_error(10'000'000, "Experimental/pp7_soft", Process::SoftQCDNonDiffractive, 1, true);	
 }
 
 void dps_experiment(int count, bool hard) {
@@ -719,7 +739,7 @@ DPSExperiment nuclear_run_template(int count, bool hard, string type) {
 	return dps;
 }
 
-void pp_run(int count, bool hard) {
+void pp_comparison_run(int count, bool hard) {
 	DPSExperiment dps = nuclear_run_template(count, hard, "pp");
 	dps.beam_B = Beam();
 	const string hs_string = hard ? "Hard/" : "Soft/";
@@ -728,7 +748,7 @@ void pp_run(int count, bool hard) {
 	dps.run();
 }
 
-void Al_run(int count, bool hard, bool nPDF) {
+void Al_comparison_run(int count, bool hard, bool nPDF) {
 	DPSExperiment dps = nuclear_run_template(count, hard, "Al");
 	dps.beam_B = Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, nPDF);
 	const string hs_string = hard ? "Hard" : "Soft/";
@@ -738,7 +758,7 @@ void Al_run(int count, bool hard, bool nPDF) {
 	dps.run();
 }
 
-void Au_run(int count, bool hard, bool nPDF) {
+void Au_comparison_run(int count, bool hard, bool nPDF) {
 	DPSExperiment dps = nuclear_run_template(count, hard, "Au");
 	dps.beam_B = Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, nPDF);
 	const string hs_string = hard ? "Hard" : "Soft/";
@@ -750,23 +770,59 @@ void Au_run(int count, bool hard, bool nPDF) {
 
 void run_hard_soft_npdf_experiment(int count) {
 	// HardQCD p+p
-	pp_run(count, true);
+	pp_comparison_run(count, true);
 	// SoftQCD p+p
-	pp_run(count, false);
+	pp_comparison_run(count, false);
 
 	// HardQCD p+Al
-	Al_run(count, true, false);
+	Al_comparison_run(count, true, false);
 	// HardQCD p+Al with nPDF
-	Al_run(count, true, true);
+	Al_comparison_run(count, true, true);
 	// SoftQCD p+Al
-	Al_run(count, false, false);
+	Al_comparison_run(count, false, false);
 
 	// HardQCD p+Au
-	Au_run(count, true, false);
+	Au_comparison_run(count, true, false);
 	// HardQCD p+Au with nPDF
-	Au_run(count, true, true);
+	Au_comparison_run(count, true, true);
 	// SoftQCD p+Au
-	Au_run(count, false, false);
+	Au_comparison_run(count, false, false);
+}
+
+void pp_run(int count) {
+	DPSExperiment dps = nuclear_run_template(count, false, "pp");
+	dps.beam_B = Beam();
+	dps.working_directory = "Data/Nuclear/pp/";
+	dps.cross_section_error = false;
+	dps.histogram_fluctuation_error = false;
+	dps.experimental_histogram_error = true;
+	dps.run();
+}
+
+void Al_run(int count) {
+	DPSExperiment dps = nuclear_run_template(count, false, "Al");
+	dps.beam_B = Beam(13, 27);
+	dps.working_directory = "Data/Nuclear/Al/";
+	dps.cross_section_error = false;
+	dps.histogram_fluctuation_error = false;
+	dps.experimental_histogram_error = true;
+	dps.run();
+}
+
+void Au_run(int count) {
+	DPSExperiment dps = nuclear_run_template(count, false, "Au");
+	dps.beam_B = Beam(97, 197);
+	dps.working_directory = "Data/Nuclear/Au/";
+	dps.cross_section_error = false;
+	dps.histogram_fluctuation_error = false;
+	dps.experimental_histogram_error = true;
+	dps.run();
+}
+
+void run_nuclear_experiment(int count) {
+	pp_run(count);
+	Al_run(count);
+	Au_run(count);
 }
 
 #endif // EXPERIMENT_DEFS_H
