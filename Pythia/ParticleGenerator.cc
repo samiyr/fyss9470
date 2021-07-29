@@ -55,7 +55,7 @@ public:
 		filter.pT_range = params.pT_range;
 		filter.y_range = params.y_range;
 
-		for (int i = 0; i < params.event_count; ++i) {
+		for (EVENT_COUNT_TYPE i = 0; i < params.event_count; ++i) {
 			if (!pythia->next()) {
 				continue;
 			}

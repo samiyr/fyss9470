@@ -1,6 +1,8 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+#define EVENT_COUNT_TYPE unsigned long long
+
 namespace Defaults {
 	static bool pythia_printing 			= true;
 	static bool include_decayed 			= true;

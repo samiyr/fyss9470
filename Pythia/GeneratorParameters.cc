@@ -6,7 +6,7 @@
 
 struct GeneratorParameters {
 	double cm_energy;
-	int event_count;
+	EVENT_COUNT_TYPE event_count;
 	bool pythia_printing;
 
 	bool include_decayed;

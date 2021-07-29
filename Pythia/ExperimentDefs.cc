@@ -22,7 +22,7 @@ public:
 	/// Center-of-mass energy in GeV. Required.
 	double energy;
 	/// Number of events per partonic bin. Required.
-	int count;
+	EVENT_COUNT_TYPE count;
 	/// Histogram bins. Required, must be non-empty.
 	std::vector<double> bins;
 	/// Partonic bins for generating high-pT particles. Required, must be non-empty.
@@ -417,7 +417,7 @@ public:
 	}
 };
 
-CrossSectionExperiment pT_template(int count) {
+CrossSectionExperiment pT_template(EVENT_COUNT_TYPE count) {
 	CrossSectionExperiment cs;
 
 	cs.process = Process::HardQCD;
@@ -438,7 +438,7 @@ CrossSectionExperiment pT_template(int count) {
 	return cs;
 }
 
-void pT_cross_section(int count, bool biasing, bool subdivision, string fn, int seed = -1, bool experimental_histogram_error = false) {
+void pT_cross_section(EVENT_COUNT_TYPE count, bool biasing, bool subdivision, string fn, int seed = -1, bool experimental_histogram_error = false) {
 	CrossSectionExperiment cs = pT_template(count);
 
 	if (subdivision) {
@@ -501,7 +501,7 @@ void run_pT_error_experiment() {
 	pT_cross_section(1'000'000 / 5, true, true, "pT6_4.csv", 4000);
 }
 
-DPSExperiment dps_template(int count) {
+DPSExperiment dps_template(EVENT_COUNT_TYPE count) {
 	DPSExperiment dps;
 
 	dps.energy = 200;
@@ -526,7 +526,7 @@ DPSExperiment dps_template(int count) {
 	return dps;
 }
 
-void dps_error(int count, string fn, Process process, int seed = 1, bool experimental_histogram_error = false) {
+void dps_error(EVENT_COUNT_TYPE count, string fn, Process process, int seed = 1, bool experimental_histogram_error = false) {
 	DPSExperiment dps = dps_template(count);
 
 	dps.process = process;
@@ -584,7 +584,7 @@ void run_experimental_dps_error_experiment() {
 	dps_error(10'000'000, "Experimental/pp7_soft", Process::SoftQCDNonDiffractive, 1, true);	
 }
 
-void dps_experiment(int count, bool hard) {
+void dps_experiment(EVENT_COUNT_TYPE count, bool hard) {
 	DPSExperiment dps = dps_template(count);
 	dps.process = hard ? Process::HardQCD : Process::SoftQCDNonDiffractive;
 	dps.mpi_strategy = MPIStrategy::DPS;
@@ -611,7 +611,7 @@ void dps_experiment(int count, bool hard) {
 
 	dps.run();	
 }
-void mpi_experiment(int count, bool hard) {
+void mpi_experiment(EVENT_COUNT_TYPE count, bool hard) {
 	DPSExperiment dps = dps_template(count);
 	dps.process = hard ? Process::HardQCD : Process::SoftQCDNonDiffractive;
 	dps.mpi_strategy = MPIStrategy::PythiaMPI;
@@ -687,14 +687,14 @@ void dps() {
 	dps.run();
 }
 
-void run_dps_mpi_experiment(int count) {
+void run_dps_mpi_experiment(EVENT_COUNT_TYPE count) {
 	dps_experiment(count, true);
 	dps_experiment(count, false);
 	mpi_experiment(count, true);
 	mpi_experiment(count, false);
 }
 
-DPSExperiment nuclear_run_template(int count, bool hard, string type) {
+DPSExperiment nuclear_run_template(EVENT_COUNT_TYPE count, bool hard, string type) {
 	DPSExperiment dps = dps_template(count);
 	dps.process = hard ? Process::HardQCD : Process::SoftQCDNonDiffractive;
 	dps.mpi_strategy = MPIStrategy::DPS;
@@ -739,7 +739,7 @@ DPSExperiment nuclear_run_template(int count, bool hard, string type) {
 	return dps;
 }
 
-void pp_comparison_run(int count, bool hard) {
+void pp_comparison_run(EVENT_COUNT_TYPE count, bool hard) {
 	DPSExperiment dps = nuclear_run_template(count, hard, "pp");
 	dps.beam_B = Beam();
 	const string hs_string = hard ? "Hard/" : "Soft/";
@@ -748,7 +748,7 @@ void pp_comparison_run(int count, bool hard) {
 	dps.run();
 }
 
-void Al_comparison_run(int count, bool hard, bool nPDF) {
+void Al_comparison_run(EVENT_COUNT_TYPE count, bool hard, bool nPDF) {
 	DPSExperiment dps = nuclear_run_template(count, hard, "Al");
 	dps.beam_B = Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, nPDF);
 	const string hs_string = hard ? "Hard" : "Soft/";
@@ -758,7 +758,7 @@ void Al_comparison_run(int count, bool hard, bool nPDF) {
 	dps.run();
 }
 
-void Au_comparison_run(int count, bool hard, bool nPDF) {
+void Au_comparison_run(EVENT_COUNT_TYPE count, bool hard, bool nPDF) {
 	DPSExperiment dps = nuclear_run_template(count, hard, "Au");
 	dps.beam_B = Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, nPDF);
 	const string hs_string = hard ? "Hard" : "Soft/";
@@ -768,7 +768,7 @@ void Au_comparison_run(int count, bool hard, bool nPDF) {
 	dps.run();
 }
 
-void run_hard_soft_npdf_experiment(int count) {
+void run_hard_soft_npdf_experiment(EVENT_COUNT_TYPE count) {
 	// HardQCD p+p
 	pp_comparison_run(count, true);
 	// SoftQCD p+p
@@ -789,7 +789,7 @@ void run_hard_soft_npdf_experiment(int count) {
 	Au_comparison_run(count, false, false);
 }
 
-void pp_run(int count) {
+void pp_run(EVENT_COUNT_TYPE count) {
 	DPSExperiment dps = nuclear_run_template(count, false, "pp");
 	dps.beam_B = Beam();
 	dps.working_directory = "Data/Nuclear/pp/";
@@ -799,7 +799,7 @@ void pp_run(int count) {
 	dps.run();
 }
 
-void Al_run(int count) {
+void Al_run(EVENT_COUNT_TYPE count) {
 	DPSExperiment dps = nuclear_run_template(count, false, "Al");
 	dps.beam_B = Beam(13, 27);
 	dps.working_directory = "Data/Nuclear/Al/";
@@ -809,7 +809,7 @@ void Al_run(int count) {
 	dps.run();
 }
 
-void Au_run(int count) {
+void Au_run(EVENT_COUNT_TYPE count) {
 	DPSExperiment dps = nuclear_run_template(count, false, "Au");
 	dps.beam_B = Beam(97, 197);
 	dps.working_directory = "Data/Nuclear/Au/";
@@ -819,7 +819,7 @@ void Au_run(int count) {
 	dps.run();
 }
 
-void run_nuclear_experiment(int count) {
+void run_nuclear_experiment(EVENT_COUNT_TYPE count) {
 	pp_run(count);
 	Al_run(count);
 	Au_run(count);
