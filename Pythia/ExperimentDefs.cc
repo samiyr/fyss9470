@@ -363,7 +363,7 @@ public:
 
 				if (result.parameters.filename) {
 					file << "eCM\t\t= " << energy << "\n";
-					file << "count\t\t= " << count * pT_hat_bins.size() << "\n\n";
+					file << "count\t\t= " << count * (EVENT_COUNT_TYPE)pT_hat_bins.size() << "\n\n";
 
 					file << "process\t\t= " << to_string(process) << "\n";
 					file << "include_decayed\t= " << bool_to_string(include_decayed) << "\n";

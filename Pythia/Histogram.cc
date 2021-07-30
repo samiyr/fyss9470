@@ -134,7 +134,8 @@ public:
 			const double center = container.range.center();
 			const Around<T> value = container.value;
 			const T error = value.error ? *value.error : T(0);
-			file << center << "," << value.value << "," << error << "\n";
+			const auto hit_count = container.hit_count;
+			file << center << "," << value.value << "," << error << "," << hit_count << "\n";
 		}
 		file.close();
 	}
@@ -145,15 +146,24 @@ public:
 		});
 	}
 
+	template<typename F>
+	static ValueHistogram<T> transform(ValueHistogram<T> input, F lambda) {
+		ValueHistogram<T> result;
+		for (auto container : input.containers) {
+			const auto new_value = lambda(container);
+			RangedContainer<T> new_container(container.range.start, container.range.end, new_value, container.hit_count);
+			result.containers.push_back(new_container);
+		}
+		return result;
+	}
+
 	ValueHistogram<double> normalize_to_unity() const {
-		ValueHistogram<double> normalized;
 		const double sum_total = total();
-		for (auto container : containers) {
+		const auto normalized = ValueHistogram<double>::transform(*this, [sum_total](RangedContainer<double> container) {
 			const double factor = container.range.width() * sum_total;
 			const Around<double> new_value = factor == 0 ? 0 : container.value / factor;
-			RangedContainer<double> new_container(container.range.start, container.range.end, new_value, container.hit_count);
-			normalized.containers.push_back(new_container);
-		}
+			return new_value;
+		});
 		return normalized;
 	}
 
@@ -172,13 +182,6 @@ public:
 	template <typename V>
 	ValueHistogram<double> normalize_by(V constant) const {
 		return *this / constant;
-		// ValueHistogram<double> normalized;
-		// for (auto container : containers) {
-		// 	const double new_value = (double)container.value / constant;
-		// 	RangedContainer<double> new_container(container.range.start, container.range.end, new_value);
-		// 	normalized.containers.push_back(new_container);
-		// }
-		// return normalized;	
 	}
 	static ValueHistogram<T> combine(std::vector<ValueHistogram<T>> _containers, bool calculate_error = true) {
 		auto reference = _containers.front();
@@ -207,19 +210,17 @@ public:
 		}
 		return result;
 	}
+
 	static ValueHistogram<double> calculate_statistical_error(ValueHistogram<double> hist) {
-		ValueHistogram<T> result;
-		for (auto container : hist.containers) {
-			const auto lower = container.range.start;
-			const auto upper = container.range.end;
+		const auto transformed = ValueHistogram<double>::transform(hist, [](RangedContainer<double> container) {
 			const auto value = container.value.value;
 			const auto hit_count = container.hit_count;
 			const auto error = 1.0 / sqrt((double)hit_count);
-			const RangedContainer<double> new_container(lower, upper, Around<double>(value, error));
-			result.containers.push_back(new_container);
-		}
-		return result;
+			return Around<double>(value, error);
+		});
+		return transformed;
 	}
+
 	ValueHistogram<T>& operator+=(ValueHistogram<T> rhs) {
 		*this = *this + rhs;
 		return *this;
