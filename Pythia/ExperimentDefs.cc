@@ -334,6 +334,26 @@ public:
 				file << std::setprecision(6);
 
 				file << "elapsed_time\t= " << elapsed_time << " s\n\n";
+
+				file << "eCM\t\t= " << energy << "\n";
+				file << "count\t\t= " << count * (EVENT_COUNT_TYPE)pT_hat_bins.size() << "\n\n";
+
+				file << "process\t\t= " << to_string(process) << "\n";
+				file << "include_decayed\t= " << bool_to_string(include_decayed) << "\n";
+				file << "mpi\t\t= " << to_string(mpi_strategy) << "\n\n";
+				file << "normalization\t= " << to_string(normalization) << "\n\n";
+
+				file << "beam_A\t\t= " << beam_A << "\n";
+				file << "beam_B\t\t= " << beam_B << "\n\n";
+
+				file << "use_biasing\t= " << bool_to_string(use_biasing) << "\n";
+				file << "bias_power\t= " << bias_power << "\n";
+				file << "bias_reference\t= " << bias_reference << "\n\n";
+
+				file << "pT_1\t\t= " << result.parameters.pT_small.extent() << "\n";
+				file << "pT_2\t\t= " << result.parameters.pT_large.extent() << "\n";
+				file << "y_1\t\t= " << result.parameters.y_small.extent() << "\n";
+				file << "y_2\t\t= " << result.parameters.y_large.extent() << "\n\n";
 			}
 
 			if (mpi_strategy == MPIStrategy::DPS) {
@@ -362,26 +382,6 @@ public:
 				const Around<double> beta = dps / den;
 
 				if (result.parameters.filename) {
-					file << "eCM\t\t= " << energy << "\n";
-					file << "count\t\t= " << count * (EVENT_COUNT_TYPE)pT_hat_bins.size() << "\n\n";
-
-					file << "process\t\t= " << to_string(process) << "\n";
-					file << "include_decayed\t= " << bool_to_string(include_decayed) << "\n";
-					file << "mpi\t\t= " << to_string(mpi_strategy) << "\n\n";
-					file << "normalization\t= " << to_string(normalization) << "\n\n";
-
-					file << "beam_A\t\t= " << beam_A << "\n";
-					file << "beam_B\t\t= " << beam_B << "\n\n";
-
-					file << "use_biasing\t= " << bool_to_string(use_biasing) << "\n";
-					file << "bias_power\t= " << bias_power << "\n";
-					file << "bias_reference\t= " << bias_reference << "\n\n";
-
-					file << "pT_1\t\t= " << result.parameters.pT_small.extent() << "\n";
-					file << "pT_2\t\t= " << result.parameters.pT_large.extent() << "\n";
-					file << "y_1\t\t= " << result.parameters.y_small.extent() << "\n";
-					file << "y_2\t\t= " << result.parameters.y_large.extent() << "\n\n";
-
 					file << "m\t\t= " << m << "\n";
 					file << "sigma_pp\t= " << sigma_pp << "\n";
 					file << "sigma_eff\t= " << sigma_eff << "\n\n";
@@ -416,6 +416,8 @@ public:
 		}
 	}
 };
+
+// --- pT cross section ---
 
 CrossSectionExperiment pT_template(EVENT_COUNT_TYPE count) {
 	CrossSectionExperiment cs;
@@ -454,7 +456,7 @@ void pT_cross_section(EVENT_COUNT_TYPE count, bool biasing, bool subdivision, st
 	}
 
 	cs.use_biasing = biasing;
-	cs.filename = "Data/pT cross section/" + fn;
+	cs.filename = "Data/pp/pT/" + fn;
 	cs.random_seed = seed;
 	cs.cross_section_error = false;
 	cs.histogram_fluctuation_error = false;
@@ -467,13 +469,13 @@ void run_pT_experiment() {
 	const auto t1 = std::chrono::high_resolution_clock::now();
 	// pT_cross_section(10'000'000, true, true, "pT.csv");
 	const auto t2 = std::chrono::high_resolution_clock::now();
-	pT_cross_section(100'000, false, false, "pT_raw.csv");	
+	pT_cross_section(100'000, false, false, "No bias no subdivision/1e5/data.csv");	
 	const auto t3 = std::chrono::high_resolution_clock::now();
-	pT_cross_section(100'000, true, false, "pT_bias.csv");
+	pT_cross_section(100'000, true, false, "Bias no subdivision/1e5/data.csv");
 	const auto t4 = std::chrono::high_resolution_clock::now();
-	pT_cross_section(100'000 / 5, false, true, "pT_subdivision.csv");
+	pT_cross_section(100'000 / 5, false, true, "No bias subdivision/1e5/data.csv");
 	const auto t5 = std::chrono::high_resolution_clock::now();
-	pT_cross_section(100'000 / 5, true, true, "pT_bias_subdivision.csv");
+	pT_cross_section(100'000 / 5, true, true, "Bias subdivision/1e5/data.csv");
 	const auto t6 = std::chrono::high_resolution_clock::now();
 
 	const std::chrono::duration<double> duration1 = t2 - t1;
@@ -489,29 +491,21 @@ void run_pT_experiment() {
 	cout << "pT5 = " << duration5.count() << "\n";
 }
 
-void run_pT_error_experiment() {
-	pT_cross_section(100'000 / 5, true, true, "pT5_1.csv", 1000);
-	pT_cross_section(100'000 / 5, true, true, "pT5_2.csv", 2000);
-	pT_cross_section(100'000 / 5, true, true, "pT5_3.csv", 3000);
-	pT_cross_section(100'000 / 5, true, true, "pT5_4.csv", 4000);
+// --- Azimuth correlation ---
 
-	pT_cross_section(1'000'000 / 5, true, true, "pT6_1.csv", 1000);
-	pT_cross_section(1'000'000 / 5, true, true, "pT6_2.csv", 2000);
-	pT_cross_section(1'000'000 / 5, true, true, "pT6_3.csv", 3000);
-	pT_cross_section(1'000'000 / 5, true, true, "pT6_4.csv", 4000);
-}
-
-DPSExperiment dps_template(EVENT_COUNT_TYPE count) {
+DPSExperiment dps_template(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, Beam b, string wd) {
 	DPSExperiment dps;
 
 	dps.energy = 200;
 	dps.count = count / THREAD_COUNT;
-	dps.mpi_strategy = MPIStrategy::DPS;
+	dps.mpi_strategy = mpi;
+	dps.process = process;
 	dps.normalization = Normalization::Unity;
 	dps.bins = fixed_range(0.0, M_PI, 20);
-	dps.pT_hat_bins = std::vector<OptionalRange<double>>(THREAD_COUNT, OptionalRange<double>(1.5, std::nullopt));
-	dps.cross_section_error = true;
-	dps.histogram_fluctuation_error = true;
+	dps.pT_hat_bins = std::vector<OptionalRange<double>>(THREAD_COUNT, OptionalRange<double>(pT_hat_min, std::nullopt));
+	dps.cross_section_error = false;
+	dps.histogram_fluctuation_error = false;
+	dps.experimental_histogram_error = true;
 
 	dps.include_decayed = true;
 	dps.use_biasing = false;
@@ -521,151 +515,62 @@ DPSExperiment dps_template(EVENT_COUNT_TYPE count) {
 	dps.variable_seed = true;
 	dps.random_seed = 1;
 
+	dps.working_directory = wd;
+
 	dps.beam_A = Beam();
+	dps.beam_B = b;
+
+	dps.runs = {
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "1014_1420_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "1014_1420_dps25", 0.5, 25.0),
+
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1014_2024_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1014_2024_dps25", 0.5, 25.0),
+		
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1014_2428_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1014_2428_dps25", 0.5, 25.0),
+		
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1014_2850_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1014_2850_dps25", 0.5, 25.0),		
+
+
+		Analyzer::Parameters(1.4, 2.0, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1420_2024_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.4, 2.0, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1420_2024_dps25", 0.5, 25.0),
+		
+		Analyzer::Parameters(1.4, 2.0, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1420_2428_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.4, 2.0, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1420_2428_dps25", 0.5, 25.0),
+		
+		Analyzer::Parameters(1.4, 2.0, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1420_2850_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.4, 2.0, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1420_2850_dps25", 0.5, 25.0),	
+
+
+		Analyzer::Parameters(2.0, 2.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "2024_2428_dps10", 0.5, 10.0),
+		Analyzer::Parameters(2.0, 2.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "2024_2428_dps25", 0.5, 25.0),
+		
+		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2024_2850_dps10", 0.5, 10.0),
+		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2024_2850_dps25", 0.5, 25.0),	
+
+
+		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850_dps10", 0.5, 10.0),
+		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2424_2850_dps25", 0.5, 25.0),	
+	};
 
 	return dps;
 }
 
-void dps_error(EVENT_COUNT_TYPE count, string fn, Process process, int seed = 1, bool experimental_histogram_error = false) {
-	DPSExperiment dps = dps_template(count);
-
-	dps.process = process;
-	dps.cross_section_error = true;
-	dps.histogram_fluctuation_error = false;
-
-	dps.runs = {
-		Analyzer::Parameters(
-			1.0, 1.4,
-			1.4, 2.0,
-			2.6, 4.1,
-			2.6, 4.1,
-			fn,
-			0.5, 10.0)
-	};
-	dps.pT_range = OptionalRange<double>(1.0, 2.0);
-	dps.y_range = OptionalRange<double>(2.6, 4.1);
-
-	dps.beam_B = Beam();
-	dps.working_directory = "Data/Error Analysis/";
-	dps.random_seed = seed;
-	dps.cross_section_error = false;
-	dps.histogram_fluctuation_error = false;
-	dps.experimental_histogram_error = experimental_histogram_error;
-
-	dps.run();
-}
-
-void run_dps_error_experiment() {
-	dps_error(1'000'000, "pp6_hard_1", Process::HardQCD, 1000);
-	dps_error(1'000'000, "pp6_hard_2", Process::HardQCD, 2000);
-	dps_error(1'000'000, "pp6_hard_3", Process::HardQCD, 3000);
-	dps_error(1'000'000, "pp6_hard_4", Process::HardQCD, 4000);
-
-	dps_error(1'000'000, "pp6_soft_1", Process::SoftQCDNonDiffractive, 1000);
-	dps_error(1'000'000, "pp6_soft_2", Process::SoftQCDNonDiffractive, 2000);
-	dps_error(1'000'000, "pp6_soft_3", Process::SoftQCDNonDiffractive, 3000);
-	dps_error(1'000'000, "pp6_soft_4", Process::SoftQCDNonDiffractive, 4000);
-
-	dps_error(10'000'000, "pp7_hard_1", Process::HardQCD, 1000);
-	dps_error(10'000'000, "pp7_hard_2", Process::HardQCD, 2000);
-	dps_error(10'000'000, "pp7_hard_3", Process::HardQCD, 3000);
-	dps_error(10'000'000, "pp7_hard_4", Process::HardQCD, 4000);
-	
-	dps_error(10'000'000, "pp7_soft_1", Process::SoftQCDNonDiffractive, 1000);
-	dps_error(10'000'000, "pp7_soft_2", Process::SoftQCDNonDiffractive, 2000);
-	dps_error(10'000'000, "pp7_soft_3", Process::SoftQCDNonDiffractive, 3000);
-	dps_error(10'000'000, "pp7_soft_4", Process::SoftQCDNonDiffractive, 4000);
-}
-
-void run_experimental_dps_error_experiment() {
-	dps_error(1'000'000, "Experimental/pp6_hard", Process::HardQCD, 1, true);
-	dps_error(1'000'000, "Experimental/pp6_soft", Process::SoftQCDNonDiffractive, 1, true);
-	dps_error(10'000'000, "Experimental/pp7_hard", Process::HardQCD, 1, true);
-	dps_error(10'000'000, "Experimental/pp7_soft", Process::SoftQCDNonDiffractive, 1, true);	
-}
-
-void dps_experiment(EVENT_COUNT_TYPE count, bool hard) {
-	DPSExperiment dps = dps_template(count);
-	dps.process = hard ? Process::HardQCD : Process::SoftQCDNonDiffractive;
-	dps.mpi_strategy = MPIStrategy::DPS;
-
-	const string hs_string = hard ? "hard" : "soft";
-	dps.runs = {
-		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "pp_1014_1420_dps10_" + hs_string, 0.5, 10.0),
-		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "pp_1014_1420_dps25_" + hs_string, 0.5, 25.0),
-
-		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "pp_1014_2024_dps10_" + hs_string, 0.5, 10.0),
-		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "pp_1014_2024_dps25_" + hs_string, 0.5, 25.0),
-		
-		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "pp_1014_2428_dps10_" + hs_string, 0.5, 10.0),
-		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "pp_1014_2428_dps25_" + hs_string, 0.5, 25.0),
-		
-		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "pp_1014_2850_dps10_" + hs_string, 0.5, 10.0),
-		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "pp_1014_2850_dps25_" + hs_string, 0.5, 25.0),		
-	};
-	dps.pT_range = OptionalRange<double>(1.0, 5.0);
-	dps.y_range = OptionalRange<double>(2.6, 4.1);
-
-	dps.beam_B = Beam();
-	dps.working_directory = "Data/MPI/";
-
-	dps.run();	
-}
-void mpi_experiment(EVENT_COUNT_TYPE count, bool hard) {
-	DPSExperiment dps = dps_template(count);
-	dps.process = hard ? Process::HardQCD : Process::SoftQCDNonDiffractive;
-	dps.mpi_strategy = MPIStrategy::PythiaMPI;
-
-	const string hs_string = hard ? "hard" : "soft";
-	dps.runs = {
-		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "pp_1014_1420_mpi_" + hs_string),
-		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "pp_1014_2024_mpi_" + hs_string),
-		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "pp_1014_2428_mpi_" + hs_string),
-		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "pp_1014_2850_mpi_" + hs_string),
-	};
-	dps.pT_range = OptionalRange<double>(1.0, 5.0);
-	dps.y_range = OptionalRange<double>(2.6, 4.1);
-
-	dps.beam_B = Beam();
-	dps.working_directory = "Data/MPI/";
-
-	dps.run();
-}
-
-void dps() {
+DPSExperiment mpi_template(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, Beam b, string wd) {
 	DPSExperiment dps;
 
-	dps.process = Process::HardQCD;
 	dps.energy = 200;
-	dps.count = 100'000'000 / 16;
-	dps.mpi_strategy = MPIStrategy::DPS;
+	dps.count = count / THREAD_COUNT;
+	dps.mpi_strategy = mpi;
+	dps.process = process;
 	dps.normalization = Normalization::Unity;
 	dps.bins = fixed_range(0.0, M_PI, 20);
-	dps.pT_hat_bins = std::vector<OptionalRange<double>>(16, OptionalRange<double>(1.5, std::nullopt));
-	dps.cross_section_error = true;
-	dps.histogram_fluctuation_error = true;
-
-	dps.runs = {
-		Analyzer::Parameters(
-			1.0, 1.4,
-			1.4, 2.0,
-			2.6, 4.1,
-			2.6, 4.1,
-			"Al_10",
-			0.5,
-			10.0),
-		Analyzer::Parameters(
-			1.0, 1.4,
-			1.4, 2.0,
-			2.6, 4.1,
-			2.6, 4.1,
-			"Al_25",
-			0.5,
-			25.0),
-	};
-
-	dps.pT_range = OptionalRange<double>(1.0, 2.0);
-	dps.y_range = OptionalRange<double>(2.6, 4.1);
+	dps.pT_hat_bins = std::vector<OptionalRange<double>>(THREAD_COUNT, OptionalRange<double>(pT_hat_min, std::nullopt));
+	dps.cross_section_error = false;
+	dps.histogram_fluctuation_error = false;
+	dps.experimental_histogram_error = true;
 
 	dps.include_decayed = true;
 	dps.use_biasing = false;
@@ -675,154 +580,46 @@ void dps() {
 	dps.variable_seed = true;
 	dps.random_seed = 1;
 
+	dps.working_directory = wd;
+
 	dps.beam_A = Beam();
-	// dps.beam_B = Beam();
-	dps.beam_B = Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, false);
-	// dps.beam_B = Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, true);
-
-	dps.working_directory = "Tests/Nuclear/nPDF/";
-	dps.histogram_file_extension = ".csv";
-	dps.run_data_file_extension = ".txt";
-
-	dps.run();
-}
-
-void run_dps_mpi_experiment(EVENT_COUNT_TYPE count) {
-	dps_experiment(count, true);
-	dps_experiment(count, false);
-	mpi_experiment(count, true);
-	mpi_experiment(count, false);
-}
-
-DPSExperiment nuclear_run_template(EVENT_COUNT_TYPE count, bool hard, string type) {
-	DPSExperiment dps = dps_template(count);
-	dps.process = hard ? Process::HardQCD : Process::SoftQCDNonDiffractive;
-	dps.mpi_strategy = MPIStrategy::DPS;
+	dps.beam_B = b;
 
 	dps.runs = {
-		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, type + "_1014_1420_dps10", 0.5, 10.0),
-		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, type + "_1014_1420_dps25", 0.5, 25.0),
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "1014_1420"),
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1014_2024"),
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1014_2428"),
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1014_2850"),
 
-		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, type + "_1014_2024_dps10", 0.5, 10.0),
-		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, type + "_1014_2024_dps25", 0.5, 25.0),
-		
-		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, type + "_1014_2428_dps10", 0.5, 10.0),
-		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, type + "_1014_2428_dps25", 0.5, 25.0),
-		
-		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_1014_2850_dps10", 0.5, 10.0),
-		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_1014_2850_dps25", 0.5, 25.0),		
+		Analyzer::Parameters(1.4, 2.0, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1420_2024"),
+		Analyzer::Parameters(1.4, 2.0, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1420_2428"),
+		Analyzer::Parameters(1.4, 2.0, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1420_2850"),
 
+		Analyzer::Parameters(2.0, 2.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "2024_2428"),
+		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2024_2850"),
 
-		Analyzer::Parameters(1.4, 2.0, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, type + "_1420_2024_dps10", 0.5, 10.0),
-		Analyzer::Parameters(1.4, 2.0, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, type + "_1420_2024_dps25", 0.5, 25.0),
-		
-		Analyzer::Parameters(1.4, 2.0, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, type + "_1420_2428_dps10", 0.5, 10.0),
-		Analyzer::Parameters(1.4, 2.0, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, type + "_1420_2428_dps25", 0.5, 25.0),
-		
-		Analyzer::Parameters(1.4, 2.0, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_1420_2850_dps10", 0.5, 10.0),
-		Analyzer::Parameters(1.4, 2.0, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_1420_2850_dps25", 0.5, 25.0),	
-
-
-		Analyzer::Parameters(2.0, 2.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, type + "_2024_2428_dps10", 0.5, 10.0),
-		Analyzer::Parameters(2.0, 2.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, type + "_2024_2428_dps25", 0.5, 25.0),
-		
-		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_2024_2850_dps10", 0.5, 10.0),
-		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_2024_2850_dps25", 0.5, 25.0),	
-
-
-		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_2428_2850_dps10", 0.5, 10.0),
-		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, type + "_2424_2850_dps25", 0.5, 25.0),	
+		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850"),
 	};
-	dps.pT_range = OptionalRange<double>(1.0, 5.0);
-	dps.y_range = OptionalRange<double>(2.6, 4.1);
 
 	return dps;
 }
 
-void pp_comparison_run(EVENT_COUNT_TYPE count, bool hard) {
-	DPSExperiment dps = nuclear_run_template(count, hard, "pp");
-	dps.beam_B = Beam();
-	const string hs_string = hard ? "Hard/" : "Soft/";
-	dps.working_directory = "Data/Nuclear/Comparison/pp/" + hs_string;
-
+void pp_dps_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd) {
+	DPSExperiment dps = dps_template(count, process, mpi, pT_hat_min, Beam(), wd);
 	dps.run();
 }
 
-void Al_comparison_run(EVENT_COUNT_TYPE count, bool hard, bool nPDF) {
-	DPSExperiment dps = nuclear_run_template(count, hard, "Al");
-	dps.beam_B = Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, nPDF);
-	const string hs_string = hard ? "Hard" : "Soft/";
-	const string npdf_string = nPDF ? " nPDF/" : "/";
-	dps.working_directory = "Data/Nuclear/Comparison/Al/" + hs_string + npdf_string;
-
+void pp_mpi_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd) {
+	DPSExperiment dps = mpi_template(count, process, mpi, pT_hat_min, Beam(), wd);
 	dps.run();
 }
 
-void Au_comparison_run(EVENT_COUNT_TYPE count, bool hard, bool nPDF) {
-	DPSExperiment dps = nuclear_run_template(count, hard, "Au");
-	dps.beam_B = Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, nPDF);
-	const string hs_string = hard ? "Hard" : "Soft/";
-	const string npdf_string = nPDF ? " nPDF/" : "/";
-	dps.working_directory = "Data/Nuclear/Comparison/Au/" + hs_string + npdf_string;
-
-	dps.run();
+void Al_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, bool nPDF = false) {
+	DPSExperiment dps = dps_template(count, process, mpi, pT_hat_min, Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, nPDF), wd);
 }
 
-void run_hard_soft_npdf_experiment(EVENT_COUNT_TYPE count) {
-	// HardQCD p+p
-	pp_comparison_run(count, true);
-	// SoftQCD p+p
-	pp_comparison_run(count, false);
-
-	// HardQCD p+Al
-	Al_comparison_run(count, true, false);
-	// HardQCD p+Al with nPDF
-	Al_comparison_run(count, true, true);
-	// SoftQCD p+Al
-	Al_comparison_run(count, false, false);
-
-	// HardQCD p+Au
-	Au_comparison_run(count, true, false);
-	// HardQCD p+Au with nPDF
-	Au_comparison_run(count, true, true);
-	// SoftQCD p+Au
-	Au_comparison_run(count, false, false);
-}
-
-void pp_run(EVENT_COUNT_TYPE count) {
-	DPSExperiment dps = nuclear_run_template(count, false, "pp");
-	dps.beam_B = Beam();
-	dps.working_directory = "Data/Nuclear/pp/";
-	dps.cross_section_error = false;
-	dps.histogram_fluctuation_error = false;
-	dps.experimental_histogram_error = true;
-	dps.run();
-}
-
-void Al_run(EVENT_COUNT_TYPE count) {
-	DPSExperiment dps = nuclear_run_template(count, false, "Al");
-	dps.beam_B = Beam(13, 27);
-	dps.working_directory = "Data/Nuclear/Al/";
-	dps.cross_section_error = false;
-	dps.histogram_fluctuation_error = false;
-	dps.experimental_histogram_error = true;
-	dps.run();
-}
-
-void Au_run(EVENT_COUNT_TYPE count) {
-	DPSExperiment dps = nuclear_run_template(count, false, "Au");
-	dps.beam_B = Beam(97, 197);
-	dps.working_directory = "Data/Nuclear/Au/";
-	dps.cross_section_error = false;
-	dps.histogram_fluctuation_error = false;
-	dps.experimental_histogram_error = true;
-	dps.run();
-}
-
-void run_nuclear_experiment(EVENT_COUNT_TYPE count) {
-	pp_run(count);
-	Al_run(count);
-	Au_run(count);
+void Au_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, bool nPDF = false) {
+	DPSExperiment dps = dps_template(count, process, mpi, pT_hat_min, Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, nPDF), wd);
 }
 
 #endif // EXPERIMENT_DEFS_H
