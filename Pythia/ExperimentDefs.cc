@@ -616,10 +616,12 @@ void pp_mpi_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double
 
 void Al_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, bool nPDF = false) {
 	DPSExperiment dps = dps_template(count, process, mpi, pT_hat_min, Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, nPDF), wd);
+	dps.run();
 }
 
 void Au_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, bool nPDF = false) {
 	DPSExperiment dps = dps_template(count, process, mpi, pT_hat_min, Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, nPDF), wd);
+	dps.run();
 }
 
 #endif // EXPERIMENT_DEFS_H

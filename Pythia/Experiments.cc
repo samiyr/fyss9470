@@ -17,10 +17,10 @@ int main() {
 	// pp_mpi_run(10'000'000, Process::HardQCD, MPIStrategy::Disabled, 2.0, "Data/pp/delta_phi/No MPI/Hard20/1e7/");
 	// pp_mpi_run(10'000'000, Process::SoftQCDNonDiffractive, MPIStrategy::Disabled, 1.5, "Data/pp/delta_phi/No MPI/Soft/1e7/");
 
-	pp_mpi_run(1'000'000'000, Process::HardQCD, MPIStrategy::Disabled, 1.0, "Data/pp/delta_phi/No MPI/Hard10/1e9/");
-	pp_mpi_run(1'000'000'000, Process::HardQCD, MPIStrategy::Disabled, 1.5, "Data/pp/delta_phi/No MPI/Hard15/1e9/");
-	pp_mpi_run(1'000'000'000, Process::HardQCD, MPIStrategy::Disabled, 2.0, "Data/pp/delta_phi/No MPI/Hard20/1e9/");
-	pp_mpi_run(1'000'000'000, Process::SoftQCDNonDiffractive, MPIStrategy::Disabled, 1.5, "Data/pp/delta_phi/No MPI/Soft/1e9/");
+	// pp_mpi_run(1'000'000'000, Process::HardQCD, MPIStrategy::Disabled, 1.0, "Data/pp/delta_phi/No MPI/Hard10/1e9/");
+	// pp_mpi_run(1'000'000'000, Process::HardQCD, MPIStrategy::Disabled, 1.5, "Data/pp/delta_phi/No MPI/Hard15/1e9/");
+	// pp_mpi_run(1'000'000'000, Process::HardQCD, MPIStrategy::Disabled, 2.0, "Data/pp/delta_phi/No MPI/Hard20/1e9/");
+	// pp_mpi_run(1'000'000'000, Process::SoftQCDNonDiffractive, MPIStrategy::Disabled, 1.5, "Data/pp/delta_phi/No MPI/Soft/1e9/");
 
 	// pp_dps_run(10'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pp/delta_phi/DPS/Hard15/1e7/");
 	// pp_dps_run(10'000'000, Process::SoftQCDNonDiffractive, MPIStrategy::DPS, 1.5, "Data/pp/delta_phi/DPS/Soft/1e7/");
