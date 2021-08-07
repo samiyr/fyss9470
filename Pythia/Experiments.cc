@@ -1,5 +1,5 @@
-#ifndef EXPERIMENT_H
-#define EXPERIMENT_H
+#ifndef EXPERIMENTS_H
+#define EXPERIMENTS_H
 
 #include "ExperimentDefs.cc"
 
@@ -67,4 +67,4 @@ int main() {
 	return 0;
 }
 
-#endif // EXPERIMENT_H
+#endif // EXPERIMENTS_H

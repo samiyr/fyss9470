@@ -1,7 +1,7 @@
 #ifndef EXPERIMENT_DEFS_H
 #define EXPERIMENT_DEFS_H
 
-#include "PartonicGenerator.cc"
+#include "ParticleGenerator.cc"
 #include "Histogram.cc"
 #include "Analyzer.cc"
 #include "Constants.cc"
@@ -72,21 +72,19 @@ public:
 	Beam beam_B;
 	/// Type of process, e.g. Process::HardQCD or Process::SoftQCDNonDiffractive. Required.
 	Process process;
-	/// Path component appended to the filename during export.
-	/// Either the filename or the working directory has to include
-	/// a path component separator '/' since one isn't automatically
-	/// appended to the export file. Defaults to nullopt.
+	/// Path component appended to the filename during export. Defaults to nullopt.
 	std::optional<std::filesystem::path> working_directory = std::nullopt;
-	/// The file extension used in the exported histogram. 
-	/// Default specified in Constants.cc. Must include '.', e.g. '.csv'.
-	string histogram_file_extension = Defaults::histogram_file_extension;
-	/// The file extension used in the exported parameter data file. 
-	/// Default specified in Constants.cc. Must include '.', e.g. '.txt'.
-	string run_data_file_extension = Defaults::run_data_file_extension;
-
-	bool cross_section_error;
-	bool histogram_fluctuation_error;
-	bool experimental_histogram_error;
+	/// The file extension used in the exported histogram. Defaults to 'csv'.
+	string histogram_file_extension = "csv";
+	/// The file extension used in the exported parameter data file. Defaults to 'txt',
+	string run_data_file_extension = "txt";
+	/// A flag determining whether to estimate the error of SPS and DPS cross sections. Defaults to false,
+	bool cross_section_error = false;
+	/// A flag determining whether to estimate the error caused by histogram fluctuations by taking their mean. 
+	/// Defaults to false.
+	bool histogram_fluctuation_error = false;
+	/// A flag determining whether to estimate histogram error by sqrt(N). Defaults to true.
+	bool statistical_histogram_error = true;
 
 	/// Runs the experiment. Subclasses must implement this method.
 	virtual void run() = 0;
@@ -112,19 +110,6 @@ public:
 		params.process = process;
 
 		return params;
-	}
-
-	/**
-	 * Initializes an instance of `PartonicGenerator`
-	 * with the appropriate parameters set.
-	 */
-	PartonicGenerator create_generator() {
-		GeneratorParameters params = create_parameters();
-		PartonicGenerator generator(params, pT_hat_bins);
-		generator.parallelize = parallelize;
-		generator.variable_seed = variable_seed;
-
-		return generator;
 	}
 
 	/**
@@ -190,74 +175,87 @@ public:
 		const auto start_time = std::chrono::high_resolution_clock::now();
 
 		std::vector<ValueHistogram<double>> containers;
-		PartonicGenerator generator = create_generator();
+		GeneratorParameters params = create_parameters();
 
-		generator.generate([&containers, this](std::vector<std::vector<ParticleContainer>> pions_by_event, ParticleGenerator *particle_generator) {
-			const auto pions = flatten(pions_by_event);
+		#pragma omp parallel for if(parallelize)
+		for (std::vector<OptionalRange<double>>::size_type i = 0; i < pT_hat_bins.size(); i++) {
+			const auto range = pT_hat_bins[i];
+
+			ParticleGenerator generator(params, range);
+
+			if (variable_seed) {
+				generator.params.random_seed = i + params.random_seed;
+			}
+
+			generator.initialize();
+			const std::vector<std::vector<ParticleContainer>> particles = generator.generate();
+			
+			const auto pions = flatten(particles);
 			const std::vector<double> pTs = find_pTs(pions);
 			const std::vector<double> event_weights = find_event_weights(pions);
 
 			Histogram<double> partial(bins);
 			partial.fill(pTs, event_weights);
 
-			const double sigma = particle_generator->sigma();
-			const double total_weight = particle_generator->total_weight();
+			const double sigma = generator.sigma();
+			const double total_weight = generator.total_weight();
 			const auto partial_container = partial.normalize(total_weight, sigma, y_range, use_biasing);
+			#pragma omp critical
 			containers.push_back(partial_container);
-		}, [&containers, this, start_time]{
-			ValueHistogram<double> combined = normalize(ValueHistogram<double>::combine(containers, histogram_fluctuation_error));
-			if (experimental_histogram_error) {
-				combined = ValueHistogram<double>::calculate_statistical_error(combined);
+		}
+
+		ValueHistogram<double> combined = normalize(ValueHistogram<double>::combine(containers, histogram_fluctuation_error));
+		if (statistical_histogram_error) {
+			combined = ValueHistogram<double>::calculate_statistical_error(combined);
+		}
+		cout << "Normalized pT histogram" << "\n";
+		combined.print();
+		cout << "\n";
+
+		// Stop the clock
+		const auto end_time = std::chrono::high_resolution_clock::now();
+		const std::chrono::duration<double> elapsed_duration = end_time - start_time;
+		const double elapsed_time = elapsed_duration.count();
+
+		if (filename) {
+			const auto histogram_path = construct_path(working_directory, *filename, histogram_file_extension);
+			const auto data_path = construct_path(working_directory, *filename, run_data_file_extension);
+			ofstream file;
+			file.open(data_path);
+
+			file << std::setprecision(6);
+
+			file << "elapsed_time\t= " << elapsed_time << " s\n\n";
+
+			file << "eCM\t\t= " << energy << "\n";
+			file << "count\t\t= " << count * (EVENT_COUNT_TYPE)pT_hat_bins.size() << "\n\n";
+
+			file << "process\t\t= " << to_string(process) << "\n";
+			file << "include_decayed\t= " << bool_to_string(include_decayed) << "\n";
+			file << "mpi\t\t= " << bool_to_string(mpi) << "\n\n";
+			file << "normalization\t= " << "cross section" << "\n\n";
+
+			file << "beam_A\t\t= " << beam_A << "\n";
+			file << "beam_B\t\t= " << beam_B << "\n\n";
+
+			file << "use_biasing\t= " << bool_to_string(use_biasing) << "\n";
+			file << "bias_power\t= " << bias_power << "\n";
+			file << "bias_reference\t= " << bias_reference << "\n\n";
+
+			file << "pT\t\t= " << pT_range.extent() << "\n";
+			file << "y\t\t= " << y_range.extent() << "\n\n";
+
+			file << "pT histogram:";
+			file << combined;
+			file << "\n";
+			file << "pT_hat_bins:\n";
+			for (auto bin : pT_hat_bins) {
+				file << bin.extent() << "\n";
 			}
-			cout << "Normalized pT histogram" << "\n";
-			combined.print();
-			cout << "\n";
+			file.close();
 
-			// Stop the clock
-			const auto end_time = std::chrono::high_resolution_clock::now();
-			const std::chrono::duration<double> elapsed_duration = end_time - start_time;
-			const double elapsed_time = elapsed_duration.count();
-
-			if (filename) {
-				const auto histogram_path = construct_path(working_directory, *filename, histogram_file_extension);
-				const auto data_path = construct_path(working_directory, *filename, run_data_file_extension);
-				ofstream file;
-				file.open(data_path);
-
-				file << std::setprecision(6);
-
-				file << "elapsed_time\t= " << elapsed_time << " s\n\n";
-
-				file << "eCM\t\t= " << energy << "\n";
-				file << "count\t\t= " << count * (EVENT_COUNT_TYPE)pT_hat_bins.size() << "\n\n";
-
-				file << "process\t\t= " << to_string(process) << "\n";
-				file << "include_decayed\t= " << bool_to_string(include_decayed) << "\n";
-				file << "mpi\t\t= " << bool_to_string(mpi) << "\n\n";
-				file << "normalization\t= " << "cross section" << "\n\n";
-
-				file << "beam_A\t\t= " << beam_A << "\n";
-				file << "beam_B\t\t= " << beam_B << "\n\n";
-
-				file << "use_biasing\t= " << bool_to_string(use_biasing) << "\n";
-				file << "bias_power\t= " << bias_power << "\n";
-				file << "bias_reference\t= " << bias_reference << "\n\n";
-
-				file << "pT\t\t= " << pT_range.extent() << "\n";
-				file << "y\t\t= " << y_range.extent() << "\n";
-
-				file << "pT histogram:";
-				file << combined;
-				file << "\n";
-				file << "pT_hat_bins:\n";
-				for (auto bin : pT_hat_bins) {
-					file << bin.extent() << "\n";
-				}
-				file.close();
-
-				combined.export_histogram(histogram_path);
-			}
-		});
+			combined.export_histogram(histogram_path);
+		}
 	}
 };
 
@@ -332,7 +330,7 @@ public:
 			auto result = results[run_index];
 			auto normalized = normalize(result);
 
-			if (experimental_histogram_error) {
+			if (statistical_histogram_error) {
 				normalized = ValueHistogram<double>::calculate_statistical_error(normalized);
 			}
 			// Stop the clock
@@ -458,7 +456,7 @@ CrossSectionExperiment pT_template(EVENT_COUNT_TYPE count, bool mpi = Defaults::
 	return cs;
 }
 
-void pT_cross_section(EVENT_COUNT_TYPE count, bool biasing, bool subdivision, string fn, bool mpi = Defaults::mpi, int seed = -1, bool experimental_histogram_error = false) {
+void pT_cross_section(EVENT_COUNT_TYPE count, bool biasing, bool subdivision, string fn, bool mpi = Defaults::mpi, int seed = -1, bool statistical_histogram_error = false) {
 	CrossSectionExperiment cs = pT_template(count, mpi);
 
 	if (subdivision) {
@@ -479,7 +477,7 @@ void pT_cross_section(EVENT_COUNT_TYPE count, bool biasing, bool subdivision, st
 	cs.random_seed = seed;
 	cs.cross_section_error = false;
 	cs.histogram_fluctuation_error = false;
-	cs.experimental_histogram_error = experimental_histogram_error;
+	cs.statistical_histogram_error = statistical_histogram_error;
 
 	cs.run();
 }
@@ -524,7 +522,7 @@ DPSExperiment dps_template(EVENT_COUNT_TYPE count, Process process, MPIStrategy 
 	dps.pT_hat_bins = std::vector<OptionalRange<double>>(THREAD_COUNT, OptionalRange<double>(pT_hat_min, std::nullopt));
 	dps.cross_section_error = false;
 	dps.histogram_fluctuation_error = false;
-	dps.experimental_histogram_error = true;
+	dps.statistical_histogram_error = true;
 
 	dps.include_decayed = true;
 	dps.use_biasing = false;
@@ -589,7 +587,7 @@ DPSExperiment mpi_template(EVENT_COUNT_TYPE count, Process process, MPIStrategy 
 	dps.pT_hat_bins = std::vector<OptionalRange<double>>(THREAD_COUNT, OptionalRange<double>(pT_hat_min, std::nullopt));
 	dps.cross_section_error = false;
 	dps.histogram_fluctuation_error = false;
-	dps.experimental_histogram_error = true;
+	dps.statistical_histogram_error = true;
 
 	dps.include_decayed = true;
 	dps.use_biasing = false;

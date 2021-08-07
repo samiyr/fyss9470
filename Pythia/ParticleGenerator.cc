@@ -14,7 +14,7 @@ public:
 	OptionalRange<double> pT_hat_range;
 	Pythia *pythia;
 
-	ParticleGenerator(GeneratorParameters p) : params(p) {}
+	ParticleGenerator(GeneratorParameters p, OptionalRange<double> _pT_hat_range) : params(p), pT_hat_range(_pT_hat_range) {}
 	
 	void initialize() {
 		pythia = new Pythia("../share/Pythia8/xmldoc", params.pythia_printing);

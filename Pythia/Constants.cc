@@ -16,8 +16,6 @@ namespace Defaults {
 	static bool parallelize					= false;
 	static double sigma_eff					= 1.0;
 	static double m 						= 0.0;
-	static string histogram_file_extension 	= ".csv";
-	static string run_data_file_extension 	= ".txt";
 }
 
 #include "Analyzer.cc"
