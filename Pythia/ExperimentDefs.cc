@@ -185,7 +185,7 @@ public:
 /**
  * Transverse momentum cross sectino experiment.
  */
-class CrossSectionExperiment : public Experiment {
+class TransverseMomentumExperiment : public Experiment {
 public:
 	/// Specified the output file name.
 	std::optional<string> filename;
@@ -291,9 +291,9 @@ public:
 
 
 /**
- * DPS experiment.
+ * Azimuthal correlations experiment.
  */
-class DPSExperiment : public Experiment {
+class AzimuthalCorrelationExperiment : public Experiment {
 public:
 	/**
 	 * A list of analysis parameters,
@@ -481,8 +481,8 @@ public:
 // --- pT cross section ---
 
 /// Returns a pT cross section experiment template with prepopulated parameters.
-CrossSectionExperiment pT_template(EVENT_COUNT_TYPE count, bool mpi = Defaults::mpi) {
-	CrossSectionExperiment cs;
+TransverseMomentumExperiment pT_template(EVENT_COUNT_TYPE count, bool mpi = Defaults::mpi) {
+	TransverseMomentumExperiment cs;
 
 	cs.process = Process::HardQCD;
 	cs.mpi = mpi;
@@ -511,7 +511,7 @@ void pT_cross_section(
 	bool mpi = Defaults::mpi, 
 	int seed = -1, 
 	bool statistical_histogram_error = false) {
-	CrossSectionExperiment cs = pT_template(count, mpi);
+	TransverseMomentumExperiment cs = pT_template(count, mpi);
 
 	if (subdivision) {
 		cs.pT_hat_bins = {
@@ -566,8 +566,14 @@ void run_pT_experiment() {
 // --- Azimuth correlation ---
 
 /// Returns azimuthal correlation experiment template with DPS and prepopulated parameters.
-DPSExperiment dps_template(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, Beam b, string wd) {
-	DPSExperiment dps;
+AzimuthalCorrelationExperiment dps_template(
+	EVENT_COUNT_TYPE count, 
+	Process process, 
+	MPIStrategy mpi, 
+	double pT_hat_min, 
+	Beam b, 
+	string wd) {
+	AzimuthalCorrelationExperiment dps;
 
 	dps.energy = 200;
 	dps.count = count / THREAD_COUNT;
@@ -632,8 +638,14 @@ DPSExperiment dps_template(EVENT_COUNT_TYPE count, Process process, MPIStrategy 
 }
 
 /// Returns azimuthal correlation experiment template with MPI and prepopulated parameters.
-DPSExperiment mpi_template(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, Beam b, string wd) {
-	DPSExperiment dps;
+AzimuthalCorrelationExperiment mpi_template(
+	EVENT_COUNT_TYPE count, 
+	Process process, 
+	MPIStrategy mpi, 
+	double pT_hat_min, 
+	Beam b, 
+	string wd) {
+	AzimuthalCorrelationExperiment dps;
 
 	dps.energy = 200;
 	dps.count = count / THREAD_COUNT;
@@ -680,25 +692,25 @@ DPSExperiment mpi_template(EVENT_COUNT_TYPE count, Process process, MPIStrategy 
 
 /// Runs a p+p collision DPS experiment.
 void pp_dps_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd) {
-	DPSExperiment dps = dps_template(count, process, mpi, pT_hat_min, Beam(), wd);
+	auto dps = dps_template(count, process, mpi, pT_hat_min, Beam(), wd);
 	dps.run();
 }
 
 /// Runs a p+p collision MPI experiment.
 void pp_mpi_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd) {
-	DPSExperiment dps = mpi_template(count, process, mpi, pT_hat_min, Beam(), wd);
+	auto dps = mpi_template(count, process, mpi, pT_hat_min, Beam(), wd);
 	dps.run();
 }
 
 /// Runs a p+Al collision DPS experiment.
 void Al_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, bool nPDF = false) {
-	DPSExperiment dps = dps_template(count, process, mpi, pT_hat_min, Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, nPDF), wd);
+	auto dps = dps_template(count, process, mpi, pT_hat_min, Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, nPDF), wd);
 	dps.run();
 }
 
 /// Runs a p+Au collision DPS experiment.
 void Au_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, bool nPDF = false) {
-	DPSExperiment dps = dps_template(count, process, mpi, pT_hat_min, Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, nPDF), wd);
+	auto dps = dps_template(count, process, mpi, pT_hat_min, Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, nPDF), wd);
 	dps.run();
 }
 
