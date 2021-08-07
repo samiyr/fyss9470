@@ -7,10 +7,9 @@ int THREAD_COUNT = 16;
 
 int main() {
 	// run_pT_experiment();
-	pT_cross_section(1'000'000 / 5, true, true, "MPI/Bias subdivision/1e6/data_pseudorapidity.csv");
 	// pT_cross_section(100'000'000 / 5, true, true, "MPI/Bias subdivision/1e8/data.csv", -1, true);
 
-	// pT_cross_section(100'000 / 5, true, true, "No MPI/Bias subdivision/1e5/data.csv", false);
+	// pT_cross_section(100'000 / 5, true, true, "No MPI/Bias subdivision/1e5/data", false);
 	// pT_cross_section(1'000'000 / 5, true, true, "No MPI/Bias subdivision/1e6/data.csv", false);
 
 	// pp_mpi_run(1'000'000, Process::HardQCD, MPIStrategy::Disabled, 1.5, "Data/pp/delta_phi/No MPI/Hard15/1e6/");

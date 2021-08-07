@@ -10,6 +10,7 @@
 #include "Around.cc"
 #include <chrono>
 #include <optional>
+#include <filesystem>
 
 extern int THREAD_COUNT;
 
@@ -75,7 +76,7 @@ public:
 	/// Either the filename or the working directory has to include
 	/// a path component separator '/' since one isn't automatically
 	/// appended to the export file. Defaults to nullopt.
-	std::optional<string> working_directory = std::nullopt;
+	std::optional<std::filesystem::path> working_directory = std::nullopt;
 	/// The file extension used in the exported histogram. 
 	/// Default specified in Constants.cc. Must include '.', e.g. '.csv'.
 	string histogram_file_extension = Defaults::histogram_file_extension;
@@ -185,6 +186,9 @@ public:
 	std::optional<string> filename;
 
 	void run() {
+		// Start the clock.
+		const auto start_time = std::chrono::high_resolution_clock::now();
+
 		std::vector<ValueHistogram<double>> containers;
 		PartonicGenerator generator = create_generator();
 
@@ -200,7 +204,7 @@ public:
 			const double total_weight = particle_generator->total_weight();
 			const auto partial_container = partial.normalize(total_weight, sigma, y_range, use_biasing);
 			containers.push_back(partial_container);
-		}, [&containers, this]{
+		}, [&containers, this, start_time]{
 			ValueHistogram<double> combined = normalize(ValueHistogram<double>::combine(containers, histogram_fluctuation_error));
 			if (experimental_histogram_error) {
 				combined = ValueHistogram<double>::calculate_statistical_error(combined);
@@ -208,43 +212,55 @@ public:
 			cout << "Normalized pT histogram" << "\n";
 			combined.print();
 			cout << "\n";
+
+			// Stop the clock
+			const auto end_time = std::chrono::high_resolution_clock::now();
+			const std::chrono::duration<double> elapsed_duration = end_time - start_time;
+			const double elapsed_time = elapsed_duration.count();
+
 			if (filename) {
-				combined.export_histogram(*filename);
-			}
-		});
-	}
-};
+				const auto histogram_path = construct_path(working_directory, *filename, histogram_file_extension);
+				const auto data_path = construct_path(working_directory, *filename, run_data_file_extension);
+				ofstream file;
+				file.open(data_path);
 
-class AzimuthCorrelationExperiment : public Experiment {
-public:
-	std::vector<Analyzer::Parameters> runs;
+				file << std::setprecision(6);
 
-	void run() {
-		PartonicGenerator generator = create_generator();
+				file << "elapsed_time\t= " << elapsed_time << " s\n\n";
 
-		std::vector<Analyzer> analyzers;
+				file << "eCM\t\t= " << energy << "\n";
+				file << "count\t\t= " << count * (EVENT_COUNT_TYPE)pT_hat_bins.size() << "\n\n";
 
-		for (auto &run : runs) {
-			analyzers.emplace_back(run, bins);
-		}
+				file << "process\t\t= " << to_string(process) << "\n";
+				file << "include_decayed\t= " << bool_to_string(include_decayed) << "\n";
+				file << "mpi\t\t= " << bool_to_string(mpi) << "\n\n";
+				file << "normalization\t= " << "cross section" << "\n\n";
 
-		generator.generate_at_loop([&analyzers](std::vector<ParticleContainer> particles, [[maybe_unused]] ParticleGenerator *particle_generator) {
-			for (auto &analyzer : analyzers) {
-				analyzer.book(&particles);
-			}
-		}, [&analyzers, this] {
-			for (auto &analyzer : analyzers) {
-				const auto normalized = normalize(analyzer.histogram);
-				cout << "\nAzimuth histogram\n";
-				normalized.print_with_bars();
-				cout << "\n";
-				if (analyzer.parameters.filename) {
-					normalized.export_histogram(*analyzer.parameters.filename);
+				file << "beam_A\t\t= " << beam_A << "\n";
+				file << "beam_B\t\t= " << beam_B << "\n\n";
+
+				file << "use_biasing\t= " << bool_to_string(use_biasing) << "\n";
+				file << "bias_power\t= " << bias_power << "\n";
+				file << "bias_reference\t= " << bias_reference << "\n\n";
+
+				file << "pT\t\t= " << pT_range.extent() << "\n";
+				file << "y\t\t= " << y_range.extent() << "\n";
+
+				file << "pT histogram:";
+				file << combined;
+				file << "\n";
+				file << "pT_hat_bins:\n";
+				for (auto bin : pT_hat_bins) {
+					file << bin.extent() << "\n";
 				}
+				file.close();
+
+				combined.export_histogram(histogram_path);
 			}
 		});
 	}
 };
+
 
 /**
  * DPS experiment.
@@ -323,14 +339,12 @@ public:
 			const auto end_time = std::chrono::high_resolution_clock::now();
 			const std::chrono::duration<double> elapsed_duration = end_time - start_time;
 			const double elapsed_time = elapsed_duration.count();
-			// Prefix for the export file path.
-			const string prefix = working_directory ? *working_directory : "";
 			// Initialize data parameter output file.
 			ofstream file;
 			if (result.parameters.filename) {
 				// Construct data output file path.
-				const string filename = prefix + *result.parameters.filename + run_data_file_extension;
-				file.open(filename);
+				const auto data_path = construct_path(working_directory, *result.parameters.filename, run_data_file_extension);
+				file.open(data_path);
 				file << std::setprecision(6);
 
 				file << "elapsed_time\t= " << elapsed_time << " s\n\n";
@@ -350,6 +364,8 @@ public:
 				file << "bias_power\t= " << bias_power << "\n";
 				file << "bias_reference\t= " << bias_reference << "\n\n";
 
+				file << "pT\t\t= " << pT_range.extent() << "\n";
+				file << "y\t\t= " << y_range.extent() << "\n";
 				file << "pT_1\t\t= " << result.parameters.pT_small.extent() << "\n";
 				file << "pT_2\t\t= " << result.parameters.pT_large.extent() << "\n";
 				file << "y_1\t\t= " << result.parameters.y_small.extent() << "\n";
@@ -411,7 +427,8 @@ public:
 					file << bin.extent() << "\n";
 				}
 				file.close();
-				normalized.export_histogram(prefix + *result.parameters.filename + histogram_file_extension);
+				const auto histogram_path = construct_path(working_directory, *result.parameters.filename, histogram_file_extension);
+				normalized.export_histogram(histogram_path);
 			}
 		}
 	}
@@ -457,7 +474,8 @@ void pT_cross_section(EVENT_COUNT_TYPE count, bool biasing, bool subdivision, st
 	}
 
 	cs.use_biasing = biasing;
-	cs.filename = "Data/pp/pT/" + fn;
+	cs.working_directory = "Data/pp/pT";
+	cs.filename = fn;
 	cs.random_seed = seed;
 	cs.cross_section_error = false;
 	cs.histogram_fluctuation_error = false;

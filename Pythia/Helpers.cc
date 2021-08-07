@@ -327,4 +327,30 @@ std::string to_string(MPIStrategy mpi) {
 	}
 	return "";
 }
+
+std::string convert_optional_string(std::optional<std::string> s) {
+	return s ? *s : "";
+}
+
+#include <filesystem>
+
+std::filesystem::path construct_path(std::optional<std::filesystem::path> parent_directory, std::string filename, std::string extension, bool create_parent = true) {
+	std::filesystem::path path;
+	if (parent_directory) {
+		path = *parent_directory / filename;
+
+	} else {
+		path = filename;
+	}
+	
+	path.replace_extension(extension);
+
+	if (create_parent) {
+		const auto directory = path.parent_path();
+		std::filesystem::create_directories(directory);
+	}
+
+	return path;
+}
+
 #endif // HELPERS_H
