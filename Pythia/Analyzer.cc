@@ -10,29 +10,27 @@
 
 using namespace Pythia8;
 
+/// Analyzer for azimuthal correlations.
 class Analyzer {
 public:
+	/// Analyzer parameters.
 	struct Parameters {
+		/// Transverse momenta filter sets.
 		OptionalRange<double> pT_small;
 		OptionalRange<double> pT_large;
-
+		/// Rapidity filter sets.
 		OptionalRange<double> y_small;
 		OptionalRange<double> y_large;
-
 		/// Filename of the exported file. 
 		/// If set to `nullopt`, no data is exported.
 		std::optional<std::string> filename;
-
+		/// Parameters for the DPS model. 
 		double m;
 		double sigma_eff;
-
-		bool parameter_validation() {
-			return true;
-			return OptionalRange<double>::disjoint(pT_small, pT_large) || OptionalRange<double>::disjoint(y_small, y_large);
-		}
-
-		Parameters() : Parameters(OptionalRange<double>(), OptionalRange<double>(), OptionalRange<double>(), OptionalRange<double>()) {}
-
+		/// Constructs an empty parameter set with no cuts in transverse momenta or rapidity.
+		Parameters() : 
+		Parameters(OptionalRange<double>(), OptionalRange<double>(), OptionalRange<double>(), OptionalRange<double>()) {}
+		/// Constructs a parameter set with the cuts in transverse momenta and rapidity given as OptionalRange.
 		Parameters(
 			OptionalRange<double> pT_1, 
 			OptionalRange<double> pT_2, 
@@ -48,9 +46,8 @@ public:
 			filename(fn), 
 			m(_m), 
 			sigma_eff(_sigma_eff) {
-			assert(parameter_validation());
 		}
-
+		/// Constructs a parameter set with the cuts in transverse momenta and rapidity given as individual endpoints.
 		Parameters(
 			std::optional<double> pT_1_l,
 			std::optional<double> pT_1_u,
@@ -70,21 +67,22 @@ public:
 			filename(fn), 
 			m(_m), 
 			sigma_eff(_sigma_eff) {
-			assert(parameter_validation());
 		}
 	};
+	/// The analysis parameters.
 	Analyzer::Parameters parameters;
-
+	/// Histogram bins.
 	std::vector<double> bins;
-
+	/// Output histogram.
 	ValueHistogram<double> histogram;
-
+	/// Total weights of trigger and associated particles, as well as of the paired particles.
 	double N_trigger = 0.0;
 	double N_assoc = 0.0;
 	double N_pair = 0.0;
-
-	Analyzer(Analyzer::Parameters params, std::vector<double> b) : parameters(params), bins(b), histogram(ValueHistogram<double>(bins)) {}
-
+	/// Constructs an analyzer with the given parameters and histogram bins.
+	Analyzer(Analyzer::Parameters params, std::vector<double> b) 
+	: parameters(params), bins(b), histogram(ValueHistogram<double>(bins)) {}
+	/// Analyze the particles generated at an event.
 	void book(std::vector<ParticleContainer> *input) {
 		const auto N = input->size();
 

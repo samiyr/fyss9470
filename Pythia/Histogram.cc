@@ -15,7 +15,6 @@ template <typename T>
 struct Bin {
 	/// Extent of the bin, [range.start, range.end).
 	Range<double> range;
-
 	/// Stored contents of the bin.
 	std::vector<T> contents;
 	/// Weights associated with the contents.
@@ -45,10 +44,12 @@ struct RangedContainer {
 	Range<double> range;
 	/// Value associated with the bin.
 	Around<T> value;
-
+	/// The number of hits in the bin. Starts from zero and is incremented by one every time the value changes.
 	unsigned long long hit_count;
-	/// Initializes a bin.
+	/// Initializes a bin with the given lower and upper bounds and the value. By default, hit count is set to zero
 	RangedContainer(double l, double u, T v, unsigned long long h = 0) : range(l, u), value(v), hit_count(h) {}
+	/// Initializes a bin with the given lower and upper bounds and the value with uncertainty.
+	/// By default, hit count is set to zero
 	RangedContainer(double l, double u, Around<T> v, unsigned long long h = 0) : range(l, u), value(v), hit_count(h) {}
 };
 
@@ -67,7 +68,9 @@ public:
 	ValueHistogram(int capacity) {
 		containers.reserve(capacity);
 	}
-
+	/// Initializes a histogram with bin edges given by the input vector.
+	/// For example, input of {0.0, 1.0, 2.0} corresponds to a histogram with
+	/// two bins, the first [0.0, 1.0) and the second [1.0, 2.0).
 	ValueHistogram(std::vector<double> points) {
 		std::vector<RangedContainer<T>> c;
 		for (typename std::vector<T>::size_type i = 0; i < points.size() - 1; i++) {
@@ -103,7 +106,7 @@ public:
 			print_with_precision(value, 8);
 		}
 	}
-
+	/// Defines a formatting for the histogram when outputting to streams.
 	friend ostream& operator<<(ostream& os, ValueHistogram<T> const & hist) {
 		os << "\n";
 		T total = T(0);
@@ -122,10 +125,11 @@ public:
 		}
 		return os << "\n";
     }
+    /// Prints the histogram to stdout.
 	void print_with_bars() const {
 		cout << *this;
 	}
-	/// Exports the histogram to a file `filename`.
+	/// Exports the histogram to a file filename. By default, precision is set to 12.
 	void export_histogram(std::string filename, int precision = 12) const {
 		ofstream file;
 		file.open(filename);
@@ -139,7 +143,7 @@ public:
 		}
 		file.close();
 	}
-
+	/// Returns the total value of the histogram across all bins.
 	double total() const {
 		return std::accumulate(containers.begin(), containers.end(), 0.0, [](double partial, RangedContainer<T> current) {
 			return partial + current.value.value;
@@ -147,6 +151,8 @@ public:
 	}
 
 	template<typename F>
+	/// Applies a transformation to the histogram. The transformation, given by a lambda function,
+	/// is called with each container and must return a new value based on the container.
 	static ValueHistogram<T> transform(ValueHistogram<T> input, F lambda) {
 		ValueHistogram<T> result;
 		for (auto container : input.containers) {
@@ -156,7 +162,7 @@ public:
 		}
 		return result;
 	}
-
+	/// Returns a histogram normalized to unity, i.e. the integral of the normalized histogram equals 1.
 	ValueHistogram<double> normalize_to_unity() const {
 		const double sum_total = total();
 		const auto normalized = ValueHistogram<double>::transform(*this, [sum_total](RangedContainer<double> container) {
@@ -166,7 +172,8 @@ public:
 		});
 		return normalized;
 	}
-
+	/// Returns a histogram normalized with a procedure outlined in the STAR presentation. 
+	/// Shouldn't be used.
 	ValueHistogram<double> normalize_to_star_C(double N_trig) const {
 		ValueHistogram<double> normalized;
 		for (auto container : containers) {
@@ -180,10 +187,12 @@ public:
 	}
 
 	template <typename V>
+	/// Returns a histogram with the contents divided by a constant.
 	ValueHistogram<double> normalize_by(V constant) const {
 		return *this / constant;
 	}
-	static ValueHistogram<T> combine(std::vector<ValueHistogram<T>> _containers, bool calculate_error = true) {
+	/// Combines a list of histograms into one histogram by taking the sum across each histogram for all bins.
+	static ValueHistogram<T> combine(std::vector<ValueHistogram<T>> _containers, bool calculate_error = false) {
 		auto reference = _containers.front();
 		const auto N = reference.size();
 		ValueHistogram<T> result(N);
@@ -210,7 +219,8 @@ public:
 		}
 		return result;
 	}
-
+	/// Calculates the estimated statistical error and erases all other errors. The error is given by
+	/// 1 / sqrt(N), where N is the hit count of a bin. This corresponds with a relative error.
 	static ValueHistogram<double> calculate_statistical_error(ValueHistogram<double> hist) {
 		const auto transformed = ValueHistogram<double>::transform(hist, [](RangedContainer<double> container) {
 			const auto value = container.value.value;
@@ -220,7 +230,9 @@ public:
 		});
 		return transformed;
 	}
-
+	/**
+	 * Arithmetic operations for histograms.
+	 */
 	ValueHistogram<T>& operator+=(ValueHistogram<T> rhs) {
 		*this = *this + rhs;
 		return *this;
@@ -372,7 +384,7 @@ public:
 		}
 		return normalized;
 	}
-
+	/// Converts the histogram to a ValueHistogram by taking the number of elements as the size of the bin.
 	ValueHistogram<T> export_to_values() const {
 		std::vector<RangedContainer<T>> containers;
 		ValueHistogram<T> hist;
@@ -384,6 +396,7 @@ public:
 		return hist;
 	}
 private:
+	/// Histogram constructor with bin edges given as a list.
 	void Construct(std::vector<double> points) {
 		axis = points;
 		std::vector<Bin<T>> b;

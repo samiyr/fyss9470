@@ -83,7 +83,9 @@ public:
 	/// A flag determining whether to estimate the error caused by histogram fluctuations by taking their mean. 
 	/// Defaults to false.
 	bool histogram_fluctuation_error = false;
-	/// A flag determining whether to estimate histogram error by sqrt(N). Defaults to true.
+	/// A flag determining whether to estimate histogram error by sqrt(N). 
+	/// If enabled, other errors will be ignored.
+	/// Defaults to true.
 	bool statistical_histogram_error = true;
 
 	/// Runs the experiment. Subclasses must implement this method.
@@ -114,12 +116,13 @@ public:
 
 	/**
 	 * Normalizes a histogram according to the given normalization type.
-	 * \param _normalization The requested normalization, of type `Normalization`.
-	 * \param hist Input histogram.
+	 * norm: The requested normalization, of type Normalization.
+	 * hist: Input histogram.
+	 * param: Optional parameter for certain normalization schemes.
 	 */
 	template<typename T>
-	ValueHistogram<T> normalize(Normalization _normalization, ValueHistogram<T> hist, double param = 0.0) {
-		switch (_normalization) {
+	ValueHistogram<T> normalize(Normalization norm, ValueHistogram<T> hist, double param = 0.0) {
+		switch (norm) {
 			case Normalization::Unity:
 				return hist.normalize_to_unity();
 				break;
@@ -135,9 +138,14 @@ public:
 		}
 	}
 
-	ValueHistogram<double> normalize(Normalization _normalization, EventGenerator::Result result) {
+	/**
+	 * Normalizes a histogram contained in EventGenerator::Result according to the given normalization type.
+	 * norm: The requested normalization, of type `Normalization`.
+	 * result: Event generator output to normalize.
+	 */
+	ValueHistogram<double> normalize(Normalization norm, EventGenerator::Result result) {
 		const auto histogram = ValueHistogram<double>::combine(result.histograms, histogram_fluctuation_error);
-		switch (_normalization) {
+		switch (norm) {
 			case Normalization::Unity:
 				return histogram.normalize_to_unity();
 				break;
@@ -152,71 +160,89 @@ public:
 				break;
 		}
 	}
+
 	/**
-	 * Normalizes a histogram according to the normalization type specified in member `normalization`.
-	 * \param hist Input histogram.
+	 * Normalizes a histogram with the normalization scheme specified in experiment parameters.
+	 * hist: Input histogram.
+	 * param: Optional parameter for certain normalization schemes.
 	 */
 	template<typename T>
 	ValueHistogram<T> normalize(ValueHistogram<T> hist, double param = 0.0) {
 		return normalize(normalization, hist, param);
 	}
 
+	/**
+	 * Normalizes a histogram contained in EventGenerator::Result with the normalization scheme 
+	 * specified in experiment parameters.
+	 * norm: The requested normalization, of type `Normalization`.
+	 * result: Event generator output to normalize.
+	 */
 	ValueHistogram<double> normalize(EventGenerator::Result result) {
 		return normalize(normalization, result);
 	}
 };
 
+/**
+ * Transverse momentum cross sectino experiment.
+ */
 class CrossSectionExperiment : public Experiment {
 public:
+	/// Specified the output file name.
 	std::optional<string> filename;
 
 	void run() {
 		// Start the clock.
 		const auto start_time = std::chrono::high_resolution_clock::now();
-
+		// Initialize the output container list.
 		std::vector<ValueHistogram<double>> containers;
+		// Create parameters.
 		GeneratorParameters params = create_parameters();
-
+		// Loop over pT_hat_bins, in parallel if specified.
 		#pragma omp parallel for if(parallelize)
 		for (std::vector<OptionalRange<double>>::size_type i = 0; i < pT_hat_bins.size(); i++) {
+			// Get the current pT_hat_range.
 			const auto range = pT_hat_bins[i];
-
+			// Create the particle generator.
 			ParticleGenerator generator(params, range);
-
+			// Change the random seed if needed.
 			if (variable_seed) {
 				generator.params.random_seed = i + params.random_seed;
 			}
-
+			// Initialize generator and generate particles.
 			generator.initialize();
 			const std::vector<std::vector<ParticleContainer>> particles = generator.generate();
-			
+			// Extract transverse momenta and event weights.
 			const auto pions = flatten(particles);
 			const std::vector<double> pTs = find_pTs(pions);
 			const std::vector<double> event_weights = find_event_weights(pions);
-
+			// Create and fill the pT histogram with appropriate event weights.
 			Histogram<double> partial(bins);
 			partial.fill(pTs, event_weights);
-
+			// Normalize the histogram to cross section.
 			const double sigma = generator.sigma();
 			const double total_weight = generator.total_weight();
 			const auto partial_container = partial.normalize(total_weight, sigma, y_range, use_biasing);
+			// Push the results to the iist.
 			#pragma omp critical
 			containers.push_back(partial_container);
 		}
-
-		ValueHistogram<double> combined = normalize(ValueHistogram<double>::combine(containers, histogram_fluctuation_error));
+		// Combine and normalize the total pT histogram.
+		ValueHistogram<double> combined = normalize(
+			ValueHistogram<double>::combine(containers, histogram_fluctuation_error)
+		);
+		// Estimate statistical error if requested.
 		if (statistical_histogram_error) {
 			combined = ValueHistogram<double>::calculate_statistical_error(combined);
 		}
+		// Print the histogram.
 		cout << "Normalized pT histogram" << "\n";
-		combined.print();
-		cout << "\n";
+		cout << combined << "\n";
 
 		// Stop the clock
 		const auto end_time = std::chrono::high_resolution_clock::now();
 		const std::chrono::duration<double> elapsed_duration = end_time - start_time;
 		const double elapsed_time = elapsed_duration.count();
-
+		// Write run parameters to file, if output file is specified.
 		if (filename) {
 			const auto histogram_path = construct_path(working_directory, *filename, histogram_file_extension);
 			const auto data_path = construct_path(working_directory, *filename, run_data_file_extension);
@@ -231,16 +257,20 @@ public:
 			file << "count\t\t= " << count * (EVENT_COUNT_TYPE)pT_hat_bins.size() << "\n\n";
 
 			file << "process\t\t= " << to_string(process) << "\n";
-			file << "include_decayed\t= " << bool_to_string(include_decayed) << "\n";
-			file << "mpi\t\t= " << bool_to_string(mpi) << "\n\n";
-			file << "normalization\t= " << "cross section" << "\n\n";
+			file << "include_decayed\t= " << to_string(include_decayed) << "\n";
+			file << "mpi\t\t= " << to_string(mpi) << "\n\n";
+			file << "normalization\t= " << to_string(normalization) << "\n\n";
 
 			file << "beam_A\t\t= " << beam_A << "\n";
 			file << "beam_B\t\t= " << beam_B << "\n\n";
 
-			file << "use_biasing\t= " << bool_to_string(use_biasing) << "\n";
+			file << "use_biasing\t= " << to_string(use_biasing) << "\n";
 			file << "bias_power\t= " << bias_power << "\n";
 			file << "bias_reference\t= " << bias_reference << "\n\n";
+
+			file << "cs_error\t= " << to_string(cross_section_error) << "\n";
+			file << "hf_error\t= " << to_string(histogram_fluctuation_error) << "\n";
+			file << "stat_error\t= " << to_string(statistical_histogram_error) << "\n\n";
 
 			file << "pT\t\t= " << pT_range.extent() << "\n";
 			file << "y\t\t= " << y_range.extent() << "\n\n";
@@ -253,7 +283,7 @@ public:
 				file << bin.extent() << "\n";
 			}
 			file.close();
-
+			// Export histogram to file.
 			combined.export_histogram(histogram_path);
 		}
 	}
@@ -341,7 +371,11 @@ public:
 			ofstream file;
 			if (result.parameters.filename) {
 				// Construct data output file path.
-				const auto data_path = construct_path(working_directory, *result.parameters.filename, run_data_file_extension);
+				const auto data_path = construct_path(
+					working_directory, 
+					*result.parameters.filename, 
+					run_data_file_extension
+				);
 				file.open(data_path);
 				file << std::setprecision(6);
 
@@ -351,16 +385,21 @@ public:
 				file << "count\t\t= " << count * (EVENT_COUNT_TYPE)pT_hat_bins.size() << "\n\n";
 
 				file << "process\t\t= " << to_string(process) << "\n";
-				file << "include_decayed\t= " << bool_to_string(include_decayed) << "\n";
+				file << "include_decayed\t= " << to_string(include_decayed) << "\n";
 				file << "mpi\t\t= " << to_string(mpi_strategy) << "\n\n";
 				file << "normalization\t= " << to_string(normalization) << "\n\n";
 
 				file << "beam_A\t\t= " << beam_A << "\n";
 				file << "beam_B\t\t= " << beam_B << "\n\n";
 
-				file << "use_biasing\t= " << bool_to_string(use_biasing) << "\n";
+				file << "use_biasing\t= " << to_string(use_biasing) << "\n";
 				file << "bias_power\t= " << bias_power << "\n";
 				file << "bias_reference\t= " << bias_reference << "\n\n";
+
+				file << "cs_error\t= " << to_string(cross_section_error) << "\n";
+				file << "hf_error\t= " << to_string(histogram_fluctuation_error) << "\n";
+				file << "stat_error\t= " << to_string(statistical_histogram_error) << "\n\n";
+
 
 				file << "pT\t\t= " << pT_range.extent() << "\n";
 				file << "y\t\t= " << y_range.extent() << "\n";
@@ -369,32 +408,35 @@ public:
 				file << "y_1\t\t= " << result.parameters.y_small.extent() << "\n";
 				file << "y_2\t\t= " << result.parameters.y_large.extent() << "\n\n";
 			}
-
+			// Apply DPS model.
 			if (mpi_strategy == MPIStrategy::DPS) {
+				// Beam particle mass numbers.
 				const int A = beam_A.nucleus.mass_number;
 				const int B = beam_B.nucleus.mass_number;
-
+				// Calculate SPS and DPS integrals.
 				Around<double> sps1 = Around(result.sigma_sps_1);
 				Around<double> sps2 = Around(result.sigma_sps_2);
 				Around<double> ssps = Around(result.sigma_sps);
-
+				// Erase the errors introduced in the Around initializer 
+				// if cross section errors are not requested.
 				if (!cross_section_error) {
 					sps1.error = std::nullopt;
 					sps2.error = std::nullopt;
 					ssps.error = std::nullopt;
 				}
-
+				// Get DPS parameters.
 				const double m = result.parameters.m;
 				const double sigma_pp = result.parameters.sigma_eff;
+				// Calculate the sigma_eff based on beam B.
 				const double sigma_eff = calculate_sigma_eff(beam_B, sigma_pp);
-
+				// Compute SPS and DPS contributions.
 				const Around<double> dps = (m * A * B / sigma_eff) * sps1 * sps2;
 				const Around<double> sps = (double)A * (double)B * ssps;
-
+				// Compute alpha and beta factors.
 				const Around<double> den = sps + dps;
 				const Around<double> alpha = sps / den;
 				const Around<double> beta = dps / den;
-
+				// Export DPS parameters if output file is specified.
 				if (result.parameters.filename) {
 					file << "m\t\t= " << m << "\n";
 					file << "sigma_pp\t= " << sigma_pp << "\n";
@@ -410,12 +452,12 @@ public:
 					file << "alpha\t\t= " << alpha << "\n";
 					file << "beta\t\t= " << beta << "\n\n";
 				}
-
+				// Calculate DPS histogram.
 				normalized *= alpha;
 				normalized += beta / M_PI;
 			}
 			cout << normalized;
-
+			// Export histogram if output file is specified.
 			if (result.parameters.filename) {
 				file << "azimuthal histogram:";
 				file << normalized;
@@ -425,7 +467,11 @@ public:
 					file << bin.extent() << "\n";
 				}
 				file.close();
-				const auto histogram_path = construct_path(working_directory, *result.parameters.filename, histogram_file_extension);
+				const auto histogram_path = construct_path(
+					working_directory, 
+					*result.parameters.filename, 
+					histogram_file_extension
+				);
 				normalized.export_histogram(histogram_path);
 			}
 		}
@@ -434,6 +480,7 @@ public:
 
 // --- pT cross section ---
 
+/// Returns a pT cross section experiment template with prepopulated parameters.
 CrossSectionExperiment pT_template(EVENT_COUNT_TYPE count, bool mpi = Defaults::mpi) {
 	CrossSectionExperiment cs;
 
@@ -455,8 +502,15 @@ CrossSectionExperiment pT_template(EVENT_COUNT_TYPE count, bool mpi = Defaults::
 
 	return cs;
 }
-
-void pT_cross_section(EVENT_COUNT_TYPE count, bool biasing, bool subdivision, string fn, bool mpi = Defaults::mpi, int seed = -1, bool statistical_histogram_error = false) {
+/// Run a pT cross section experiment with the specified parameters.
+void pT_cross_section(
+	EVENT_COUNT_TYPE count, 
+	bool biasing, 
+	bool subdivision, 
+	string fn, 
+	bool mpi = Defaults::mpi, 
+	int seed = -1, 
+	bool statistical_histogram_error = false) {
 	CrossSectionExperiment cs = pT_template(count, mpi);
 
 	if (subdivision) {
@@ -482,6 +536,7 @@ void pT_cross_section(EVENT_COUNT_TYPE count, bool biasing, bool subdivision, st
 	cs.run();
 }
 
+/// Runs and times the bias/subdivision comparison.
 void run_pT_experiment() {
 	const auto t1 = std::chrono::high_resolution_clock::now();
 	// pT_cross_section(10'000'000, true, true, "pT.csv");
@@ -510,6 +565,7 @@ void run_pT_experiment() {
 
 // --- Azimuth correlation ---
 
+/// Returns azimuthal correlation experiment template with DPS and prepopulated parameters.
 DPSExperiment dps_template(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, Beam b, string wd) {
 	DPSExperiment dps;
 
@@ -575,6 +631,7 @@ DPSExperiment dps_template(EVENT_COUNT_TYPE count, Process process, MPIStrategy 
 	return dps;
 }
 
+/// Returns azimuthal correlation experiment template with MPI and prepopulated parameters.
 DPSExperiment mpi_template(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, Beam b, string wd) {
 	DPSExperiment dps;
 
@@ -621,21 +678,25 @@ DPSExperiment mpi_template(EVENT_COUNT_TYPE count, Process process, MPIStrategy 
 	return dps;
 }
 
+/// Runs a p+p collision DPS experiment.
 void pp_dps_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd) {
 	DPSExperiment dps = dps_template(count, process, mpi, pT_hat_min, Beam(), wd);
 	dps.run();
 }
 
+/// Runs a p+p collision MPI experiment.
 void pp_mpi_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd) {
 	DPSExperiment dps = mpi_template(count, process, mpi, pT_hat_min, Beam(), wd);
 	dps.run();
 }
 
+/// Runs a p+Al collision DPS experiment.
 void Al_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, bool nPDF = false) {
 	DPSExperiment dps = dps_template(count, process, mpi, pT_hat_min, Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, nPDF), wd);
 	dps.run();
 }
 
+/// Runs a p+Au collision DPS experiment.
 void Au_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, bool nPDF = false) {
 	DPSExperiment dps = dps_template(count, process, mpi, pT_hat_min, Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, nPDF), wd);
 	dps.run();

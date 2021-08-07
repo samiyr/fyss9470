@@ -8,14 +8,18 @@
 
 using namespace Pythia8;
 
+/// The most basic generator, responsible for generating particles and interfacing with Pythia.
 class ParticleGenerator {
 public:
+	/// Generator parameters.
 	GeneratorParameters params;
+	/// A list of phase space cuts.
 	OptionalRange<double> pT_hat_range;
+	/// A pointer to the Pythia instance associated with the generator.
 	Pythia *pythia;
-
+	/// Constructs a particle generator from the parameters and phase space cuts.
 	ParticleGenerator(GeneratorParameters p, OptionalRange<double> _pT_hat_range) : params(p), pT_hat_range(_pT_hat_range) {}
-	
+	/// Initializes the generator and Pythia, and applies the settings.
 	void initialize() {
 		pythia = new Pythia("../share/Pythia8/xmldoc", params.pythia_printing);
 		Settings &settings = pythia->settings;
@@ -48,6 +52,8 @@ public:
 	}
 
 	template <typename F>
+	/// Start generating events in the event loop. The lambda
+	/// expression is called with the particles generated from each event.
 	void generate(F lambda) {
 		ParticleFilter filter;
 		filter.allowed_particle_ids = params.particle_ids;
@@ -75,7 +81,7 @@ public:
 			lambda(particles);
 		}
 	}
-
+	/// Generates, stores and returns a 2D matrix of all the particles generated in the event loop, event-by-event.
 	std::vector<std::vector<ParticleContainer>> generate() {
 		std::vector<std::vector<ParticleContainer>> particles(params.event_count, std::vector<ParticleContainer>());
 
@@ -85,9 +91,13 @@ public:
 
 		return particles;
 	}
+	/// Returns the total cross section as given by Pythia.
+	/// If called before event generation has stopped, value is meaningless.
 	double sigma() const {
 		return pythia->info.sigmaGen();
 	}
+	/// Returns the total weight of all the generated events as given by Pythia.
+	/// If called before event generation has stopped, value is meaningless.
 	double total_weight() const {
 		return pythia->info.weightSum();
 	}

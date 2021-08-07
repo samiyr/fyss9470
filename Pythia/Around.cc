@@ -6,18 +6,27 @@
 #include <optional>
 
 template <typename T>
+/// A wrapper for a value with an associated error. When used with arithmetic operations,
+/// errors are combined using error propagation.
 struct Around {
+	/// The actual value.
 	T value;
+	/// Uncertainty associated with the value. A value of nullopt represents no uncertainty.
 	std::optional<T> error;
-
+	/// Constructs an Around object with the given value. Second optional argument specifies
+	/// the associated uncertainty.
 	Around(T v, std::optional<T> e = std::nullopt) : value(v), error(e) {}
-
+	/// Constructs an Around object based on a list of values. The list must be non-empty.
+	/// Violation of this assumption causes an assertion. The value is taken to be the mean
+	/// of the values in the list and the uncertainty is given by the standard error the mean.
 	Around(std::vector<T> v) {
 		assert(v.size() != 0);
 		value = mean(v);
 		error = standard_error_of_mean(v);
 	}
-
+	/// Specifies the format for outputting to streams. For objects with uncertainty,
+	/// the formatting is 'value ± uncertainty', while for objects with no (nullopt) uncertainty,
+	/// the formatting 'value' is used.
 	friend ostream& operator<<(ostream& os, Around<T> const & around) {
 		if (around.error) {
 			return os << around.value << " ± " << *around.error;
@@ -25,11 +34,16 @@ struct Around {
 			return os << around.value;
 		}
     }
+    /// Overloads the += operator, for expressions of Around += constant.
     Around<T>& operator+=(T c) {
 		value += c;
 		return *this;
 	}
 };
+
+/**
+ * Rules of arithmetic based on error propagation formulas.
+ */
 
 template <typename T>
 const Around<T> operator+(const Around<T>& lhs, const T& rhs) {
