@@ -419,10 +419,11 @@ public:
 
 // --- pT cross section ---
 
-CrossSectionExperiment pT_template(EVENT_COUNT_TYPE count) {
+CrossSectionExperiment pT_template(EVENT_COUNT_TYPE count, bool mpi = Defaults::mpi) {
 	CrossSectionExperiment cs;
 
 	cs.process = Process::HardQCD;
+	cs.mpi = mpi;
 	cs.energy = 200;
 	cs.count = count;
 	cs.bins = {
@@ -440,8 +441,8 @@ CrossSectionExperiment pT_template(EVENT_COUNT_TYPE count) {
 	return cs;
 }
 
-void pT_cross_section(EVENT_COUNT_TYPE count, bool biasing, bool subdivision, string fn, int seed = -1, bool experimental_histogram_error = false) {
-	CrossSectionExperiment cs = pT_template(count);
+void pT_cross_section(EVENT_COUNT_TYPE count, bool biasing, bool subdivision, string fn, bool mpi = Defaults::mpi, int seed = -1, bool experimental_histogram_error = false) {
+	CrossSectionExperiment cs = pT_template(count, mpi);
 
 	if (subdivision) {
 		cs.pT_hat_bins = {
@@ -469,13 +470,13 @@ void run_pT_experiment() {
 	const auto t1 = std::chrono::high_resolution_clock::now();
 	// pT_cross_section(10'000'000, true, true, "pT.csv");
 	const auto t2 = std::chrono::high_resolution_clock::now();
-	pT_cross_section(100'000, false, false, "No bias no subdivision/1e5/data.csv");	
+	pT_cross_section(100'000, false, false, "MPI/No bias no subdivision/1e5/data.csv");	
 	const auto t3 = std::chrono::high_resolution_clock::now();
-	pT_cross_section(100'000, true, false, "Bias no subdivision/1e5/data.csv");
+	pT_cross_section(100'000, true, false, "MPI/Bias no subdivision/1e5/data.csv");
 	const auto t4 = std::chrono::high_resolution_clock::now();
-	pT_cross_section(100'000 / 5, false, true, "No bias subdivision/1e5/data.csv");
+	pT_cross_section(100'000 / 5, false, true, "MPI/No bias subdivision/1e5/data.csv");
 	const auto t5 = std::chrono::high_resolution_clock::now();
-	pT_cross_section(100'000 / 5, true, true, "Bias subdivision/1e5/data.csv");
+	pT_cross_section(100'000 / 5, true, true, "MPI/Bias subdivision/1e5/data.csv");
 	const auto t6 = std::chrono::high_resolution_clock::now();
 
 	const std::chrono::duration<double> duration1 = t2 - t1;
