@@ -99,7 +99,8 @@ When outputting to file, the `ValueHistogram` is exported as list of comma-separ
 
 Both histograms and run parameters can be exported to files. The `Experiment` class includes a parameter `working_directory`, which acts as a base directory for the data output. For `TransverseMomentumExperiment`, an additional parameter `filename` specifies the name of the produced file. Two files are produced: a histogram file, the format of which was specified in the section _Histograms_, and a text file containing the values of different run parameters. Both files have the same filename, but different file extensions. By default, the histogram file has extension `csv` and the parameter file `txt`, although these can be changed with `histogram_file_extension` and `run_data_file_extension`, defined in the `Experiment` class. Thus, the two files produced have the paths
 
-```[working_directory]/[filename].csv
+```
+[working_directory]/[filename].csv
 [working_directory]/[filename].txt
 ```
 
@@ -118,3 +119,4 @@ For `AzimuthalCorrelationExperiment`, only a single phase space cut is needed. S
 - In `AzimuthalCorrelationExperiment`, the `pT_range` and `y_range` are applied before `pT_small`, `pT_large`, `y_small` and `y_large`. Thus, restricting `pT_range` and `y_range` too much might mean that no particles will pass the two sets of transverse momentum and rapidity filters.
 - The property `variable_seed` of `Experiment` is related to the initialization of multiple `EventGenerator` instances in `AzimuthalCorrelationExperiment`. Since the phase space cuts are just copies, the events produced would, by default, be identical, defeating the point of parallelization. This is because the PRNG used by Pythia is seeded with a specific number by default. The `variable_seed` flag ensures that each generator gets a unique random seed, resulting in an actual increase in statistics.
 - Default parameter values are defined in the file `Constants.cc`.
+- There are practically no checks. If you enter invalid data, or more likely forget to set some parameter, anything might happen. When weird results happen or the program crashes, the first to check is whether all parameters are properly initalized in classes like `Experiment` or `ParticleGenerator`.
