@@ -7,7 +7,7 @@
 
 /// Provides a list of default parameter values.
 namespace Defaults {
-	static bool pythia_printing 			= true;
+	static bool pythia_printing 			= false;
 	static bool include_decayed 			= true;
 	static bool mpi 						= true;
 	static bool use_biasing					= false;

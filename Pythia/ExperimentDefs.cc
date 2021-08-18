@@ -631,7 +631,7 @@ AzimuthalCorrelationExperiment dps_template(
 
 
 		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850_dps10", 0.5, 10.0),
-		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2424_2850_dps25", 0.5, 25.0),	
+		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850_dps25", 0.5, 25.0),	
 	};
 
 	return dps;

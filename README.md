@@ -2,7 +2,9 @@
 
 ## General
 
-This repository includes all the code used in generating the data for my research training thesis on pion azimuthal correlations. The code was written during the summer of 2021 while I was doing a summer traineeship in the Department of Physics in the University of Jyväskylä.
+This repository includes all the code used in generating the data for my research training thesis on pion azimuthal correlations. The code was written during the summer of 2021 while I was doing a summer traineeship in the Department of Physics at the University of Jyväskylä.
+
+No guarantees about the code or the results it produces are made. Use at your own risk.
 
 ## Installation
 
@@ -14,10 +16,10 @@ Using this code requires a `C++17` compiler with `OpenMP` support, such as a mod
 g++ Experiments.cc -Xpreprocessor -fopenmp -o Experiments -O3 -I /path/to/pythia8306/include -std=c++17 -pedantic -W -Wall -Wshadow -fPIC -L /path/to/pythia8306/lib -Wl,-rpath -Wl,/path/to/pythia8306/lib -lpythia8 -ldl -lomp
 ```
 
-On a RedHat system, the compilation call looks more like this:
+On a Unix system, the compilation call looks more like this:
 
 ```
-g++ Experiments.cc -fopenmp -o Experiments -O3 -I /path/to/pythia8306/include -std=c++17 -pedantic -W -Wall -Wshadow -fPIC -L /path/to/pythia8306/lib -Wl,-rpath -Wl,/path/to/pythia8306/lib -lpythia8 -ldl -lgomp
+g++ Experiments.cc -fopenmp -o Experiments -O3 -I /path/to/pythia8306/include -std=c++17 -pedantic -W -Wall -Wshadow -fPIC -L /path/to/pythia8306/lib -Wl,-rpath -Wl,/path/to/pythia8306/lib -lpythia8 -ldl -lgomp -lstdc++fs
 ```
 
 In both cases, `/path/to/pythia8306` should of course be replaced with the actual path to the Pythia installation.
@@ -104,7 +106,7 @@ Both histograms and run parameters can be exported to files. The `Experiment` cl
 [working_directory]/[filename].txt
 ```
 
-The working directory is relative to the location of the executable.
+The working directory is relative to the location of the executable. If the directory doesn't exist, it will be created (although you should check this before launching a long run).
 
 
 ### Parallelization
@@ -120,3 +122,4 @@ For `AzimuthalCorrelationExperiment`, only a single phase space cut is needed. S
 - The property `variable_seed` of `Experiment` is related to the initialization of multiple `EventGenerator` instances in `AzimuthalCorrelationExperiment`. Since the phase space cuts are just copies, the events produced would, by default, be identical, defeating the point of parallelization. This is because the PRNG used by Pythia is seeded with a specific number by default. The `variable_seed` flag ensures that each generator gets a unique random seed, resulting in an actual increase in statistics.
 - Default parameter values are defined in the file `Constants.cc`.
 - There are practically no checks. If you enter invalid data, or more likely forget to set some parameter, anything might happen. When weird results happen or the program crashes, the first to check is whether all parameters are properly initalized in classes like `Experiment` or `ParticleGenerator`.
+- If nPDFs are not used, pA runs can be done by running a no MPI pp run and introducing the DPS corrections afterwards.
