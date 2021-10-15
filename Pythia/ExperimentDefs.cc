@@ -153,7 +153,7 @@ public:
 				return histogram.normalize_by(histogram.total());
 				break;
 			case Normalization::STARC:
-				return histogram.normalize_to_star_C(result.N_trigger);
+				return histogram.normalize_to_star_C(result.N_assoc);
 				break;
 			default:
 				return histogram;
@@ -414,6 +414,9 @@ public:
 				const int A = beam_A.nucleus.mass_number;
 				const int B = beam_B.nucleus.mass_number;
 				// Calculate SPS and DPS integrals.
+				const double N_assoc = result.N_assoc;
+				const double N_trigger = result.N_trigger;
+				const double N_pair = result.N_pair;
 				Around<double> sps1 = Around(result.sigma_sps_1);
 				Around<double> sps2 = Around(result.sigma_sps_2);
 				Around<double> ssps = Around(result.sigma_sps);
@@ -442,6 +445,10 @@ public:
 					file << "sigma_pp\t= " << sigma_pp << "\n";
 					file << "sigma_eff\t= " << sigma_eff << "\n\n";
 
+					file << "N_trigger\t= " << N_trigger << "\n";
+					file << "N_assoc\t\t= " << N_assoc << "\n";
+					file << "N_pair\t\t= " << N_pair << "\n\n";
+
 					file << "sps1\t\t= " << sps1 << "\n";
 					file << "sps2\t\t= " << sps2 << "\n";
 					file << "ssps\t\t= " << ssps << "\n\n";
@@ -452,9 +459,26 @@ public:
 					file << "alpha\t\t= " << alpha << "\n";
 					file << "beta\t\t= " << beta << "\n\n";
 				}
-				// Calculate DPS histogram.
-				normalized *= alpha;
-				normalized += beta / M_PI;
+				if (normalization == Normalization::STARC) {
+					// Calculate DPS histogram with C correlation function.
+					// Assume that the histogram has constant-width bins.
+					const double delta_phi = mean(ValueHistogram<double>(bins).widths());
+					const double sigma_gen = result.sigma_gen;
+					const double total_weight = result.total_weight;
+
+					// Undo the previous normalization.
+					normalized = normalize(Normalization::None, result);
+					if (statistical_histogram_error) {
+						normalized = ValueHistogram<double>::calculate_statistical_error(normalized);
+					}
+					// Calculate DPS histogram.
+					normalized *= 1.0 / (N_trigger * delta_phi);
+					normalized += (m * sigma_gen * N_assoc) / (M_PI * sigma_eff * total_weight);
+				} else {
+					// Calculate DPS histogram.
+					normalized *= alpha;
+					normalized += beta / M_PI;
+				}
 			}
 			cout << normalized;
 			// Export histogram if output file is specified.
@@ -572,14 +596,15 @@ AzimuthalCorrelationExperiment dps_template(
 	MPIStrategy mpi, 
 	double pT_hat_min, 
 	Beam b, 
-	string wd) {
+	string wd,
+	Normalization normalization) {
 	AzimuthalCorrelationExperiment dps;
 
 	dps.energy = 200;
 	dps.count = count / THREAD_COUNT;
 	dps.mpi_strategy = mpi;
 	dps.process = process;
-	dps.normalization = Normalization::Unity;
+	dps.normalization = normalization;
 	dps.bins = fixed_range(0.0, M_PI, 20);
 	dps.pT_hat_bins = std::vector<OptionalRange<double>>(THREAD_COUNT, OptionalRange<double>(pT_hat_min, std::nullopt));
 	dps.cross_section_error = false;
@@ -631,7 +656,14 @@ AzimuthalCorrelationExperiment dps_template(
 
 
 		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850_dps10", 0.5, 10.0),
-		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850_dps25", 0.5, 25.0),	
+		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850_dps25", 0.5, 25.0),
+
+
+		Analyzer::Parameters(1.0, 1.5, 2.0, 2.5, 2.6, 4.0, 2.6, 4.0, "1015_2025_dps10", 0.5, 10.0),
+		Analyzer::Parameters(1.0, 1.5, 2.0, 2.5, 2.6, 4.0, 2.6, 4.0, "1015_2025_dps25", 0.5, 25.0),
+
+		Analyzer::Parameters(2.0, 2.5, 3.0, 5.0, 2.6, 4.0, 2.6, 4.0, "2025_3050_dps10", 0.5, 10.0),
+		Analyzer::Parameters(2.0, 2.5, 3.0, 5.0, 2.6, 4.0, 2.6, 4.0, "2025_3050_dps25", 0.5, 25.0),
 	};
 
 	return dps;
@@ -644,14 +676,15 @@ AzimuthalCorrelationExperiment mpi_template(
 	MPIStrategy mpi, 
 	double pT_hat_min, 
 	Beam b, 
-	string wd) {
+	string wd,
+	Normalization normalization) {
 	AzimuthalCorrelationExperiment dps;
 
 	dps.energy = 200;
 	dps.count = count / THREAD_COUNT;
 	dps.mpi_strategy = mpi;
 	dps.process = process;
-	dps.normalization = Normalization::Unity;
+	dps.normalization = normalization;
 	dps.bins = fixed_range(0.0, M_PI, 20);
 	dps.pT_hat_bins = std::vector<OptionalRange<double>>(THREAD_COUNT, OptionalRange<double>(pT_hat_min, std::nullopt));
 	dps.cross_section_error = false;
@@ -691,26 +724,26 @@ AzimuthalCorrelationExperiment mpi_template(
 }
 
 /// Runs a p+p collision DPS experiment.
-void pp_dps_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd) {
-	auto dps = dps_template(count, process, mpi, pT_hat_min, Beam(), wd);
+void pp_dps_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, Normalization normalization = Normalization::Unity) {
+	auto dps = dps_template(count, process, mpi, pT_hat_min, Beam(), wd, normalization);
 	dps.run();
 }
 
 /// Runs a p+p collision MPI experiment.
-void pp_mpi_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd) {
-	auto dps = mpi_template(count, process, mpi, pT_hat_min, Beam(), wd);
+void pp_mpi_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, Normalization normalization = Normalization::Unity) {
+	auto dps = mpi_template(count, process, mpi, pT_hat_min, Beam(), wd, normalization);
 	dps.run();
 }
 
 /// Runs a p+Al collision DPS experiment.
-void Al_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, bool nPDF = false) {
-	auto dps = dps_template(count, process, mpi, pT_hat_min, Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, nPDF), wd);
+void Al_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, bool nPDF = false, Normalization normalization = Normalization::Unity) {
+	auto dps = dps_template(count, process, mpi, pT_hat_min, Beam(13, 27, Beam::NuclearPDF::EPPS16NLO, nPDF), wd, normalization);
 	dps.run();
 }
 
 /// Runs a p+Au collision DPS experiment.
-void Au_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, bool nPDF = false) {
-	auto dps = dps_template(count, process, mpi, pT_hat_min, Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, nPDF), wd);
+void Au_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, bool nPDF = false, Normalization normalization = Normalization::Unity) {
+	auto dps = dps_template(count, process, mpi, pT_hat_min, Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, nPDF), wd, normalization);
 	dps.run();
 }
 

@@ -10,6 +10,10 @@ public:
 		std::vector<ValueHistogram<double>> histograms;
 		/// The total weight of trigger particles.
 		double N_trigger;
+		/// The total weight of associated particles.
+		double N_assoc;
+		/// THe total weight of paired particles.
+		double N_pair;
 		/// A list of SPS integrals, each corresponding to a pT_hat range.
 		std::vector<double> sigma_sps_1;
 		std::vector<double> sigma_sps_2;
@@ -25,6 +29,8 @@ public:
 		Result& operator+=(Result rhs) {
 			histograms.insert(histograms.end(), rhs.histograms.begin(), rhs.histograms.end());
 			N_trigger += rhs.N_trigger;
+			N_assoc += rhs.N_assoc;
+			N_pair += rhs.N_pair;
 			sigma_sps_1.insert(sigma_sps_1.end(), rhs.sigma_sps_1.begin(), rhs.sigma_sps_1.end());
 			sigma_sps_2.insert(sigma_sps_2.end(), rhs.sigma_sps_2.begin(), rhs.sigma_sps_2.end());
 			sigma_sps.insert(sigma_sps.end(), rhs.sigma_sps.begin(), rhs.sigma_sps.end());
@@ -93,6 +99,8 @@ public:
 			Result result;
 			result.histograms = {analyzer.histogram};
 			result.N_trigger = analyzer.N_trigger;
+			result.N_assoc = analyzer.N_assoc;
+			result.N_pair = analyzer.N_pair;
 			result.sigma_sps_1 = {analyzer.N_trigger * factor};
 			result.sigma_sps_2 = {analyzer.N_assoc * factor};
 			result.sigma_sps = {analyzer.N_pair * factor};

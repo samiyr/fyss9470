@@ -64,6 +64,25 @@ int main() {
 	// Al_run(50'000'000'000, Process::SoftQCDNonDiffractive, MPIStrategy::DPS, 1.5, "Data/pAl/delta_phi/DPS/Soft/5e10/", false);
 	// Au_run(50'000'000'000, Process::SoftQCDNonDiffractive, MPIStrategy::DPS, 1.5, "Data/pAu/delta_phi/DPS/Soft/5e10/", false);
 
+	// pp_dps_run(10'000'000, Process::SoftQCDNonDiffractive, MPIStrategy::DPS, 1.5, "Data/pp/delta_phi/DPS/Soft/1e7/STARC/", Normalization::STARC);
+	// Al_run(10'000'000, Process::SoftQCDNonDiffractive, MPIStrategy::DPS, 1.5, "Data/pAl/delta_phi/DPS/Soft/1e7/STARC/", false, Normalization::STARC);
+	// Au_run(10'000'000, Process::SoftQCDNonDiffractive, MPIStrategy::DPS, 1.5, "Data/pAu/delta_phi/DPS/Soft/1e7/STARC/", false, Normalization::STARC);
+
+	pp_dps_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pp/delta_phi/DPS/Hard15/2e9/STARC/", Normalization::STARC);
+	pp_dps_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pp/delta_phi/DPS/Hard25/2e9/STARC/", Normalization::STARC);
+
+	Al_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pAl/delta_phi/DPS/Hard15/2e9/STARC/", false, Normalization::STARC);
+	Al_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pAl/delta_phi/DPS/Hard15 nPDF/2e9/STARC/", true, Normalization::STARC);
+
+	Al_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pAl/delta_phi/DPS/Hard25/2e9/STARC/", false, Normalization::STARC);
+	Al_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pAl/delta_phi/DPS/Hard25 nPDF/2e9/STARC/", true, Normalization::STARC);
+
+	Au_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pAu/delta_phi/DPS/Hard15/2e9/STARC/", false, Normalization::STARC);
+	Au_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pAu/delta_phi/DPS/Hard15 nPDF/2e9/STARC/", true, Normalization::STARC);
+
+	Au_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pAu/delta_phi/DPS/Hard25/2e9/STARC/", false, Normalization::STARC);
+	Au_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pAu/delta_phi/DPS/Hard25 nPDF/2e9/STARC/", true, Normalization::STARC);
+
 	return 0;
 }
 

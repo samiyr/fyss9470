@@ -87,6 +87,14 @@ public:
 	RangedContainer<T> &operator[](int index) {
 		return containers[index];
 	}
+	/// Returns a list of the widths of each bin.
+	auto widths() const {
+		std::vector<double> result;
+		for (auto &container : containers) {
+			result.push_back(container.range.width());
+		}
+		return result;
+	}
 	/// Appends a value `v` to the appropriate bin. 
 	/// If no bin is found, discards the value silently.
 	void fill(double v, T w = T(1)) {
@@ -174,11 +182,11 @@ public:
 	}
 	/// Returns a histogram normalized with a procedure outlined in the STAR presentation. 
 	/// Shouldn't be used.
-	ValueHistogram<double> normalize_to_star_C(double N_trig) const {
+	ValueHistogram<double> normalize_to_star_C(double N_assoc) const {
 		ValueHistogram<double> normalized;
 		for (auto container : containers) {
 			const double delta_phi = container.range.width();
-			const double factor = N_trig * delta_phi;
+			const double factor = N_assoc * delta_phi;
 			const Around<double> new_value = factor == 0 ? 0 : container.value / factor;
 			RangedContainer<double> new_container(container.range.start, container.range.end, new_value, container.hit_count);
 			normalized.containers.push_back(new_container);
