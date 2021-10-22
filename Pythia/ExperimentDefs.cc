@@ -417,6 +417,8 @@ public:
 				const double N_assoc = result.N_assoc;
 				const double N_trigger = result.N_trigger;
 				const double N_pair = result.N_pair;
+				const double sigma_gen = result.sigma_gen;
+				const double total_weight = result.total_weight;			
 				Around<double> sps1 = Around(result.sigma_sps_1);
 				Around<double> sps2 = Around(result.sigma_sps_2);
 				Around<double> ssps = Around(result.sigma_sps);
@@ -447,7 +449,9 @@ public:
 
 					file << "N_trigger\t= " << N_trigger << "\n";
 					file << "N_assoc\t\t= " << N_assoc << "\n";
-					file << "N_pair\t\t= " << N_pair << "\n\n";
+					file << "N_pair\t\t= " << N_pair << "\n";
+					file << "sigma_gen\t= " << sigma_gen << "\n";
+					file << "total_weight\t= " << total_weight << "\n\n";
 
 					file << "sps1\t\t= " << sps1 << "\n";
 					file << "sps2\t\t= " << sps2 << "\n";
@@ -463,8 +467,6 @@ public:
 					// Calculate DPS histogram with C correlation function.
 					// Assume that the histogram has constant-width bins.
 					const double delta_phi = mean(ValueHistogram<double>(bins).widths());
-					const double sigma_gen = result.sigma_gen;
-					const double total_weight = result.total_weight;
 
 					// Undo the previous normalization.
 					normalized = normalize(Normalization::None, result);
@@ -472,8 +474,8 @@ public:
 						normalized = ValueHistogram<double>::calculate_statistical_error(normalized);
 					}
 					// Calculate DPS histogram.
-					normalized *= 1.0 / (N_trigger * delta_phi);
-					normalized += (m * sigma_gen * N_assoc) / (M_PI * sigma_eff * total_weight);
+					normalized *= 1.0 / (N_assoc * delta_phi);
+					normalized += (m * sigma_gen * N_trigger) / (M_PI * sigma_eff * total_weight * pT_hat_bins.size());
 				} else {
 					// Calculate DPS histogram.
 					normalized *= alpha;
@@ -718,6 +720,11 @@ AzimuthalCorrelationExperiment mpi_template(
 		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2024_2850"),
 
 		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850"),
+
+
+		Analyzer::Parameters(1.0, 1.5, 2.0, 2.5, 2.6, 4.0, 2.6, 4.0, "1015_2025"),
+		Analyzer::Parameters(2.0, 2.5, 3.0, 5.0, 2.6, 4.0, 2.6, 4.0, "2025_3050"),
+
 	};
 
 	return dps;

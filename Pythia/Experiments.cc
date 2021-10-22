@@ -3,7 +3,7 @@
 
 #include "ExperimentDefs.cc"
 
-int THREAD_COUNT = 16;
+int THREAD_COUNT = 8;
 
 int main() {
 	// run_pT_experiment();
