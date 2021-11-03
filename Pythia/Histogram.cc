@@ -125,7 +125,7 @@ public:
 			const Around<T> value = container.value;
 			const T percentage = ((double)value.value / (double)total) * 100;
 			const int count = round(percentage);
-			os << container.range.extent() << ": " << "(" << value << ")\t";
+			os << container.range.extent() << ": " << "(" << value << ") [" << container.hit_count << "]\t";
 			for (int i = 0; i < count; i++) {
 				os << "#";
 			}

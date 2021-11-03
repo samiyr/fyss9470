@@ -8,6 +8,13 @@ public:
 	struct Result {
 		/// A list of histograms, each corresponding to a pT_hat range.
 		std::vector<ValueHistogram<double>> histograms;
+		/// A list of nuclear histograms, each correspnding to a pT_hat range.
+		std::vector<ValueHistogram<double>> nuclear_histograms;
+		/// A list of momentum fraction histograms.
+		std::vector<ValueHistogram<double>> x1_pre_histograms;
+		std::vector<ValueHistogram<double>> x2_pre_histograms;
+		std::vector<ValueHistogram<double>> x1_post_histograms;
+		std::vector<ValueHistogram<double>> x2_post_histograms;
 		/// The total weight of trigger particles.
 		double N_trigger;
 		/// The total weight of associated particles.
@@ -28,6 +35,13 @@ public:
 		/// Overloads the += operator for combining multiple Result objects.
 		Result& operator+=(Result rhs) {
 			histograms.insert(histograms.end(), rhs.histograms.begin(), rhs.histograms.end());
+			nuclear_histograms.insert(nuclear_histograms.end(), rhs.nuclear_histograms.begin(), rhs.nuclear_histograms.end());
+
+			x1_pre_histograms.insert(x1_pre_histograms.end(), rhs.x1_pre_histograms.begin(), rhs.x1_pre_histograms.end());
+			x2_pre_histograms.insert(x2_pre_histograms.end(), rhs.x2_pre_histograms.begin(), rhs.x2_pre_histograms.end());
+			x1_post_histograms.insert(x1_post_histograms.end(), rhs.x1_post_histograms.begin(), rhs.x1_post_histograms.end());
+			x2_post_histograms.insert(x2_post_histograms.end(), rhs.x2_post_histograms.begin(), rhs.x2_post_histograms.end());
+
 			N_trigger += rhs.N_trigger;
 			N_assoc += rhs.N_assoc;
 			N_pair += rhs.N_pair;
@@ -79,10 +93,10 @@ public:
 		ParticleGenerator generator(params, pT_hat_range);
 		generator.initialize();
 		/// Run the particle generator.
-		generator.generate([this](std::vector<ParticleContainer> particles) {
+		generator.generate([this](std::vector<ParticleContainer> particles, Info info) {
 			/// For each event, send the generated particles to all analyzers.			
 			for (auto &analyzer : analyzers) {
-				analyzer.book(&particles);
+				analyzer.book(&particles, &info);
 			}
 		});
 		/// Get the total cross section and weight.
@@ -97,17 +111,29 @@ public:
 			const auto factor = sigma_gen / total_weight;
 
 			Result result;
+			
 			result.histograms = {analyzer.histogram};
+			result.nuclear_histograms = {analyzer.nuclear_histogram};
+
+			result.x1_pre_histograms = {analyzer.x1_pre_histogram};
+			result.x2_pre_histograms = {analyzer.x2_pre_histogram};
+			result.x1_post_histograms = {analyzer.x1_post_histogram};
+			result.x2_post_histograms = {analyzer.x2_post_histogram};
+
 			result.N_trigger = analyzer.N_trigger;
 			result.N_assoc = analyzer.N_assoc;
 			result.N_pair = analyzer.N_pair;
+			
 			result.sigma_sps_1 = {analyzer.N_trigger * factor};
 			result.sigma_sps_2 = {analyzer.N_assoc * factor};
 			result.sigma_sps = {analyzer.N_pair * factor};
+			
 			result.sigma_gen = sigma_gen;
 			result.total_weight = total_weight;
+			
 			result.parameters = analyzer.parameters;
 			result.run_index = i;
+			
 			result_vector.push_back(result);
 		}
 

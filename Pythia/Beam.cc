@@ -34,6 +34,8 @@ struct Beam {
 		/// y default, the number of strange quarks and isomer levels are set to zero.
 		Nucleus(int Z, int A, int ns = 0, int I = 0) : atomic_number(Z), mass_number(A), strange_count(ns), isomer_level(I) {}
 		/// Returns the PDG code for the nucleus. See https://pdg.lbl.gov/2007/reviews/montecarlorpp.pdf.
+		/// Al-27 = 1000130270
+		/// Au-197 = 1000971970
 		int pdg_code() const {
 			int base = 1'000'000'000;
 			int L = strange_count * 10'000'000;
@@ -93,9 +95,9 @@ struct Beam {
 /// Calculates the effective cross section for the given beam and with the given
 /// effective cross section for p+p collisions. Currently, only nuclei with mass numbers
 /// A = 27 (Al) and A = 197 (Au) are supported.
-double calculate_sigma_eff(Beam b, double sigma_pp) {
+
+double calculate_sigma_eff(int B, double sigma_pp) {
 	double geometric_integral;
-	const int B = b.nucleus.mass_number;
 
 	switch(B) {
 		case 1:
@@ -113,6 +115,10 @@ double calculate_sigma_eff(Beam b, double sigma_pp) {
 	}
 
 	return (B * B * sigma_pp) / (B * B + (B - 1) * geometric_integral * sigma_pp);
+}
+
+double calculate_sigma_eff(Beam b, double sigma_pp) {
+	return calculate_sigma_eff(b.nucleus.mass_number, sigma_pp);
 }
 
 #endif // BEAM_H

@@ -78,14 +78,14 @@ public:
 					particles.emplace_back(particle, info.weight());
 				}
 			}
-			lambda(particles);
+			lambda(particles, info);
 		}
 	}
 	/// Generates, stores and returns a 2D matrix of all the particles generated in the event loop, event-by-event.
 	std::vector<std::vector<ParticleContainer>> generate() {
 		std::vector<std::vector<ParticleContainer>> particles(params.event_count, std::vector<ParticleContainer>());
 
-		generate([&particles](std::vector<ParticleContainer> generated) {
+		generate([&particles](std::vector<ParticleContainer> generated, [[maybe_unused]] Info info) {
 			particles.push_back(generated);
 		});
 

@@ -68,20 +68,29 @@ int main() {
 	// Al_run(10'000'000, Process::SoftQCDNonDiffractive, MPIStrategy::DPS, 1.5, "Data/pAl/delta_phi/DPS/Soft/1e7/STARC/", false, Normalization::STARC);
 	// Au_run(10'000'000, Process::SoftQCDNonDiffractive, MPIStrategy::DPS, 1.5, "Data/pAu/delta_phi/DPS/Soft/1e7/STARC/", false, Normalization::STARC);
 
-	pp_dps_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pp/delta_phi/DPS/Hard15/2e9/STARC/", Normalization::STARC);
-	pp_dps_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pp/delta_phi/DPS/Hard25/2e9/STARC/", Normalization::STARC);
+	// pp_dps_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pp/delta_phi/DPS/Hard15/2e9/STARC/", Normalization::STARC);
+	// pp_dps_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pp/delta_phi/DPS/Hard25/2e9/STARC/", Normalization::STARC);
 
-	Al_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pAl/delta_phi/DPS/Hard15/2e9/STARC/", false, Normalization::STARC);
-	Al_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pAl/delta_phi/DPS/Hard15 nPDF/2e9/STARC/", true, Normalization::STARC);
+	// Al_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pAl/delta_phi/DPS/Hard15/2e9/STARC/", false, Normalization::STARC);
+	// Al_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pAl/delta_phi/DPS/Hard15 nPDF/2e9/STARC/", true, Normalization::STARC);
 
-	Al_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pAl/delta_phi/DPS/Hard25/2e9/STARC/", false, Normalization::STARC);
-	Al_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pAl/delta_phi/DPS/Hard25 nPDF/2e9/STARC/", true, Normalization::STARC);
+	// Al_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pAl/delta_phi/DPS/Hard25/2e9/STARC/", false, Normalization::STARC);
+	// Al_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pAl/delta_phi/DPS/Hard25 nPDF/2e9/STARC/", true, Normalization::STARC);
 
-	Au_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pAu/delta_phi/DPS/Hard15/2e9/STARC/", false, Normalization::STARC);
-	Au_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pAu/delta_phi/DPS/Hard15 nPDF/2e9/STARC/", true, Normalization::STARC);
+	// Au_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pAu/delta_phi/DPS/Hard15/2e9/STARC/", false, Normalization::STARC);
+	// Au_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pAu/delta_phi/DPS/Hard15 nPDF/2e9/STARC/", true, Normalization::STARC);
 
-	Au_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pAu/delta_phi/DPS/Hard25/2e9/STARC/", false, Normalization::STARC);
-	Au_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pAu/delta_phi/DPS/Hard25 nPDF/2e9/STARC/", true, Normalization::STARC);
+	// Au_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pAu/delta_phi/DPS/Hard25/2e9/STARC/", false, Normalization::STARC);
+	// Au_run(2'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pAu/delta_phi/DPS/Hard25 nPDF/2e9/STARC/", true, Normalization::STARC);
+
+	// pp_dps_run(10'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/temp/", Normalization::STARC);
+	// Al_run(10'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/temp/pAl/", true, Normalization::STARC);
+	// Au_run(10'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/temp/pAu/", true, Normalization::STARC);
+
+	// ppAlAu_run(10'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/temp/pp4/", "Data/temp/pAl4/", "Data/temp/pAu4/", Normalization::STARC);
+
+	ppAlAu_run(10'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pp/delta_phi/DPS/Hard15/1e10/STARCN/", "Data/pAl/delta_phi/DPS/Hard15/1e10/STARCN/", "Data/pAu/delta_phi/DPS/Hard15/1e10/STARCN/", Normalization::STARC);
+	ppAlAu_run(10'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pp/delta_phi/DPS/Hard25/1e10/STARCN/", "Data/pAl/delta_phi/DPS/Hard25/1e10/STARCN/", "Data/pAu/delta_phi/DPS/Hard25/1e10/STARCN/", Normalization::STARC);
 
 	return 0;
 }

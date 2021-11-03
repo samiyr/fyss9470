@@ -359,20 +359,23 @@ public:
 		for (std::vector<EventGenerator::Result>::size_type run_index = 0; run_index < results.size(); run_index++) {
 			auto result = results[run_index];
 			auto normalized = normalize(result);
+			auto nuclear = normalize(ValueHistogram<double>::combine(result.nuclear_histograms, histogram_fluctuation_error), result.N_assoc);
 
 			if (statistical_histogram_error) {
 				normalized = ValueHistogram<double>::calculate_statistical_error(normalized);
+				nuclear = ValueHistogram<double>::calculate_statistical_error(nuclear);
 			}
 			// Stop the clock
 			const auto end_time = std::chrono::high_resolution_clock::now();
 			const std::chrono::duration<double> elapsed_duration = end_time - start_time;
 			const double elapsed_time = elapsed_duration.count();
 			// Initialize data parameter output file.
+			const auto wd = result.parameters.working_directory.has_value() ? *result.parameters.working_directory : working_directory;
 			ofstream file;
 			if (result.parameters.filename) {
 				// Construct data output file path.
 				const auto data_path = construct_path(
-					working_directory, 
+					wd,
 					*result.parameters.filename, 
 					run_data_file_extension
 				);
@@ -390,7 +393,13 @@ public:
 				file << "normalization\t= " << to_string(normalization) << "\n\n";
 
 				file << "beam_A\t\t= " << beam_A << "\n";
-				file << "beam_B\t\t= " << beam_B << "\n\n";
+				file << "beam_B\t\t= " << beam_B << "\n";
+				if (result.parameters.beam) {
+					file << "nuclear_beam\t= " << *result.parameters.beam;
+				} else {
+					file << "nuclear_beam\t= " << "none";
+				}
+				file << "\n\n";
 
 				file << "use_biasing\t= " << to_string(use_biasing) << "\n";
 				file << "bias_power\t= " << bias_power << "\n";
@@ -399,7 +408,6 @@ public:
 				file << "cs_error\t= " << to_string(cross_section_error) << "\n";
 				file << "hf_error\t= " << to_string(histogram_fluctuation_error) << "\n";
 				file << "stat_error\t= " << to_string(statistical_histogram_error) << "\n\n";
-
 
 				file << "pT\t\t= " << pT_range.extent() << "\n";
 				file << "y\t\t= " << y_range.extent() << "\n";
@@ -432,8 +440,8 @@ public:
 				// Get DPS parameters.
 				const double m = result.parameters.m;
 				const double sigma_pp = result.parameters.sigma_eff;
-				// Calculate the sigma_eff based on beam B.
-				const double sigma_eff = calculate_sigma_eff(beam_B, sigma_pp);
+				// Calculate the sigma_eff based on the beam.
+				const double sigma_eff = result.parameters.beam.has_value() ? calculate_sigma_eff(*result.parameters.beam, sigma_pp) : calculate_sigma_eff(beam_B, sigma_pp);
 				// Compute SPS and DPS contributions.
 				const Around<double> dps = (m * A * B / sigma_eff) * sps1 * sps2;
 				const Around<double> sps = (double)A * (double)B * ssps;
@@ -470,35 +478,107 @@ public:
 
 					// Undo the previous normalization.
 					normalized = normalize(Normalization::None, result);
+					nuclear = normalize(Normalization::None, nuclear);
 					if (statistical_histogram_error) {
 						normalized = ValueHistogram<double>::calculate_statistical_error(normalized);
+						nuclear = ValueHistogram<double>::combine(result.nuclear_histograms, histogram_fluctuation_error);
 					}
 					// Calculate DPS histogram.
 					normalized *= 1.0 / (N_assoc * delta_phi);
 					normalized += (m * sigma_gen * N_trigger) / (M_PI * sigma_eff * total_weight * pT_hat_bins.size());
+
+					nuclear *= 1.0 / (N_assoc * delta_phi);
+					nuclear += (m * sigma_gen * N_trigger) / (M_PI * sigma_eff * total_weight * pT_hat_bins.size());
 				} else {
 					// Calculate DPS histogram.
 					normalized *= alpha;
 					normalized += beta / M_PI;
+
+					nuclear *= alpha;
+					nuclear += beta / M_PI;
 				}
 			}
 			cout << normalized;
+
 			// Export histogram if output file is specified.
 			if (result.parameters.filename) {
 				file << "azimuthal histogram:";
 				file << normalized;
 				file << "\n";
+				if (result.parameters.beam) {
+					file << "nuclear histogram:";
+					file << nuclear;
+					file << "\n";
+				}
 				file << "pT_hat_bins:\n";
 				for (auto bin : pT_hat_bins) {
 					file << bin.extent() << "\n";
 				}
+				file << "\n\n";
+
+				auto x1_pre_histogram = ValueHistogram<double>::combine(result.x1_pre_histograms, histogram_fluctuation_error);
+				auto x2_pre_histogram = ValueHistogram<double>::combine(result.x2_pre_histograms, histogram_fluctuation_error);
+				auto x1_post_histogram = ValueHistogram<double>::combine(result.x1_post_histograms, histogram_fluctuation_error);
+				auto x2_post_histogram = ValueHistogram<double>::combine(result.x2_post_histograms, histogram_fluctuation_error);
+				if (statistical_histogram_error) {
+					x1_pre_histogram = ValueHistogram<double>::calculate_statistical_error(x1_pre_histogram);
+					x2_pre_histogram = ValueHistogram<double>::calculate_statistical_error(x2_pre_histogram);
+					x1_post_histogram = ValueHistogram<double>::calculate_statistical_error(x1_post_histogram);
+					x2_post_histogram = ValueHistogram<double>::calculate_statistical_error(x2_post_histogram);
+				}
+
+				file << "x1 pre histogram:";
+				file << x1_pre_histogram;
+				file << "\n";
+				file << "x2 pre histogram:";
+				file << x2_pre_histogram;
+				file << "\n";
+
+				file << "x1 post histogram:";
+				file << x1_post_histogram;
+				file << "\n";
+				file << "x2 post histogram:";
+				file << x2_post_histogram;
+				file << "\n";
+				
 				file.close();
+				
 				const auto histogram_path = construct_path(
-					working_directory, 
+					wd,
 					*result.parameters.filename, 
 					histogram_file_extension
 				);
-				normalized.export_histogram(histogram_path);
+				if (result.parameters.beam) {
+					nuclear.export_histogram(histogram_path);
+				} else {
+					normalized.export_histogram(histogram_path);
+				}
+
+				const auto x1_pre_path = construct_path(
+					wd,
+					*result.parameters.filename + "_x1_pre",
+					histogram_file_extension
+				);
+				const auto x2_pre_path = construct_path(
+					wd,
+					*result.parameters.filename + "_x2_pre",
+					histogram_file_extension
+				);
+				const auto x1_post_path = construct_path(
+					wd,
+					*result.parameters.filename + "_x1_post",
+					histogram_file_extension
+				);
+				const auto x2_post_path = construct_path(
+					wd,
+					*result.parameters.filename + "_x2_post",
+					histogram_file_extension
+				);
+
+				x1_pre_histogram.export_histogram(x1_pre_path);
+				x2_pre_histogram.export_histogram(x2_pre_path);
+				x1_post_histogram.export_histogram(x1_post_path);
+				x2_post_histogram.export_histogram(x2_post_path);
 			}
 		}
 	}
@@ -751,6 +831,116 @@ void Al_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_
 /// Runs a p+Au collision DPS experiment.
 void Au_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, bool nPDF = false, Normalization normalization = Normalization::Unity) {
 	auto dps = dps_template(count, process, mpi, pT_hat_min, Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, nPDF), wd, normalization);
+	dps.run();
+}
+
+void ppAlAu_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd_pp, string wd_Al, string wd_Au, Normalization normalization = Normalization::Unity) {
+	AzimuthalCorrelationExperiment dps;
+
+ 	dps.energy = 200;
+	dps.count = count / THREAD_COUNT;
+	dps.mpi_strategy = mpi;
+	dps.process = process;
+	dps.normalization = normalization;
+	dps.bins = fixed_range(0.0, M_PI, 20);
+	dps.pT_hat_bins = std::vector<OptionalRange<double>>(THREAD_COUNT, OptionalRange<double>(pT_hat_min, std::nullopt));
+	dps.cross_section_error = false;
+	dps.histogram_fluctuation_error = false;
+	dps.statistical_histogram_error = true;
+
+	dps.include_decayed = true;
+	dps.use_biasing = false;
+	dps.parallelize = true;
+	dps.pythia_printing = false;
+
+	dps.variable_seed = true;
+	dps.random_seed = 1;
+
+	dps.working_directory = std::nullopt;
+
+	dps.beam_A = Beam();
+	dps.beam_B = Beam();
+
+	const Beam Al(13, 27);
+	const Beam Au(97, 197);
+
+	dps.runs = {
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "1014_1420_dps10", 0.5, 10.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "1014_1420_dps25", 0.5, 25.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1014_2024_dps10", 0.5, 10.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1014_2024_dps25", 0.5, 25.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1014_2428_dps10", 0.5, 10.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1014_2428_dps25", 0.5, 25.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1014_2850_dps10", 0.5, 10.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1014_2850_dps25", 0.5, 25.0, std::nullopt, wd_pp),		
+		Analyzer::Parameters(1.4, 2.0, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1420_2024_dps10", 0.5, 10.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(1.4, 2.0, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1420_2024_dps25", 0.5, 25.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(1.4, 2.0, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1420_2428_dps10", 0.5, 10.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(1.4, 2.0, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1420_2428_dps25", 0.5, 25.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(1.4, 2.0, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1420_2850_dps10", 0.5, 10.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(1.4, 2.0, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1420_2850_dps25", 0.5, 25.0, std::nullopt, wd_pp),	
+		Analyzer::Parameters(2.0, 2.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "2024_2428_dps10", 0.5, 10.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(2.0, 2.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "2024_2428_dps25", 0.5, 25.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2024_2850_dps10", 0.5, 10.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2024_2850_dps25", 0.5, 25.0, std::nullopt, wd_pp),	
+		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850_dps10", 0.5, 10.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850_dps25", 0.5, 25.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(1.0, 1.5, 2.0, 2.5, 2.6, 4.0, 2.6, 4.0, "1015_2025_dps10", 0.5, 10.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(1.0, 1.5, 2.0, 2.5, 2.6, 4.0, 2.6, 4.0, "1015_2025_dps25", 0.5, 25.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(2.0, 2.5, 3.0, 5.0, 2.6, 4.0, 2.6, 4.0, "2025_3050_dps10", 0.5, 10.0, std::nullopt, wd_pp),
+		Analyzer::Parameters(2.0, 2.5, 3.0, 5.0, 2.6, 4.0, 2.6, 4.0, "2025_3050_dps25", 0.5, 25.0, std::nullopt, wd_pp),
+
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "1014_1420_dps10", 0.5, 10.0, Al, wd_Al),
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "1014_1420_dps25", 0.5, 25.0, Al, wd_Al),
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1014_2024_dps10", 0.5, 10.0, Al, wd_Al),
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1014_2024_dps25", 0.5, 25.0, Al, wd_Al),
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1014_2428_dps10", 0.5, 10.0, Al, wd_Al),
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1014_2428_dps25", 0.5, 25.0, Al, wd_Al),
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1014_2850_dps10", 0.5, 10.0, Al, wd_Al),
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1014_2850_dps25", 0.5, 25.0, Al, wd_Al),		
+		Analyzer::Parameters(1.4, 2.0, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1420_2024_dps10", 0.5, 10.0, Al, wd_Al),
+		Analyzer::Parameters(1.4, 2.0, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1420_2024_dps25", 0.5, 25.0, Al, wd_Al),
+		Analyzer::Parameters(1.4, 2.0, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1420_2428_dps10", 0.5, 10.0, Al, wd_Al),
+		Analyzer::Parameters(1.4, 2.0, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1420_2428_dps25", 0.5, 25.0, Al, wd_Al),
+		Analyzer::Parameters(1.4, 2.0, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1420_2850_dps10", 0.5, 10.0, Al, wd_Al),
+		Analyzer::Parameters(1.4, 2.0, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1420_2850_dps25", 0.5, 25.0, Al, wd_Al),	
+		Analyzer::Parameters(2.0, 2.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "2024_2428_dps10", 0.5, 10.0, Al, wd_Al),
+		Analyzer::Parameters(2.0, 2.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "2024_2428_dps25", 0.5, 25.0, Al, wd_Al),
+		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2024_2850_dps10", 0.5, 10.0, Al, wd_Al),
+		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2024_2850_dps25", 0.5, 25.0, Al, wd_Al),	
+		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850_dps10", 0.5, 10.0, Al, wd_Al),
+		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850_dps25", 0.5, 25.0, Al, wd_Al),
+		Analyzer::Parameters(1.0, 1.5, 2.0, 2.5, 2.6, 4.0, 2.6, 4.0, "1015_2025_dps10", 0.5, 10.0, Al, wd_Al),
+		Analyzer::Parameters(1.0, 1.5, 2.0, 2.5, 2.6, 4.0, 2.6, 4.0, "1015_2025_dps25", 0.5, 25.0, Al, wd_Al),
+		Analyzer::Parameters(2.0, 2.5, 3.0, 5.0, 2.6, 4.0, 2.6, 4.0, "2025_3050_dps10", 0.5, 10.0, Al, wd_Al),
+		Analyzer::Parameters(2.0, 2.5, 3.0, 5.0, 2.6, 4.0, 2.6, 4.0, "2025_3050_dps25", 0.5, 25.0, Al, wd_Al),
+
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "1014_1420_dps10", 0.5, 10.0, Au, wd_Au),
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "1014_1420_dps25", 0.5, 25.0, Au, wd_Au),
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1014_2024_dps10", 0.5, 10.0, Au, wd_Au),
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1014_2024_dps25", 0.5, 25.0, Au, wd_Au),
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1014_2428_dps10", 0.5, 10.0, Au, wd_Au),
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1014_2428_dps25", 0.5, 25.0, Au, wd_Au),
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1014_2850_dps10", 0.5, 10.0, Au, wd_Au),
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1014_2850_dps25", 0.5, 25.0, Au, wd_Au),		
+		Analyzer::Parameters(1.4, 2.0, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1420_2024_dps10", 0.5, 10.0, Au, wd_Au),
+		Analyzer::Parameters(1.4, 2.0, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1420_2024_dps25", 0.5, 25.0, Au, wd_Au),
+		Analyzer::Parameters(1.4, 2.0, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1420_2428_dps10", 0.5, 10.0, Au, wd_Au),
+		Analyzer::Parameters(1.4, 2.0, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1420_2428_dps25", 0.5, 25.0, Au, wd_Au),
+		Analyzer::Parameters(1.4, 2.0, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1420_2850_dps10", 0.5, 10.0, Au, wd_Au),
+		Analyzer::Parameters(1.4, 2.0, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1420_2850_dps25", 0.5, 25.0, Au, wd_Au),	
+		Analyzer::Parameters(2.0, 2.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "2024_2428_dps10", 0.5, 10.0, Au, wd_Au),
+		Analyzer::Parameters(2.0, 2.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "2024_2428_dps25", 0.5, 25.0, Au, wd_Au),
+		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2024_2850_dps10", 0.5, 10.0, Au, wd_Au),
+		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2024_2850_dps25", 0.5, 25.0, Au, wd_Au),	
+		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850_dps10", 0.5, 10.0, Au, wd_Au),
+		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850_dps25", 0.5, 25.0, Au, wd_Au),
+		Analyzer::Parameters(1.0, 1.5, 2.0, 2.5, 2.6, 4.0, 2.6, 4.0, "1015_2025_dps10", 0.5, 10.0, Au, wd_Au),
+		Analyzer::Parameters(1.0, 1.5, 2.0, 2.5, 2.6, 4.0, 2.6, 4.0, "1015_2025_dps25", 0.5, 25.0, Au, wd_Au),
+		Analyzer::Parameters(2.0, 2.5, 3.0, 5.0, 2.6, 4.0, 2.6, 4.0, "2025_3050_dps10", 0.5, 10.0, Au, wd_Au),
+		Analyzer::Parameters(2.0, 2.5, 3.0, 5.0, 2.6, 4.0, 2.6, 4.0, "2025_3050_dps25", 0.5, 25.0, Au, wd_Au),
+	};
+
 	dps.run();
 }
 
