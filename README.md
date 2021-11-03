@@ -28,6 +28,8 @@ In both cases, `/path/to/pythia8306` should of course be replaced with the actua
 
 The code includes support for nuclear modifications to the parton distribution functions. Pythia has built-in support for a few sets of nPDFs. For documentation, see the file _PDF Selection_ under _Beams_ in the Pythia online manual, and look for the section _Nuclear modifications of parton densities_. The grid files of these sets are not built into Pythia, however. Pythia's documentation includes links for obtaining these grid files. The grid files, which for EPPS16 have filenames `EPPS16NLOR_A`, where `A` is the mass number of the nucleus. The required grid files must be copied to the folder `pythia8306/share/Pythia8/pdfdata`. Recompiling Pythia is not required.
 
+When adding the effects of nPDFs after event generation (using the `beam` parameter in `Analyzer::Parameters`), the grid file location must be specified explicitly using the `Constants::pdf_grid_data` string value.
+
 ### Running
 
 After compiling, all that's left is to run the executable created. Continuing the example above, this amounts to `./Experiments`. A useful thing to do is call `time ./Experiments`, which will tell how long the execution took. When the program is running, status updates are provided to `stdout` on the number of events generated thus far. A useful trick is to invoke `screen` before running the program. With `screen` enabled, it's now possible to exit the current screen by pressing <kbd>ctrl</kbd>+<kbd>a</kbd> and then <kbd>d</kbd>. The program is now running in the background, and the status can be checked by returning to the screen with `screen -r`. For more information on using `screen`, please consult Google.

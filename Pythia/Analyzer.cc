@@ -122,9 +122,9 @@ public:
 	x2_pre_histogram(ValueHistogram<double>(fixed_range(0.0, 1.0, 20))),
 	x1_post_histogram(ValueHistogram<double>(fixed_range(0.0, 1.0, 20))),
 	x2_post_histogram(ValueHistogram<double>(fixed_range(0.0, 1.0, 20))) {
-		protonPDF = make_shared<LHAGrid1>(2212, "13", "/Users/samiyrjanheikki/pythia8306/share/Pythia8/pdfdata/");
+		protonPDF = make_shared<LHAGrid1>(2212, "13", Constants::pdf_grid_data);
 		if (parameters.beam) {
-			nuclearPDF = new EPPS16((*parameters.beam).nucleus.pdg_code(), 1, "/Users/samiyrjanheikki/pythia8306/share/Pythia8/pdfdata/", protonPDF); 
+			nuclearPDF = new EPPS16((*parameters.beam).nucleus.pdg_code(), 1, Constants::pdf_grid_data, protonPDF); 
 		}
 	}
 

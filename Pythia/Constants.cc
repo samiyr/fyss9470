@@ -27,6 +27,8 @@ namespace Constants {
 	static string cmnd_input = "pp.cmnd";
 	/// The ID for neutral pions.
 	static std::vector<int> pions = {111};
+	/// Location for nuclear PDF grid files. Probably needs to be an absolute path.
+	static string pdf_grid_data = "/Users/samiyrjanheikki/pythia8306/share/Pythia8/pdfdata/";
 }
 
 #endif // CONSTANTS_H
