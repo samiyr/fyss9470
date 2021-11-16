@@ -29,6 +29,10 @@ namespace Constants {
 	static std::vector<int> pions = {111};
 	/// Location for nuclear PDF grid files. Probably needs to be an absolute path.
 	static string pdf_grid_data = "/Users/samiyrjanheikki/pythia8306/share/Pythia8/pdfdata/";
+	/// Location for a list of ncoll entries for 27-Al.
+	static string pAl_ncoll_list_file = "./n_coll_pAl.txt";
+	/// Location for a list of ncoll entries for 197-Au.
+	static string pAu_ncoll_list_file = "./n_coll_pAu.txt";
 }
 
 #endif // CONSTANTS_H

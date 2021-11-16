@@ -193,7 +193,14 @@ public:
 		}
 		return normalized;
 	}
-
+	ValueHistogram<double> divide_by_bin_width() const {
+		const auto result = ValueHistogram<double>::transform(*this, [](RangedContainer<double> container) {
+			const double factor = container.range.width();
+			const Around<double> new_value = factor == 0 ? 0 : container.value / factor;
+			return new_value;
+		});
+		return result;
+	}
 	template <typename V>
 	/// Returns a histogram with the contents divided by a constant.
 	ValueHistogram<double> normalize_by(V constant) const {

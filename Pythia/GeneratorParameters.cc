@@ -36,6 +36,10 @@ struct GeneratorParameters {
 	Beam beam_B;
 	/// Type of process used in Pythia.
 	Process process;
+	/// Enable ncoll mode.
+	bool use_ncoll;
+	/// Number of retries per event in ncoll mode.
+	EVENT_COUNT_TYPE ncoll_retries;
 };
 
 #endif // GENERATOR_PARAMETER_H

@@ -584,6 +584,153 @@ public:
 	}
 };
 
+/**
+ * Azimuthal correlations experiment with ncoll.
+ */
+class AzimuthalNCOLLCorrelationExperiment : public Experiment {
+public:
+	/**
+	 * A list of analysis parameters,
+	 * each of which will produce its own
+	 * analysis result using the same events.
+	 */
+	std::vector<Analyzer::Parameters> runs;
+
+	/// Number of retries per event.
+	EVENT_COUNT_TYPE ncoll_retries;
+
+	void run() {
+		// Start the clock.
+		const auto start_time = std::chrono::high_resolution_clock::now();
+		// Enable Pythia's MPI.
+		mpi = true;
+		// Initalize a shared vector collecting the results from each thread.
+		std::vector<std::vector<EventGenerator::Result>> per_thread_results;
+		#pragma omp parallel if(parallelize)
+		{
+			// A local variable for collecting an individual thread's results.
+			std::vector<std::vector<EventGenerator::Result>> _results;
+			// Loop over partonic pT bins in parallel (if enabled)
+			#pragma omp for nowait
+			for (std::vector<OptionalRange<double>>::size_type i = 0; i < pT_hat_bins.size(); i++) {
+				auto params = create_parameters();
+				params.use_ncoll = true;
+				params.ncoll_retries = ncoll_retries;
+				// Change seeds if needed
+				if (variable_seed) {
+					params.random_seed += i;
+				}
+				auto const range = pT_hat_bins[i];
+				// Create an event generator with the given parameters
+				EventGenerator gen(params, bins, range, runs);
+				// Generate events and collect results...
+				std::vector<EventGenerator::Result> result = gen.run();
+				// ...and append to the local variable
+				_results.push_back(result);
+			}
+			// Collect per-thread results to the shared variable, one thread at a time to avoid data races
+			#pragma omp critical
+			per_thread_results.insert(per_thread_results.end(), _results.begin(), _results.end());
+		}
+		// Combine the per-thread results to a single list of results, each corresponding to a single run
+		std::vector<EventGenerator::Result> results = EventGenerator::Result::combine(per_thread_results);
+		// Analyze the results, one run at a time
+		for (std::vector<EventGenerator::Result>::size_type run_index = 0; run_index < results.size(); run_index++) {
+			auto result = results[run_index];
+			auto normalized = normalize(Normalization::None, result);
+
+			if (statistical_histogram_error) {
+				normalized = ValueHistogram<double>::calculate_statistical_error(normalized);
+			}
+			// Stop the clock
+			const auto end_time = std::chrono::high_resolution_clock::now();
+			const std::chrono::duration<double> elapsed_duration = end_time - start_time;
+			const double elapsed_time = elapsed_duration.count();
+			// Initialize data parameter output file.
+			const auto wd = result.parameters.working_directory.has_value() ? *result.parameters.working_directory : working_directory;
+			ofstream file;
+			if (result.parameters.filename) {
+				// Construct data output file path.
+				const auto data_path = construct_path(
+					wd,
+					*result.parameters.filename, 
+					run_data_file_extension
+				);
+				file.open(data_path);
+				file << std::setprecision(6);
+
+				file << "elapsed_time\t= " << elapsed_time << " s\n\n";
+
+				file << "eCM\t\t= " << energy << "\n";
+				file << "count\t\t= " << count * (EVENT_COUNT_TYPE)pT_hat_bins.size() << "\n\n";
+
+				file << "process\t\t= " << to_string(process) << "\n";
+				file << "include_decayed\t= " << to_string(include_decayed) << "\n";
+				file << "mpi\t\t= " << to_string(true) << "\n\n";
+				file << "normalization\t= " << to_string(Normalization::None) << "\n\n";
+
+				file << "beam_A\t\t= " << beam_A << "\n";
+				file << "beam_B\t\t= " << beam_B << "\n\n";
+
+				file << "use_biasing\t= " << to_string(use_biasing) << "\n";
+				file << "bias_power\t= " << bias_power << "\n";
+				file << "bias_reference\t= " << bias_reference << "\n\n";
+
+				file << "cs_error\t= " << to_string(cross_section_error) << "\n";
+				file << "hf_error\t= " << to_string(histogram_fluctuation_error) << "\n";
+				file << "stat_error\t= " << to_string(statistical_histogram_error) << "\n\n";
+
+				file << "pT\t\t= " << pT_range.extent() << "\n";
+				file << "y\t\t= " << y_range.extent() << "\n";
+				file << "pT_1\t\t= " << result.parameters.pT_small.extent() << "\n";
+				file << "pT_2\t\t= " << result.parameters.pT_large.extent() << "\n";
+				file << "y_1\t\t= " << result.parameters.y_small.extent() << "\n";
+				file << "y_2\t\t= " << result.parameters.y_large.extent() << "\n\n";
+
+				file << "ncoll_retries\t= " << ncoll_retries << "\n\n";
+			}
+			const double N_assoc = result.N_assoc;
+			const double N_trigger = result.N_trigger;
+			const double N_pair = result.N_pair;
+			// Export parameters if output file is specified.
+			if (result.parameters.filename) {
+				file << "N_trigger\t= " << N_trigger << "\n";
+				file << "N_assoc\t\t= " << N_assoc << "\n";
+				file << "N_pair\t\t= " << N_pair << "\n\n";
+
+				file << "next_calls\t= " << result.next_calls << "\n";
+				file << "next_skips\t= " << result.next_skips << "\n";
+				file << "rejections\t= " << result.rejections << "\n\n";
+			}
+			// Normalize to STARC.
+			normalized = normalized.divide_by_bin_width();
+			normalized *= 1.0 / N_assoc;
+			cout << normalized;
+
+			// Export histogram if output file is specified.
+			if (result.parameters.filename) {
+				file << "azimuthal histogram:";
+				file << normalized;
+				file << "\n";
+				file << "pT_hat_bins:\n";
+				for (auto bin : pT_hat_bins) {
+					file << bin.extent() << "\n";
+				}
+				file << "\n\n";
+				
+				file.close();
+				
+				const auto histogram_path = construct_path(
+					wd,
+					*result.parameters.filename, 
+					histogram_file_extension
+				);
+				normalized.export_histogram(histogram_path);
+			}
+		}
+	}
+};
+
 // --- pT cross section ---
 
 /// Returns a pT cross section experiment template with prepopulated parameters.
@@ -830,7 +977,7 @@ void Al_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_
 
 /// Runs a p+Au collision DPS experiment.
 void Au_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double pT_hat_min, string wd, bool nPDF = false, Normalization normalization = Normalization::Unity) {
-	auto dps = dps_template(count, process, mpi, pT_hat_min, Beam(97, 197, Beam::NuclearPDF::EPPS16NLO, nPDF), wd, normalization);
+	auto dps = dps_template(count, process, mpi, pT_hat_min, Beam(79, 197, Beam::NuclearPDF::EPPS16NLO, nPDF), wd, normalization);
 	dps.run();
 }
 
@@ -862,7 +1009,7 @@ void ppAlAu_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double
 	dps.beam_B = Beam();
 
 	const Beam Al(13, 27);
-	const Beam Au(97, 197);
+	const Beam Au(79, 197);
 
 	dps.runs = {
 		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "1014_1420_dps10", 0.5, 10.0, std::nullopt, wd_pp),
@@ -942,6 +1089,84 @@ void ppAlAu_run(EVENT_COUNT_TYPE count, Process process, MPIStrategy mpi, double
 	};
 
 	dps.run();
+}
+
+/// Returns azimuthal ncoll correlation experiment template prepopulated parameters.
+AzimuthalNCOLLCorrelationExperiment ncoll_template(
+	EVENT_COUNT_TYPE count, 
+	Process process, 
+	double pT_hat_min, 
+	Beam b, 
+	string wd,
+	EVENT_COUNT_TYPE retries,
+	Normalization normalization) {
+	AzimuthalNCOLLCorrelationExperiment ex;
+
+	ex.energy = 200;
+	ex.count = count / THREAD_COUNT;
+	ex.process = process;
+	ex.normalization = normalization;
+	ex.bins = fixed_range(0.0, M_PI, 20);
+	ex.pT_hat_bins = std::vector<OptionalRange<double>>(THREAD_COUNT, OptionalRange<double>(pT_hat_min, std::nullopt));
+	ex.cross_section_error = false;
+	ex.histogram_fluctuation_error = false;
+	ex.statistical_histogram_error = true;
+
+	ex.include_decayed = true;
+	ex.use_biasing = false;
+	ex.parallelize = true;
+	ex.pythia_printing = false;
+
+	ex.variable_seed = true;
+	ex.random_seed = 1;
+
+	ex.working_directory = wd;
+
+	ex.beam_A = Beam();
+	ex.beam_B = b;
+
+	ex.ncoll_retries = retries;
+
+	ex.runs = {
+		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "1014_1420"),
+		Analyzer::Parameters(1.0, 1.4, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1014_2024"),
+		Analyzer::Parameters(1.0, 1.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1014_2428"),
+		Analyzer::Parameters(1.0, 1.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1014_2850"),
+
+		Analyzer::Parameters(1.4, 2.0, 2.0, 2.4, 2.6, 4.1, 2.6, 4.1, "1420_2024"),
+		Analyzer::Parameters(1.4, 2.0, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "1420_2428"),
+		Analyzer::Parameters(1.4, 2.0, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "1420_2850"),
+
+		Analyzer::Parameters(2.0, 2.4, 2.4, 2.8, 2.6, 4.1, 2.6, 4.1, "2024_2428"),
+		Analyzer::Parameters(2.0, 2.4, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2024_2850"),
+
+		Analyzer::Parameters(2.4, 2.8, 2.8, 5.0, 2.6, 4.1, 2.6, 4.1, "2428_2850"),
+
+
+		Analyzer::Parameters(1.0, 1.5, 2.0, 2.5, 2.6, 4.0, 2.6, 4.0, "1015_2025"),
+		Analyzer::Parameters(2.0, 2.5, 3.0, 5.0, 2.6, 4.0, 2.6, 4.0, "2025_3050"),
+
+	};
+
+	return ex;
+}
+
+/// Runs a p+p ncoll collision experiment.
+void pp_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, Normalization normalization = Normalization::None) {
+	auto ex = ncoll_template(count, process, pT_hat_min, Beam(), wd, retries, normalization);
+	ex.run();
+}
+
+/// Runs a p+Al ncoll collision experiment.
+void Al_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, Normalization normalization = Normalization::None) {
+	auto ex = ncoll_template(count, process, pT_hat_min, Beam(13, 27), wd, retries, normalization);
+	ex.run();
+}
+
+/// Runs a p+Au ncoll collision experiment.
+void Au_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, Normalization normalization = Normalization::None) {
+	auto ex = ncoll_template(count, process, pT_hat_min, Beam(79, 197), wd, retries, normalization);
+	ex.run();
 }
 
 #endif // EXPERIMENT_DEFS_H

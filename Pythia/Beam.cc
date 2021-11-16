@@ -3,6 +3,8 @@
 
 #include "Pythia8/Pythia.h"
 #include <cassert>
+#include "NumberListReader.cc"
+#include "Constants.cc"
 
 using namespace Pythia8;
 
@@ -35,7 +37,7 @@ struct Beam {
 		Nucleus(int Z, int A, int ns = 0, int I = 0) : atomic_number(Z), mass_number(A), strange_count(ns), isomer_level(I) {}
 		/// Returns the PDG code for the nucleus. See https://pdg.lbl.gov/2007/reviews/montecarlorpp.pdf.
 		/// Al-27 = 1000130270
-		/// Au-197 = 1000971970
+		/// Au-197 = 1000791970
 		int pdg_code() const {
 			int base = 1'000'000'000;
 			int L = strange_count * 10'000'000;
@@ -89,6 +91,16 @@ struct Beam {
 			os << " (nPDF off)";
 		}
 		return os;
+    }
+
+    std::optional<NumberListReader<int>> ncoll_list() {
+    	if (nucleus.atomic_number == 13 && nucleus.mass_number == 27) {
+    		return NumberListReader<int>(Constants::pAl_ncoll_list_file);
+    	} else if (nucleus.atomic_number == 79 && nucleus.mass_number == 197) {
+    		return NumberListReader<int>(Constants::pAu_ncoll_list_file);
+    	} else {
+    		return std::nullopt;
+    	}
     }
 };
 

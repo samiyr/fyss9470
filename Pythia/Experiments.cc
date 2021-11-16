@@ -87,10 +87,27 @@ int main() {
 	// Al_run(10'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/temp/pAl/", true, Normalization::STARC);
 	// Au_run(10'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/temp/pAu/", true, Normalization::STARC);
 
-	// ppAlAu_run(10'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/temp/pp4/", "Data/temp/pAl4/", "Data/temp/pAu4/", Normalization::STARC);
+	// ppAlAu_run(10'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/temp/pp5/", "Data/temp/pAl5/", "Data/temp/pAu5/", Normalization::STARC);
 
-	ppAlAu_run(10'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pp/delta_phi/DPS/Hard15/1e10/STARCN/", "Data/pAl/delta_phi/DPS/Hard15/1e10/STARCN/", "Data/pAu/delta_phi/DPS/Hard15/1e10/STARCN/", Normalization::STARC);
-	ppAlAu_run(10'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pp/delta_phi/DPS/Hard25/1e10/STARCN/", "Data/pAl/delta_phi/DPS/Hard25/1e10/STARCN/", "Data/pAu/delta_phi/DPS/Hard25/1e10/STARCN/", Normalization::STARC);
+	// ppAlAu_run(10'000'000'000, Process::HardQCD, MPIStrategy::DPS, 1.5, "Data/pp/delta_phi/DPS/Hard15/1e10/STARCN/", "Data/pAl/delta_phi/DPS/Hard15/1e10/STARCN/", "Data/pAu/delta_phi/DPS/Hard15/1e10/STARCN/", Normalization::STARC);
+	// ppAlAu_run(10'000'000'000, Process::HardQCD, MPIStrategy::DPS, 2.5, "Data/pp/delta_phi/DPS/Hard25/1e10/STARCN/", "Data/pAl/delta_phi/DPS/Hard25/1e10/STARCN/", "Data/pAu/delta_phi/DPS/Hard25/1e10/STARCN/", Normalization::STARC);
+
+	// pp_mpi_run(1'000'000, Process::SoftQCDNonDiffractive, MPIStrategy::PythiaMPI, 1.0, "Data/temp/pp6/", Normalization::STARC);
+	// pp_ncoll_run(1'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/temp/pp7");
+	// Al_ncoll_run(1'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/temp/pAl7", 2);
+	// Au_ncoll_run(1'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/temp/pAu7", 0);
+
+	pp_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pp/delta_phi/ncoll0/Soft/1e8/", 0);
+	pp_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pp/delta_phi/ncoll2/Soft/1e8/", 2);
+	pp_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pp/delta_phi/ncoll5/Soft/1e8/", 5);
+
+	Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll0/Soft/1e8/", 0);
+	Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll2/Soft/1e8/", 2);
+	Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll5/Soft/1e8/", 5);
+
+	Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll0/Soft/1e8/", 0);
+	Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll2/Soft/1e8/", 2);
+	Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll5/Soft/1e8/", 5);
 
 	return 0;
 }

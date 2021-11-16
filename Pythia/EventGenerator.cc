@@ -32,6 +32,10 @@ public:
 		Analyzer::Parameters parameters;
 		/// The index of the current run.
 		std::vector<Analyzer>::size_type run_index;
+
+		EVENT_COUNT_TYPE next_calls;
+		EVENT_COUNT_TYPE next_skips;
+		EVENT_COUNT_TYPE rejections;
 		/// Overloads the += operator for combining multiple Result objects.
 		Result& operator+=(Result rhs) {
 			histograms.insert(histograms.end(), rhs.histograms.begin(), rhs.histograms.end());
@@ -50,6 +54,9 @@ public:
 			sigma_sps.insert(sigma_sps.end(), rhs.sigma_sps.begin(), rhs.sigma_sps.end());
 			sigma_gen += rhs.sigma_gen;
 			total_weight += rhs.total_weight;
+			next_calls += rhs.next_calls;
+			next_skips += rhs.next_skips;
+			rejections += rhs.rejections;
 			return *this;
 		}
 		/// Combines a list of Result objects, each corresponding to a pT_hat range.
@@ -93,10 +100,16 @@ public:
 		ParticleGenerator generator(params, pT_hat_range);
 		generator.initialize();
 		/// Run the particle generator.
-		generator.generate([this](std::vector<ParticleContainer> particles, Info info) {
-			/// For each event, send the generated particles to all analyzers.			
+		generator.generate([this](std::vector<ParticleContainer> particles) {
+			/// For each event, send the generated particles to all analyzers.
 			for (auto &analyzer : analyzers) {
-				analyzer.book(&particles, &info);
+				analyzer.book(&particles/*, &info*/);
+			}
+		}, [this](ParticleGeneratorInfo info) {
+			for (auto &analyzer : analyzers) {
+				analyzer.next_calls = info.next_calls;
+				analyzer.next_skips = info.next_skips;
+				analyzer.rejections = info.rejections;
 			}
 		});
 		/// Get the total cross section and weight.
@@ -133,6 +146,10 @@ public:
 			
 			result.parameters = analyzer.parameters;
 			result.run_index = i;
+
+			result.next_calls = analyzer.next_calls;
+			result.next_skips = analyzer.next_skips;
+			result.rejections = analyzer.rejections;
 			
 			result_vector.push_back(result);
 		}

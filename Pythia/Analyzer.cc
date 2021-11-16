@@ -108,6 +108,10 @@ public:
 	double N_assoc = 0.0;
 	double N_pair = 0.0;
 
+	EVENT_COUNT_TYPE next_calls = 0;
+	EVENT_COUNT_TYPE next_skips = 0;
+	EVENT_COUNT_TYPE rejections = 0;
+
 	/// Parton distribution function pointers.	
 	PDFPtr protonPDF;
 	std::optional<EPPS16 *> nuclearPDF;
@@ -129,29 +133,31 @@ public:
 	}
 
 	/// Analyze the particles generated at an event.
-	void book(std::vector<ParticleContainer> *input, Info *info) {
+	void book(std::vector<ParticleContainer> *input/*, ParticleGeneratorInfo *info*/) {
 		const auto N = input->size();
 
-   		const double x1 = info->x1();
-   		const int id2 = info->id2pdf();
-   		const double x2 = info->x2();
-   		const double Q2 = info->Q2Fac();
+   		// const double x1 = info->x1();
+   		// const int id2 = info->id2pdf();
+   		// const double x2 = info->x2();
+   		// const double Q2 = info->Q2Fac();
 
-   		double xf2 = 1.0;
-   		double xfA = 1.0;
+   		// double xf2 = 1.0;
+   		// double xfA = 1.0;
 
-   		if (nuclearPDF) {
-   			xf2 = protonPDF->xf(id2, x2, Q2);
-   			xfA = nuclearPDF.value()->xf(id2, x2, Q2);
-   		}
+   		// if (nuclearPDF) {
+   		// 	xf2 = protonPDF->xf(id2, x2, Q2);
+   		// 	xfA = nuclearPDF.value()->xf(id2, x2, Q2);
+   		// }
 
-   		const double event_weight = info->weight();
+   		// const double event_weight = info->weight();
 
-   		x1_pre_histogram.fill(x1, event_weight);
-   		x2_pre_histogram.fill(x2, event_weight);
+   		// x1_pre_histogram.fill(x1, event_weight);
+   		// x2_pre_histogram.fill(x2, event_weight);
 
 		for (std::vector<ParticleContainer>::size_type i = 0; i < N; i++) {
 			const ParticleContainer particle1 = (*input)[i];
+			const double event_weight = particle1.event_weight;
+
 			const bool check11 = parameters.pT_small.in_range(particle1.pT) && parameters.y_small.in_range(particle1.y);
 			const bool check12 = parameters.pT_large.in_range(particle1.pT) && parameters.y_large.in_range(particle1.y);
 
@@ -180,11 +186,11 @@ public:
 				N_pair += event_weight;
 
 				histogram.fill(value, event_weight);
-				if (nuclearPDF) {
-					nuclear_histogram.fill(value, event_weight * xfA / xf2);
-				}
-				x1_post_histogram.fill(x1, event_weight);
-   				x2_post_histogram.fill(x2, event_weight);
+				// if (nuclearPDF) {
+				// 	nuclear_histogram.fill(value, event_weight * xfA / xf2);
+				// }
+				// x1_post_histogram.fill(x1, event_weight);
+   	// 			x2_post_histogram.fill(x2, event_weight);
 			}
 		}
 	}

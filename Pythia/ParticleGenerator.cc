@@ -8,6 +8,16 @@
 
 using namespace Pythia8;
 
+struct ParticleGeneratorInfo {
+	Pythia *pythia;
+	EVENT_COUNT_TYPE next_calls;
+	EVENT_COUNT_TYPE next_skips;
+	EVENT_COUNT_TYPE rejections;
+
+	ParticleGeneratorInfo(Pythia *_pythia, EVENT_COUNT_TYPE _next_calls, EVENT_COUNT_TYPE _next_skips, EVENT_COUNT_TYPE _rejections)
+	:pythia(_pythia), next_calls(_next_calls), next_skips(_next_skips), rejections(_rejections) {}
+};
+
 /// The most basic generator, responsible for generating particles and interfacing with Pythia.
 class ParticleGenerator {
 public:
@@ -51,43 +61,103 @@ public:
 		pythia->init();
 	}
 
-	template <typename F>
+	template <typename F, typename G>
 	/// Start generating events in the event loop. The lambda
 	/// expression is called with the particles generated from each event.
-	void generate(F lambda) {
+	void generate(F lambda, G completion) {
 		ParticleFilter filter;
 		filter.allowed_particle_ids = params.particle_ids;
 		filter.include_decayed = params.include_decayed;
 		filter.pT_range = params.pT_range;
 		filter.y_range = params.y_range;
 
-		for (EVENT_COUNT_TYPE i = 0; i < params.event_count; ++i) {
-			if (!pythia->next()) {
-				continue;
-			}
-			const Event &event = pythia->event;
-			const Info &info = pythia->info;
+		EVENT_COUNT_TYPE next_calls = 0;
+		EVENT_COUNT_TYPE next_skips = 0;
+		EVENT_COUNT_TYPE rejections = 0;
 
-			const int particle_count = event.size();
-			std::vector<ParticleContainer> particles;
-			particles.reserve(particle_count);
+		if (params.use_ncoll) {
+			// Non-standard event generation loop to include ncoll effects for nuclear beams.
+			EVENT_COUNT_TYPE retry_counter = 0;
+			const auto ncoll_list = params.beam_B.ncoll_list();
+			for (EVENT_COUNT_TYPE i = 0; i < params.event_count; ++i) {
+				double x1_tot = 0.0;
+				const int n_coll = ncoll_list.has_value() ? (*ncoll_list)(i) : 1;
+				std::vector<ParticleContainer> particles;
+				// Collision loop.
+				for (int i_coll = 0; i_coll < n_coll; i_coll++) {
+					next_calls++;
+					if (!pythia->next()) {
+						next_skips++;
+						continue;
+					}
+					const Event &event = pythia->event;
+					const Info &info = pythia->info;
 
-			for (int j = 0; j < particle_count; j++) {
-				Particle particle = event[j];
-				if (filter.is_allowed(particle)) {
-					particles.emplace_back(particle, info.weight());
+					const int particle_count = event.size();
+
+					for (int j = 0; j < particle_count; j++) {
+						Particle particle = event[j];
+						if (filter.is_allowed(particle)) {
+							particles.emplace_back(particle, info.weight());
+						}
+					}
+					const int n_MPI = info.nMPI();
+					double x1_sum = 0.0;
+
+					for (int i_MPI = 0; i_MPI < n_MPI; i_MPI++) {
+						const double x1 = (*info.beamAPtr)[i_MPI].x();
+						x1_sum += x1;
+					}
+					x1_tot += x1_sum;
+				} // End of collision loop
+
+				// Check conservation of momentum.
+				if (x1_tot > 1.0) {
+					retry_counter++;
+					if (retry_counter > params.ncoll_retries) {
+						rejections++;
+					} else {
+						i--;
+					}
+					continue;
 				}
+				retry_counter = 0;
+				lambda(particles);
 			}
-			lambda(particles, info);
+			completion(ParticleGeneratorInfo(pythia, next_calls, next_skips, rejections));
+		} else {
+			// Standard event generation loop.
+			for (EVENT_COUNT_TYPE i = 0; i < params.event_count; ++i) {
+				next_calls++;
+				if (!pythia->next()) {
+					next_skips++;
+					continue;
+				}
+				const Event &event = pythia->event;
+				const Info &info = pythia->info;
+
+				const int particle_count = event.size();
+				std::vector<ParticleContainer> particles;
+				particles.reserve(particle_count);
+
+				for (int j = 0; j < particle_count; j++) {
+					Particle particle = event[j];
+					if (filter.is_allowed(particle)) {
+						particles.emplace_back(particle, info.weight());
+					}
+				}
+				lambda(particles);
+			}
+			completion(ParticleGeneratorInfo(pythia, next_calls, next_skips, rejections));
 		}
 	}
 	/// Generates, stores and returns a 2D matrix of all the particles generated in the event loop, event-by-event.
 	std::vector<std::vector<ParticleContainer>> generate() {
 		std::vector<std::vector<ParticleContainer>> particles(params.event_count, std::vector<ParticleContainer>());
 
-		generate([&particles](std::vector<ParticleContainer> generated, [[maybe_unused]] Info info) {
+		generate([&particles](std::vector<ParticleContainer> generated) {
 			particles.push_back(generated);
-		});
+		}, []([[maybe_unused]] ParticleGeneratorInfo info) {});
 
 		return particles;
 	}
