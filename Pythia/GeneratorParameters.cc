@@ -40,6 +40,10 @@ struct GeneratorParameters {
 	bool use_ncoll;
 	/// Number of retries per event in ncoll mode.
 	EVENT_COUNT_TYPE ncoll_retries;
+	/// ncoll index offset and multiplier, i.e. the requested ncoll number is given by 
+	/// i_event + ncoll_multiplier * ncoll_offset. Therefore ncoll_multiplier = 0 disabled offsetting.
+	EVENT_COUNT_TYPE ncoll_offset;
+	EVENT_COUNT_TYPE ncoll_multiplier;
 };
 
 #endif // GENERATOR_PARAMETER_H

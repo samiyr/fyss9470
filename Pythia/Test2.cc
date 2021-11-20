@@ -44,12 +44,13 @@ int main() {
 	NumberListReader<int> pAl_ncoll("./n_coll_pAl.txt");
 
 	int retry_counter = 0;
+	const int retries = 0;
 
 	for (int i = 0; i < 10'000; i++) {
 		events++;
 		double x1_tot = 0.0;
 
-		const int n_coll = 1; //pAl_ncoll(i);
+		const int n_coll = pAl_ncoll(i);
 
 		std::vector<Particle> particles;
 		// collision loop
@@ -86,7 +87,7 @@ int main() {
 		if (x1_tot > 1.0) {
 			// cout << "x1 = " << x1_tot << " exceeded 1 in event " << i << " with ncoll = " << n_coll << "\n";
 			retry_counter++;
-			if (retry_counter > 0) {
+			if (retry_counter > retries) {
 				rejected++;
 			} else {
 				i--;

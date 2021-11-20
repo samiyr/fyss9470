@@ -598,6 +598,8 @@ public:
 
 	/// Number of retries per event.
 	EVENT_COUNT_TYPE ncoll_retries;
+	/// ncoll offset multiplier. See GeneratorParameters.cc
+	EVENT_COUNT_TYPE ncoll_multiplier;
 
 	void run() {
 		// Start the clock.
@@ -616,6 +618,8 @@ public:
 				auto params = create_parameters();
 				params.use_ncoll = true;
 				params.ncoll_retries = ncoll_retries;
+				params.ncoll_offset = i;
+				params.ncoll_multiplier = ncoll_multiplier;
 				// Change seeds if needed
 				if (variable_seed) {
 					params.random_seed += i;
@@ -1099,6 +1103,7 @@ AzimuthalNCOLLCorrelationExperiment ncoll_template(
 	Beam b, 
 	string wd,
 	EVENT_COUNT_TYPE retries,
+	EVENT_COUNT_TYPE ncoll_multiplier,
 	Normalization normalization) {
 	AzimuthalNCOLLCorrelationExperiment ex;
 
@@ -1126,6 +1131,7 @@ AzimuthalNCOLLCorrelationExperiment ncoll_template(
 	ex.beam_B = b;
 
 	ex.ncoll_retries = retries;
+	ex.ncoll_multiplier = ncoll_multiplier;
 
 	ex.runs = {
 		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "1014_1420"),
@@ -1152,20 +1158,20 @@ AzimuthalNCOLLCorrelationExperiment ncoll_template(
 }
 
 /// Runs a p+p ncoll collision experiment.
-void pp_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, Normalization normalization = Normalization::None) {
-	auto ex = ncoll_template(count, process, pT_hat_min, Beam(), wd, retries, normalization);
+void pp_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, EVENT_COUNT_TYPE ncoll_multiplier = 0, Normalization normalization = Normalization::None) {
+	auto ex = ncoll_template(count, process, pT_hat_min, Beam(), wd, retries, ncoll_multiplier, normalization);
 	ex.run();
 }
 
 /// Runs a p+Al ncoll collision experiment.
-void Al_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, Normalization normalization = Normalization::None) {
-	auto ex = ncoll_template(count, process, pT_hat_min, Beam(13, 27), wd, retries, normalization);
+void Al_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, EVENT_COUNT_TYPE ncoll_multiplier = 0, Normalization normalization = Normalization::None) {
+	auto ex = ncoll_template(count, process, pT_hat_min, Beam(13, 27), wd, retries, ncoll_multiplier, normalization);
 	ex.run();
 }
 
 /// Runs a p+Au ncoll collision experiment.
-void Au_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, Normalization normalization = Normalization::None) {
-	auto ex = ncoll_template(count, process, pT_hat_min, Beam(79, 197), wd, retries, normalization);
+void Au_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, EVENT_COUNT_TYPE ncoll_multiplier = 0, Normalization normalization = Normalization::None) {
+	auto ex = ncoll_template(count, process, pT_hat_min, Beam(79, 197), wd, retries, ncoll_multiplier, normalization);
 	ex.run();
 }
 

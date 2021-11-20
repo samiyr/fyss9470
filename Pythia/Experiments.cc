@@ -3,7 +3,7 @@
 
 #include "ExperimentDefs.cc"
 
-int THREAD_COUNT = 8;
+int THREAD_COUNT = 16;
 
 int main() {
 	// run_pT_experiment();
@@ -97,17 +97,17 @@ int main() {
 	// Al_ncoll_run(1'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/temp/pAl7", 2);
 	// Au_ncoll_run(1'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/temp/pAu7", 0);
 
-	pp_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pp/delta_phi/ncoll0/Soft/1e8/", 0);
-	pp_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pp/delta_phi/ncoll2/Soft/1e8/", 2);
-	pp_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pp/delta_phi/ncoll5/Soft/1e8/", 5);
+	pp_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pp/delta_phi/ncoll0_offset/Soft/1e8/", 0, 1000);
+	// pp_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pp/delta_phi/ncoll2/Soft/1e8/", 2);
+	// pp_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pp/delta_phi/ncoll5/Soft/1e8/", 5);
 
-	Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll0/Soft/1e8/", 0);
-	Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll2/Soft/1e8/", 2);
-	Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll5/Soft/1e8/", 5);
+	Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll0_offset/Soft/1e8/", 0, 1000);
+	Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll2_offset/Soft/1e8/", 2, 1000);
+	Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll5_offset/Soft/1e8/", 5, 1000);
 
-	Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll0/Soft/1e8/", 0);
-	Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll2/Soft/1e8/", 2);
-	Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll5/Soft/1e8/", 5);
+	Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll0_offset/Soft/1e8/", 0, 1000);
+	Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll2_offset/Soft/1e8/", 2, 1000);
+	Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll5_offset/Soft/1e8/", 5, 1000);
 
 	return 0;
 }

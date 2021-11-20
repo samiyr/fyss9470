@@ -81,7 +81,7 @@ public:
 			const auto ncoll_list = params.beam_B.ncoll_list();
 			for (EVENT_COUNT_TYPE i = 0; i < params.event_count; ++i) {
 				double x1_tot = 0.0;
-				const int n_coll = ncoll_list.has_value() ? (*ncoll_list)(i) : 1;
+				const int n_coll = ncoll_list.has_value() ? (*ncoll_list)(i + params.ncoll_multiplier * params.ncoll_offset) : 1;
 				std::vector<ParticleContainer> particles;
 				// Collision loop.
 				for (int i_coll = 0; i_coll < n_coll; i_coll++) {
