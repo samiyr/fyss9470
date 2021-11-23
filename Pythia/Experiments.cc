@@ -3,7 +3,7 @@
 
 #include "ExperimentDefs.cc"
 
-int THREAD_COUNT = 16;
+int THREAD_COUNT = 8;
 
 int main() {
 	// run_pT_experiment();
@@ -97,17 +97,30 @@ int main() {
 	// Al_ncoll_run(1'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/temp/pAl7", 2);
 	// Au_ncoll_run(1'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/temp/pAu7", 0);
 
-	pp_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pp/delta_phi/ncoll0_offset/Soft/1e8/", 0, 1000);
+	// pp_ncoll_run(1'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/temp/pp8", 0, false);
+	// Au_ncoll_run(1'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/temp/pAu8", 0, true);
+	// Au_ncoll_run(1'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/temp/pAu9", 0, false);
+	// Au_ncoll_run(1'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/temp/pAu10", 0, false);
+
+	// pp_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pp/delta_phi/ncoll0_offset/Soft/1e8/", 0, 1000);
 	// pp_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pp/delta_phi/ncoll2/Soft/1e8/", 2);
 	// pp_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pp/delta_phi/ncoll5/Soft/1e8/", 5);
 
-	Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll0_offset/Soft/1e8/", 0, 1000);
-	Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll2_offset/Soft/1e8/", 2, 1000);
-	Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll5_offset/Soft/1e8/", 5, 1000);
+	// Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll0_offset/Soft/1e8/", 0, 1000);
+	// Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll2_offset/Soft/1e8/", 2, 1000);
+	// Al_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll5_offset/Soft/1e8/", 5, 1000);
 
-	Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll0_offset/Soft/1e8/", 0, 1000);
-	Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll2_offset/Soft/1e8/", 2, 1000);
-	Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll5_offset/Soft/1e8/", 5, 1000);
+	// Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll0_offset/Soft/1e8/", 0, 1000);
+	// Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll2_offset/Soft/1e8/", 2, 1000);
+	// Au_ncoll_run(100'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll5_offset/Soft/1e8/", 5, 1000);
+
+	pp_ncoll_run(1'000'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pp/delta_phi/ncoll0_partial/Soft/1e9/", 0, false);
+
+	Al_ncoll_run(1'000'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll0_partial/Soft/1e9/", 0, false);
+	Al_ncoll_run(1'000'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAl/delta_phi/ncoll5_partial/Soft/1e9/", 5, false);
+
+	Au_ncoll_run(1'000'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll0_partial/Soft/1e9/", 0, false);
+	Au_ncoll_run(1'000'000'000, Process::SoftQCDNonDiffractive, 1.0, "Data/pAu/delta_phi/ncoll5_partial/Soft/1e9/", 5, false);
 
 	return 0;
 }

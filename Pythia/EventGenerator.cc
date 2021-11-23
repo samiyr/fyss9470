@@ -10,6 +10,8 @@ public:
 		std::vector<ValueHistogram<double>> histograms;
 		/// A list of nuclear histograms, each correspnding to a pT_hat range.
 		std::vector<ValueHistogram<double>> nuclear_histograms;
+
+		std::vector<ValueHistogram<double>> partial_histograms;
 		/// A list of momentum fraction histograms.
 		std::vector<ValueHistogram<double>> x1_pre_histograms;
 		std::vector<ValueHistogram<double>> x2_pre_histograms;
@@ -21,6 +23,11 @@ public:
 		double N_assoc;
 		/// THe total weight of paired particles.
 		double N_pair;
+
+		double partial_N_trigger;
+		double partial_N_assoc;
+		double partial_N_pair;
+
 		/// A list of SPS integrals, each corresponding to a pT_hat range.
 		std::vector<double> sigma_sps_1;
 		std::vector<double> sigma_sps_2;
@@ -35,11 +42,13 @@ public:
 
 		EVENT_COUNT_TYPE next_calls;
 		EVENT_COUNT_TYPE next_skips;
-		EVENT_COUNT_TYPE rejections;
+		EVENT_COUNT_TYPE partial_events;
+		ValueHistogram<double> partial_ncolls;
 		/// Overloads the += operator for combining multiple Result objects.
 		Result& operator+=(Result rhs) {
 			histograms.insert(histograms.end(), rhs.histograms.begin(), rhs.histograms.end());
 			nuclear_histograms.insert(nuclear_histograms.end(), rhs.nuclear_histograms.begin(), rhs.nuclear_histograms.end());
+			partial_histograms.insert(partial_histograms.end(), rhs.partial_histograms.begin(), rhs.partial_histograms.end());
 
 			x1_pre_histograms.insert(x1_pre_histograms.end(), rhs.x1_pre_histograms.begin(), rhs.x1_pre_histograms.end());
 			x2_pre_histograms.insert(x2_pre_histograms.end(), rhs.x2_pre_histograms.begin(), rhs.x2_pre_histograms.end());
@@ -49,6 +58,11 @@ public:
 			N_trigger += rhs.N_trigger;
 			N_assoc += rhs.N_assoc;
 			N_pair += rhs.N_pair;
+
+			partial_N_trigger += rhs.partial_N_trigger;
+			partial_N_assoc += rhs.partial_N_assoc;
+			partial_N_pair += rhs.partial_N_pair;
+
 			sigma_sps_1.insert(sigma_sps_1.end(), rhs.sigma_sps_1.begin(), rhs.sigma_sps_1.end());
 			sigma_sps_2.insert(sigma_sps_2.end(), rhs.sigma_sps_2.begin(), rhs.sigma_sps_2.end());
 			sigma_sps.insert(sigma_sps.end(), rhs.sigma_sps.begin(), rhs.sigma_sps.end());
@@ -56,7 +70,9 @@ public:
 			total_weight += rhs.total_weight;
 			next_calls += rhs.next_calls;
 			next_skips += rhs.next_skips;
-			rejections += rhs.rejections;
+			partial_events += rhs.partial_events;
+			partial_ncolls += rhs.partial_ncolls;
+
 			return *this;
 		}
 		/// Combines a list of Result objects, each corresponding to a pT_hat range.
@@ -100,16 +116,17 @@ public:
 		ParticleGenerator generator(params, pT_hat_range);
 		generator.initialize();
 		/// Run the particle generator.
-		generator.generate([this](std::vector<ParticleContainer> particles) {
+		generator.generate([this](std::vector<ParticleContainer> particles, bool is_partial) {
 			/// For each event, send the generated particles to all analyzers.
 			for (auto &analyzer : analyzers) {
-				analyzer.book(&particles/*, &info*/);
+				analyzer.book(&particles/*, &info*/, is_partial);
 			}
 		}, [this](ParticleGeneratorInfo info) {
 			for (auto &analyzer : analyzers) {
 				analyzer.next_calls = info.next_calls;
 				analyzer.next_skips = info.next_skips;
-				analyzer.rejections = info.rejections;
+				analyzer.partial_events = info.partial_events;
+				analyzer.partial_ncolls = info.partial_ncolls;
 			}
 		});
 		/// Get the total cross section and weight.
@@ -127,6 +144,7 @@ public:
 			
 			result.histograms = {analyzer.histogram};
 			result.nuclear_histograms = {analyzer.nuclear_histogram};
+			result.partial_histograms = {analyzer.partial_histogram};
 
 			result.x1_pre_histograms = {analyzer.x1_pre_histogram};
 			result.x2_pre_histograms = {analyzer.x2_pre_histogram};
@@ -136,6 +154,10 @@ public:
 			result.N_trigger = analyzer.N_trigger;
 			result.N_assoc = analyzer.N_assoc;
 			result.N_pair = analyzer.N_pair;
+
+			result.partial_N_trigger = analyzer.partial_N_trigger;
+			result.partial_N_assoc = analyzer.partial_N_assoc;
+			result.partial_N_pair = analyzer.partial_N_pair;
 			
 			result.sigma_sps_1 = {analyzer.N_trigger * factor};
 			result.sigma_sps_2 = {analyzer.N_assoc * factor};
@@ -149,7 +171,8 @@ public:
 
 			result.next_calls = analyzer.next_calls;
 			result.next_skips = analyzer.next_skips;
-			result.rejections = analyzer.rejections;
+			result.partial_events = analyzer.partial_events;
+			result.partial_ncolls = analyzer.partial_ncolls;
 			
 			result_vector.push_back(result);
 		}

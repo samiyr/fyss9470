@@ -43,12 +43,17 @@ int main() {
 
 	NumberListReader<int> pAl_ncoll("./n_coll_pAl.txt");
 
+	ValueHistogram<double> partial_ncolls(fixed_range(0.0, 20.0, 20));
+
 	int retry_counter = 0;
 	const int retries = 0;
+	const bool reject_ncoll = false;
 
 	for (int i = 0; i < 100'000; i++) {
 		events++;
 		double x1_tot = 0.0;
+		bool is_partial = false;
+		bool is_retry = false;
 
 		const int n_coll = pAl_ncoll(i);
 
@@ -81,19 +86,33 @@ int main() {
        			x1_sum += x1;
      		}
      		x1_tot += x1_sum;
+
+     		// check energy limit
+			if (x1_tot > 1.0) {
+				retry_counter++;
+				is_partial = true;
+				if (retry_counter > retries) {
+					partial_ncolls.fill(n_coll);
+					rejected++;
+				} else {
+					is_retry = true;
+					i--;
+				}
+				break;
+			}
 		}
 
-		// check energy limit
-		if (x1_tot > 1.0) {
-			// cout << "x1 = " << x1_tot << " exceeded 1 in event " << i << " with ncoll = " << n_coll << "\n";
-			retry_counter++;
-			if (retry_counter > retries) {
-				rejected++;
-			} else {
-				i--;
-			}
+		if (is_retry) { 
+			// Retry event, skip analysis
+			continue; 
+		}
+		if (is_partial && reject_ncoll) {
+			// This is a partial event (so x1 > 1) and we want to reject such events.
 			continue;
 		}
+
+		// Otherwise, move on to analysis.
+
 		retry_counter = 0;
 		selected++;
 		// pair the pions after collision loop
@@ -151,6 +170,8 @@ int main() {
 	histogramAl *= 1.0 / (N_assoc * 0.157);
 
 	cout << histogramAl << "\n";
+
+	cout << partial_ncolls << "\n";
 
 	return 0;
 }

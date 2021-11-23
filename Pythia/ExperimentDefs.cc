@@ -600,6 +600,8 @@ public:
 	EVENT_COUNT_TYPE ncoll_retries;
 	/// ncoll offset multiplier. See GeneratorParameters.cc
 	EVENT_COUNT_TYPE ncoll_multiplier;
+	/// ncoll rejection, see GeneratorParameters.cc
+	bool reject_ncoll;
 
 	void run() {
 		// Start the clock.
@@ -620,6 +622,7 @@ public:
 				params.ncoll_retries = ncoll_retries;
 				params.ncoll_offset = i;
 				params.ncoll_multiplier = ncoll_multiplier;
+				params.reject_ncoll = reject_ncoll;
 				// Change seeds if needed
 				if (variable_seed) {
 					params.random_seed += i;
@@ -642,6 +645,7 @@ public:
 		for (std::vector<EventGenerator::Result>::size_type run_index = 0; run_index < results.size(); run_index++) {
 			auto result = results[run_index];
 			auto normalized = normalize(Normalization::None, result);
+			auto partial = ValueHistogram<double>::combine(result.partial_histograms, histogram_fluctuation_error);
 
 			if (statistical_histogram_error) {
 				normalized = ValueHistogram<double>::calculate_statistical_error(normalized);
@@ -691,7 +695,8 @@ public:
 				file << "y_1\t\t= " << result.parameters.y_small.extent() << "\n";
 				file << "y_2\t\t= " << result.parameters.y_large.extent() << "\n\n";
 
-				file << "ncoll_retries\t= " << ncoll_retries << "\n\n";
+				file << "ncoll_retries\t= " << ncoll_retries << "\n";
+				file << "reject_ncoll\t= " << to_string(reject_ncoll) << "\n\n";
 			}
 			const double N_assoc = result.N_assoc;
 			const double N_trigger = result.N_trigger;
@@ -702,14 +707,21 @@ public:
 				file << "N_assoc\t\t= " << N_assoc << "\n";
 				file << "N_pair\t\t= " << N_pair << "\n\n";
 
+				file << "p_N_trigger\t= " << result.partial_N_trigger << "\n";
+				file << "p_N_assoc\t= " << result.partial_N_assoc << "\n";
+				file << "p_N_pair\t= " << result.partial_N_pair << "\n\n";
+
 				file << "next_calls\t= " << result.next_calls << "\n";
 				file << "next_skips\t= " << result.next_skips << "\n";
-				file << "rejections\t= " << result.rejections << "\n\n";
+				file << "partial_events\t= " << result.partial_events << "\n\n";
 			}
 			// Normalize to STARC.
 			normalized = normalized.divide_by_bin_width();
 			normalized *= 1.0 / N_assoc;
 			cout << normalized;
+
+			partial = partial.divide_by_bin_width();
+			partial *= 1.0 / result.partial_N_assoc;
 
 			// Export histogram if output file is specified.
 			if (result.parameters.filename) {
@@ -721,6 +733,14 @@ public:
 					file << bin.extent() << "\n";
 				}
 				file << "\n\n";
+
+				file << "partial ncolls:";
+				file << result.partial_ncolls;
+				file << "\n\n";
+
+				file << "partial histogram:";
+				file << partial;
+				file << "\n\n";
 				
 				file.close();
 				
@@ -730,6 +750,19 @@ public:
 					histogram_file_extension
 				);
 				normalized.export_histogram(histogram_path);
+
+				const auto partial_ncolls_path = construct_path(
+					wd,
+					*result.parameters.filename + "_partial_ncolls",
+					histogram_file_extension
+				);
+				const auto partial_path = construct_path(
+					wd,
+					*result.parameters.filename + "_partial",
+					histogram_file_extension
+				);
+
+				partial.export_histogram(partial_path);
 			}
 		}
 	}
@@ -1103,6 +1136,7 @@ AzimuthalNCOLLCorrelationExperiment ncoll_template(
 	Beam b, 
 	string wd,
 	EVENT_COUNT_TYPE retries,
+	bool reject_ncoll,
 	EVENT_COUNT_TYPE ncoll_multiplier,
 	Normalization normalization) {
 	AzimuthalNCOLLCorrelationExperiment ex;
@@ -1132,6 +1166,7 @@ AzimuthalNCOLLCorrelationExperiment ncoll_template(
 
 	ex.ncoll_retries = retries;
 	ex.ncoll_multiplier = ncoll_multiplier;
+	ex.reject_ncoll = reject_ncoll;
 
 	ex.runs = {
 		Analyzer::Parameters(1.0, 1.4, 1.4, 2.0, 2.6, 4.1, 2.6, 4.1, "1014_1420"),
@@ -1158,20 +1193,20 @@ AzimuthalNCOLLCorrelationExperiment ncoll_template(
 }
 
 /// Runs a p+p ncoll collision experiment.
-void pp_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, EVENT_COUNT_TYPE ncoll_multiplier = 0, Normalization normalization = Normalization::None) {
-	auto ex = ncoll_template(count, process, pT_hat_min, Beam(), wd, retries, ncoll_multiplier, normalization);
+void pp_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, bool reject_ncoll = true, EVENT_COUNT_TYPE ncoll_multiplier = 0, Normalization normalization = Normalization::None) {
+	auto ex = ncoll_template(count, process, pT_hat_min, Beam(), wd, retries, reject_ncoll, ncoll_multiplier, normalization);
 	ex.run();
 }
 
 /// Runs a p+Al ncoll collision experiment.
-void Al_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, EVENT_COUNT_TYPE ncoll_multiplier = 0, Normalization normalization = Normalization::None) {
-	auto ex = ncoll_template(count, process, pT_hat_min, Beam(13, 27), wd, retries, ncoll_multiplier, normalization);
+void Al_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, bool reject_ncoll = true, EVENT_COUNT_TYPE ncoll_multiplier = 0, Normalization normalization = Normalization::None) {
+	auto ex = ncoll_template(count, process, pT_hat_min, Beam(13, 27), wd, retries, reject_ncoll, ncoll_multiplier, normalization);
 	ex.run();
 }
 
 /// Runs a p+Au ncoll collision experiment.
-void Au_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, EVENT_COUNT_TYPE ncoll_multiplier = 0, Normalization normalization = Normalization::None) {
-	auto ex = ncoll_template(count, process, pT_hat_min, Beam(79, 197), wd, retries, ncoll_multiplier, normalization);
+void Au_ncoll_run(EVENT_COUNT_TYPE count, Process process, double pT_hat_min, string wd, EVENT_COUNT_TYPE retries = 0, bool reject_ncoll = true, EVENT_COUNT_TYPE ncoll_multiplier = 0, Normalization normalization = Normalization::None) {
+	auto ex = ncoll_template(count, process, pT_hat_min, Beam(79, 197), wd, retries, reject_ncoll, ncoll_multiplier, normalization);
 	ex.run();
 }
 

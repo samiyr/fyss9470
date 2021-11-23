@@ -95,6 +95,8 @@ public:
 	/// Output histogram with post-hoc nuclear modifications.
 	ValueHistogram<double> nuclear_histogram;
 
+	ValueHistogram<double> partial_histogram;
+
 	/// Momentum fraction histograms.
 	/// The "pre" histogram is filled once per event, regardless of cuts in pT or y.
 	/// The "post" histogram is filled once per accepted pion pair.
@@ -108,9 +110,14 @@ public:
 	double N_assoc = 0.0;
 	double N_pair = 0.0;
 
+	double partial_N_trigger = 0.0;
+	double partial_N_assoc = 0.0;
+	double partial_N_pair = 0.0;
+
 	EVENT_COUNT_TYPE next_calls = 0;
 	EVENT_COUNT_TYPE next_skips = 0;
-	EVENT_COUNT_TYPE rejections = 0;
+	EVENT_COUNT_TYPE partial_events = 0;
+	ValueHistogram<double> partial_ncolls;
 
 	/// Parton distribution function pointers.	
 	PDFPtr protonPDF;
@@ -122,18 +129,19 @@ public:
 	bins(b), 
 	histogram(ValueHistogram<double>(bins)),
 	nuclear_histogram(ValueHistogram<double>(bins)),
+	partial_histogram(ValueHistogram<double>(bins)),
 	x1_pre_histogram(ValueHistogram<double>(fixed_range(0.0, 1.0, 20))),
 	x2_pre_histogram(ValueHistogram<double>(fixed_range(0.0, 1.0, 20))),
 	x1_post_histogram(ValueHistogram<double>(fixed_range(0.0, 1.0, 20))),
 	x2_post_histogram(ValueHistogram<double>(fixed_range(0.0, 1.0, 20))) {
-		protonPDF = make_shared<LHAGrid1>(2212, "13", Constants::pdf_grid_data);
+		// protonPDF = make_shared<LHAGrid1>(2212, "13", Constants::pdf_grid_data);
 		if (parameters.beam) {
 			nuclearPDF = new EPPS16((*parameters.beam).nucleus.pdg_code(), 1, Constants::pdf_grid_data, protonPDF); 
 		}
 	}
 
 	/// Analyze the particles generated at an event.
-	void book(std::vector<ParticleContainer> *input/*, ParticleGeneratorInfo *info*/) {
+	void book(std::vector<ParticleContainer> *input/*, ParticleGeneratorInfo *info*/, bool is_partial) {
 		const auto N = input->size();
 
    		// const double x1 = info->x1();
@@ -164,8 +172,14 @@ public:
 			// pT and/or y ranges are assumed to be non-overlapping, i.e. a particle passes at most one filter
 			if (check11) {
 				N_trigger += event_weight;
+				if (is_partial) {
+					partial_N_trigger += event_weight;
+				}
 			} else if (check12) {
 				N_assoc += event_weight;
+				if (is_partial) {
+					partial_N_assoc += event_weight;
+				}
 			} else {
 				continue;
 			}
@@ -186,6 +200,11 @@ public:
 				N_pair += event_weight;
 
 				histogram.fill(value, event_weight);
+
+				if (is_partial) {
+					partial_histogram.fill(value, event_weight);
+					partial_N_pair += event_weight;
+				}
 				// if (nuclearPDF) {
 				// 	nuclear_histogram.fill(value, event_weight * xfA / xf2);
 				// }

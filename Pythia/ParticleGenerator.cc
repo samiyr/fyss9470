@@ -5,6 +5,7 @@
 #include "ParticleFilter.cc"
 #include "Constants.cc"
 #include "GeneratorParameters.cc"
+#include "Histogram.cc"
 
 using namespace Pythia8;
 
@@ -12,10 +13,11 @@ struct ParticleGeneratorInfo {
 	Pythia *pythia;
 	EVENT_COUNT_TYPE next_calls;
 	EVENT_COUNT_TYPE next_skips;
-	EVENT_COUNT_TYPE rejections;
+	EVENT_COUNT_TYPE partial_events;
+	ValueHistogram<double> partial_ncolls;
 
-	ParticleGeneratorInfo(Pythia *_pythia, EVENT_COUNT_TYPE _next_calls, EVENT_COUNT_TYPE _next_skips, EVENT_COUNT_TYPE _rejections)
-	:pythia(_pythia), next_calls(_next_calls), next_skips(_next_skips), rejections(_rejections) {}
+	ParticleGeneratorInfo(Pythia *_pythia, EVENT_COUNT_TYPE _next_calls, EVENT_COUNT_TYPE _next_skips, EVENT_COUNT_TYPE _partial_events, ValueHistogram<double> _partial_ncolls)
+	:pythia(_pythia), next_calls(_next_calls), next_skips(_next_skips), partial_events(_partial_events), partial_ncolls(_partial_ncolls) {}
 };
 
 /// The most basic generator, responsible for generating particles and interfacing with Pythia.
@@ -73,7 +75,9 @@ public:
 
 		EVENT_COUNT_TYPE next_calls = 0;
 		EVENT_COUNT_TYPE next_skips = 0;
-		EVENT_COUNT_TYPE rejections = 0;
+		EVENT_COUNT_TYPE partial_events = 0;
+
+		ValueHistogram<double> partial_ncolls(fixed_range(0.0, 30.0, 30));
 
 		if (params.use_ncoll) {
 			// Non-standard event generation loop to include ncoll effects for nuclear beams.
@@ -81,6 +85,8 @@ public:
 			const auto ncoll_list = params.beam_B.ncoll_list();
 			for (EVENT_COUNT_TYPE i = 0; i < params.event_count; ++i) {
 				double x1_tot = 0.0;
+				bool is_partial = false;
+				bool is_retry = false;
 				const int n_coll = ncoll_list.has_value() ? (*ncoll_list)(i + params.ncoll_multiplier * params.ncoll_offset) : 1;
 				std::vector<ParticleContainer> particles;
 				// Collision loop.
@@ -109,22 +115,34 @@ public:
 						x1_sum += x1;
 					}
 					x1_tot += x1_sum;
+
+					// Check conservation of momentum.
+					if (x1_tot > 1.0) {
+						retry_counter++;
+						is_partial = true;
+						if (retry_counter > params.ncoll_retries) {
+							partial_ncolls.fill(n_coll);
+							partial_events++;
+						} else {
+							is_retry = true;
+							i--;
+						}
+						break;
+					}
 				} // End of collision loop
 
-				// Check conservation of momentum.
-				if (x1_tot > 1.0) {
-					retry_counter++;
-					if (retry_counter > params.ncoll_retries) {
-						rejections++;
-					} else {
-						i--;
-					}
+				if (is_retry) { 
+					continue; 
+				}
+
+				if (is_partial && params.reject_ncoll) {
 					continue;
 				}
+
 				retry_counter = 0;
-				lambda(particles);
+				lambda(particles, is_partial);
 			}
-			completion(ParticleGeneratorInfo(pythia, next_calls, next_skips, rejections));
+			completion(ParticleGeneratorInfo(pythia, next_calls, next_skips, partial_events, partial_ncolls));
 		} else {
 			// Standard event generation loop.
 			for (EVENT_COUNT_TYPE i = 0; i < params.event_count; ++i) {
@@ -146,16 +164,16 @@ public:
 						particles.emplace_back(particle, info.weight());
 					}
 				}
-				lambda(particles);
+				lambda(particles, false);
 			}
-			completion(ParticleGeneratorInfo(pythia, next_calls, next_skips, rejections));
+			completion(ParticleGeneratorInfo(pythia, next_calls, next_skips, partial_events, partial_ncolls));
 		}
 	}
 	/// Generates, stores and returns a 2D matrix of all the particles generated in the event loop, event-by-event.
 	std::vector<std::vector<ParticleContainer>> generate() {
 		std::vector<std::vector<ParticleContainer>> particles(params.event_count, std::vector<ParticleContainer>());
 
-		generate([&particles](std::vector<ParticleContainer> generated) {
+		generate([&particles](std::vector<ParticleContainer> generated, [[maybe_unused]] bool is_partial) {
 			particles.push_back(generated);
 		}, []([[maybe_unused]] ParticleGeneratorInfo info) {});
 

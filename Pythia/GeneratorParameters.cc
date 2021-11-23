@@ -38,6 +38,9 @@ struct GeneratorParameters {
 	Process process;
 	/// Enable ncoll mode.
 	bool use_ncoll;
+	/// If true, ncoll events where conservation of momentum is violated are rejected. 
+	/// If false, only the particles that don't violate conservation of momentum are kept.
+	bool reject_ncoll;
 	/// Number of retries per event in ncoll mode.
 	EVENT_COUNT_TYPE ncoll_retries;
 	/// ncoll index offset and multiplier, i.e. the requested ncoll number is given by 
